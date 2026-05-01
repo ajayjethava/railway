@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Signalling - Dashboard</title>
+    <!-- Train Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Unified Teal Theme Colors */
+        :root {
+            --primary-teal: #00695c;
+            --secondary-teal: #00796b;
+            --light-teal: #26a69a;
+            --dark-teal: #004d40;
+            --gradient-teal: linear-gradient(135deg, #00695c 0%, #00796b 100%);
+            --gradient-light: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+        }
+        
+        .card {
+            margin-bottom: 1.5rem;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-teal);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card:hover::before {
+            opacity: 1;
+        }
+        
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+       
+        /* Enhanced Sidebar Styling - Unified Teal Theme */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: var(--gradient-teal);
+            color: white;
+            z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+       
+        .sidebar-content {
+            padding: 25px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+       
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+       
+        .sidebar-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+       
+        .sidebar-user-section {
+            padding: 20px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+       
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+       
+        .user-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary-teal), var(--dark-teal));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+       
+        .user-icon i {
+            font-size: 1.2rem;
+        }
+       
+        .user-details {
+            flex: 1;
+        }
+       
+        .user-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+       
+        .user-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+       
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+       
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            padding: 12px 18px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .sidebar-btn i {
+            margin-right: 12px;
+            width: 22px;
+            text-align: center;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+       
+        .sidebar-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--light-teal);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+       
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+       
+        .sidebar-btn:hover::before {
+            transform: scaleY(1);
+        }
+       
+        .sidebar-btn:hover i {
+            color: var(--light-teal);
+            transform: scale(1.1);
+        }
+       
+        .sidebar-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+       
+        .sidebar-btn.active::before {
+            transform: scaleY(1);
+        }
+       
+        .sidebar-btn.active i {
+            color: var(--light-teal);
+        }
+       
+        .sidebar-btn.logout {
+            color: #ff6b6b;
+            margin-top: auto;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            padding-top: 25px;
+            background: rgba(255, 107, 107, 0.1);
+        }
+       
+        .sidebar-btn.logout:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            transform: translateX(5px);
+        }
+       
+        .sidebar-btn.logout:hover i {
+            color: #ff6b6b;
+        }
+       
+        /* Main content area */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+            background: var(--gradient-light);
+            transition: all 0.3s ease;
+        }
+       
+        /* Page header enhancement */
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+       
+        /* Enhanced button styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+        }
+       
+        .btn-primary {
+            background: var(--gradient-teal);
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3);
+        }
+       
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary-teal), var(--primary-teal));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 105, 92, 0.4);
+        }
+       
+        .btn-outline-primary {
+            color: var(--primary-teal);
+            border-color: var(--primary-teal);
+        }
+       
+        .btn-outline-primary:hover {
+            background-color: var(--primary-teal);
+            border-color: var(--primary-teal);
+            color: white;
+        }
+       
+        .badge {
+            border-radius: 20px;
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+       
+        /* Project card enhancements */
+        .project-card {
+            background: linear-gradient(145deg, #ffffff, #f8fcff);
+            border-left: none !important;
+        }
+       
+        .project-card-empty {
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            border-left: none !important;
+        }
+       
+        .project-card .card-body {
+            position: relative;
+            padding: 1.5rem;
+        }
+       
+        .project-card .card-body::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-teal);
+            opacity: 0.7;
+        }
+       
+        /* Status icons in cards */
+        .status-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.8;
+        }
+       
+        .no-pdf-icon {
+            color: #6c757d;
+        }
+       
+        .pdf-ready-icon {
+            color: #198754;
+        }
+       
+        .pending-icon {
+            color: var(--light-teal);
+        }
+       
+        /* Improved badges for records and status */
+        .records-badge {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            color: var(--primary-teal);
+            font-weight: 600;
+        }
+       
+        .status-badge-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+       
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: var(--primary-teal);
+            border: 1px solid #dee2e6;
+        }
+       
+        /* Enhanced empty state */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+            border-radius: 8px;
+            border: none;
+        }
+       
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--primary-teal);
+            margin-bottom: 1rem;
+        }
+       
+        /* Modal styling enhancements */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+       
+        .modal-header {
+            background: var(--gradient-teal);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            border: none;
+            padding: 20px 25px;
+        }
+       
+        /* Form focus colors to match teal theme */
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 0.25rem rgba(0, 105, 92, 0.25);
+        }
+       
+        /* Form styling enhancements */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+       
+        /* PDF History Modal - Balanced Look */
+        .pdf-history-modal .modal-dialog {
+            max-width: 90vw;
+            max-height: 85vh;
+            margin: 2rem auto;
+        }
+        
+        .pdf-history-modal .modal-content {
+            height: 85vh;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .pdf-history-modal .modal-body {
+            overflow-y: auto;
+            padding: 1.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .pdf-history-modal .table {
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+        
+        .pdf-history-modal .filename-wrap {
+            max-width: 200px;
+            word-break: break-all;
+            white-space: normal;
+        }
+        
+        .approval-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+        }
+        
+        .approval-date {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .approval-action-buttons {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .btn-approve-sm, .btn-reject-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            min-width: 90px;
+            border-radius: 6px;
+        }
+        
+        .btn-approve-sm {
+            background: linear-gradient(135deg, #198754, #157347);
+            color: white;
+            border: none;
+        }
+        
+        .btn-reject-sm {
+            background: linear-gradient(135deg, #dc3545, #bb2d3b);
+            color: white;
+            border: none;
+        }
+        
+        .btn-approve-sm:hover {
+            background: linear-gradient(135deg, #157347, #198754);
+            transform: translateY(-1px);
+        }
+        
+        .btn-reject-sm:hover {
+            background: linear-gradient(135deg, #bb2d3b, #dc3545);
+            transform: translateY(-1px);
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+        }
+        
+        .designation-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+        }
+        
+        .approval-status-cell {
+            min-width: 120px;
+        }
+        
+        .status-with-date {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+       
+        /* Enhanced table styling */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table thead th {
+            background: var(--gradient-teal);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: 600;
+        }
+        
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 105, 92, 0.05);
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+       
+        /* Custom teal background */
+        .bg-teal {
+            background: var(--gradient-teal) !important;
+            color: white !important;
+        }
+        
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+        }
+        
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 15px; 
+        }
+        
+        .designation-field { 
+            transition: all 0.3s ease; 
+        }
+       
+        /* Stats badges */
+        .stats-badge {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+       
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                background: var(--gradient-teal);
+            }
+           
+            .sidebar-brand span,
+            .user-name,
+            .user-badge,
+            .sidebar-btn span {
+                display: none;
+            }
+           
+            .sidebar-brand {
+                justify-content: center;
+                padding: 15px 0;
+                margin-bottom: 25px;
+            }
+           
+            .sidebar-logo {
+                margin-right: 0;
+                height: 35px;
+            }
+           
+            .sidebar-user-section {
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.1);
+                margin-bottom: 20px;
+            }
+           
+            .user-info {
+                justify-content: center;
+                margin-bottom: 0;
+            }
+           
+            .user-icon {
+                margin-right: 0;
+                width: 40px;
+                height: 40px;
+            }
+           
+            .sidebar-btn {
+                justify-content: center;
+                padding: 12px;
+                border-radius: 8px;
+            }
+           
+            .sidebar-btn i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+           
+            .main-content {
+                margin-left: 70px;
+                padding: 20px 15px;
+            }
+           
+            .page-header {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+           
+            .project-card {
+                margin-bottom: 15px;
+            }
+           
+            .status-badge-group {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .pdf-history-modal .modal-dialog {
+                max-width: 95vw;
+                margin: 1rem auto;
+            }
+        }
+       
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+       
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+       
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+       
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+       
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+       
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <!-- Brand/Logo -->
+            <a class="sidebar-brand" href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+                <span>Railway Signalling</span>
+            </a>
+           
+            <!-- User Info Section -->
+            <div class="sidebar-user-section">
+                {% if current_user.is_authenticated %}
+                <div class="user-info">
+                    <div class="user-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                        <!-- FIXED: Show DESIGNATION if available, otherwise show ROLE -->
+                        {% if current_user.designation and current_user.designation.lower() in ['level1', 'level2', 'level3'] %}
+                            <!-- Show designation badge (level1, level2, level3) -->
+                            <span class="badge rounded-pill user-badge
+                                {% if current_user.designation == 'level1' %}bg-success
+                                {% elif current_user.designation == 'level2' %}bg-info
+                                {% elif current_user.designation == 'level3' %}bg-warning text-dark{% endif %}">
+                                {{ current_user.designation.upper() }}
+                            </span>
+                        {% else %}
+                            <!-- Show role badge (admin, user, viewer) -->
+                            <span class="badge rounded-pill user-badge
+                                {% if current_user.role == 'admin' %}bg-danger
+                                {% elif current_user.role == 'user' %}bg-primary
+                                {% elif current_user.role == 'approver' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ current_user.role.title() }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+           
+            <!-- Navigation Buttons -->
+            <div class="sidebar-buttons">
+                {% if current_user.is_authenticated %}
+                    <!-- Dashboard/Home Button -->
+                    <a class="sidebar-btn active" href="{{ url_for('main.approval_tracking') }}">
+                        <i class="bi bi-house-door"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a class="sidebar-btn" href="{{ url_for('main.approval_tracking') }}">
+                        <i class="bi bi-clipboard-check"></i>
+                        <span>Filters</span>
+                    </a>
+                    {% if current_user.role and current_user.role.lower().strip() == 'admin' %}
+                        <!-- Admin Buttons -->
+                        <a class="sidebar-btn" href="{{ url_for('main.admin_users') }}">
+                            <i class="bi bi-people"></i>
+                            <span>Manage Users</span>
+                        </a>
+
+                    {% endif %}
+                    <!-- NEW: Add New Drawing Button for authenticated users (user or admin) -->
+                    {% if current_user.role.lower() in ['user', 'admin'] %}
+                    <a class="sidebar-btn" href="{{ url_for('main.new_drawing_selection') }}">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        <span>New Drawing</span>
+                    </a>
+                    {% endif %}
+                    {% if current_user.role.lower() in ['user', 'admin'] %}
+                    <a class="sidebar-btn" href="{{ url_for('main.new_project') }}">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        <span>New Station</span>
+                    </a>
+                    {% endif %}
+                   
+                    <!-- Logout Button -->
+                    <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Logout</span>
+                    </a>
+                {% else %}
+                    <!-- Login Button for non-authenticated users -->
+                    <a class="sidebar-btn" href="{{ url_for('main.login') }}">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span>Login</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4"></i>
+                        <div>
+                            <strong>{% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong> {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <div class="container-fluid py-4 fade-in">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="text-center">
+                    <h2 class="mb-3">
+                        <i class="bi bi-folder-open me-2"></i> ADI Station's Location Box & CTR
+                    </h2>
+                    <p class="text-muted mb-0">Choose an existing Station or create a new Station to start building your Location Box & CTR files.</p>
+                </div>
+            </div>
+            {% if projects_data %}
+            <div class="row">
+                {% for data in projects_data %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 project-card {% if data.total_rows == 0 %}project-card-empty{% endif %}">
+                        <div class="card-header d-flex justify-content-between align-items-center {% if data.total_rows > 0 %}bg-teal{% else %}bg-secondary{% endif %}">
+                            <strong class="text-truncate" title="{{ data.project.name }}">
+                                <span class="badge bg-light text-dark me-2">ID: {{ data.project.id }}</span>
+                                {{ data.project.name }}
+                            </strong>
+                            <span class="records-badge">{{ data.total_rows }} records</span>
+                        </div>
+                        <div class="card-body">
+                            {% if data.current_pdf %}
+                                <div class="status-icon pending-icon mb-3">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                                <div class="status-badge-group">
+                                    <span class="status-badge">
+                                        <i class="bi bi-star-fill"></i> Latest: v{{ data.current_pdf.version }}
+                                    </span>
+                                    <!-- Show overall approval status badge with dates -->
+                                    {% if data.current_pdf.level3_status == 'approved' %}
+                                        <span class="status-badge"><i class="bi bi-check-circle"></i> Approved (L3) on {{ data.current_pdf.level3_approval_date }}</span>
+                                    {% elif data.current_pdf.level2_status == 'rejected' or data.current_pdf.level3_status == 'rejected' or data.current_pdf.level1_status == 'rejected' %}
+                                        <span class="status-badge"><i class="bi bi-x-circle"></i> Rejected</span>
+                                    {% elif data.current_pdf.level2_status == 'approved' %}
+                                        <span class="status-badge"><i class="bi bi-clock"></i> Level 3 Pending (L2 approved on {{ data.current_pdf.level2_approval_date }})</span>
+                                    {% elif data.current_pdf.level1_status == 'approved' %}
+                                        <span class="status-badge"><i class="bi bi-clock"></i> Level 2 Pending (L1 approved on {{ data.current_pdf.level1_approval_date }})</span>
+                                    {% else %}
+                                        <span class="status-badge"><i class="bi bi-clock"></i> Level 1 Pending</span>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#pdfWideModal{{ data.project.id }}">
+                                        <i class="bi bi-clock-history"></i> Version History
+                                    </button>
+                                    <a href="{{ data.current_pdf.inline_url }}" target="_blank" class="btn btn-outline-success btn-sm flex-fill">
+                                        <i class="bi bi-file-earmark-pdf"></i> View Current PDF
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="bi bi-file-earmark-x no-pdf-icon status-icon"></i>
+                                    <p class="mb-0 small text-muted">No PDFs yet</p>
+                                </div>
+                            {% endif %}
+                            {% if current_user.designation not in ['level2', 'level3'] %}
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#newDrawingModal{{ data.project.id }}">
+                                    <i class="bi bi-file-earmark-plus"></i> New Drawing
+                                </button>
+                                <button type="button" class="btn {% if data.total_rows > 0 %}btn-success{% else %}btn-primary{% endif %} btn-sm flex-fill" onclick="handleContinue({{ data.project.id }})">
+                                    <i class="bi bi-arrow-right-circle"></i> Continue Drawing
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-light">
+                            <div class="d-flex gap-2">
+                                {% if current_user.designation not in ['level2', 'level3'] %}
+                                <a href="{{ url_for('main.edit_project', project_id=data.project.id) }}" class="btn btn-outline-warning btn-sm flex-fill">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                {% endif %}
+                                {% if current_user.designation not in ['level2', 'level3'] %}
+                                <button type="button" class="btn btn-outline-danger btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#deleteModal{{ data.project.id }}">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- New Drawing Modal -->
+                <div class="modal fade" id="newDrawingModal{{ data.project.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning text-dark">
+                                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Start New Drawing</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Do you want to start a new drawing for this project?</p>
+                                <div class="alert alert-warning">
+                                    <strong>Project:</strong> {{ data.project.name }}<br>
+                                    <strong>Current Records:</strong> {{ data.total_rows }}
+                                </div>
+                                <p class="text-danger"><strong>Warning:</strong> This will clear all existing table data (StationDrawing, JunctionBox, Circuit, Terminal, etc.) for this project. PDFs will remain saved.</p>
+                                <p><strong>Note:</strong> You can start fresh with an empty drawing or upload a new Excel file.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-warning" onclick="handleNewDrawing({{ data.project.id }})">
+                                    <i class="bi bi-file-earmark-plus"></i> Start New Drawing
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PDF History Modal (Wider Style) -->
+                <div class="modal fade pdf-history-modal" id="pdfWideModal{{ data.project.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header bg-teal">
+                                <h6 class="modal-title">
+                                    <i class="bi bi-clock-history"></i> PDF History — {{ data.project.name }}
+                                </h6>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% if data.pdfs and data.pdfs|length > 0 %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Version</th>
+                                                    <th>Filename</th>
+                                                    <th>Size</th>
+                                                    <th>Created By</th>
+                                                    <th>Created At</th>
+                                                    <th>Remarks</th>
+                                                    <!-- Approval Status Columns -->
+                                                    <th class="approval-status-cell">Level 1</th>
+                                                    <th class="approval-status-cell">Level 2</th>
+                                                    <th class="approval-status-cell">Level 3</th>
+                                                    <th class="text-center">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for pdf in data.pdfs %}
+                                                <tr>
+                                                    <td class="text-center">
+                                                        <span class="badge {% if pdf.is_current %}bg-success{% else %}bg-info{% endif %}">
+                                                            v{{ pdf.version }} {% if pdf.is_current %}<i class="bi bi-star-fill"></i>{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td class="filename-wrap">{{ pdf.filename }}</td>
+                                                    <td class="text-muted">{% if pdf.size_kb %}{{ pdf.size_kb }} KB{% else %}-{% endif %}</td>
+                                                   
+                                                    <td class="small text-muted">{{ pdf.created_at }}</td>
+                                                    <td>{{ pdf.remarks or '-' }}</td>
+                                                   
+                                                    <!-- Level 1 Status with Date -->
+                                                    <td class="approval-status-cell">
+                                                        <div class="status-with-date">
+                                                            <span class="badge approval-badge bg-{% if pdf.level1_status == 'approved' %}success{% elif pdf.level1_status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                                                                {{ pdf.level1_status|default('pending')|upper }}
+                                                            </span>
+                                                            {% if pdf.level1_approval_date %}
+                                                            <small class="approval-date">
+                                                                {{ pdf.level1_approval_date }}
+                                                            </small>
+                                                            {% endif %}
+                                                            {% if pdf.level1_approver %}
+                                                            <small class="approval-date">
+                                                                By: {{ pdf.level1_approver }}
+                                                            </small>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                   
+                                                    <!-- Level 2 Status with Date -->
+                                                    <td class="approval-status-cell">
+                                                        <div class="status-with-date">
+                                                            {% if pdf.level1_status == 'rejected' %}
+                                                            <span class="badge approval-badge bg-secondary">PENDING</span>
+                                                            {% else %}
+                                                            <span class="badge approval-badge bg-{% if pdf.level2_status == 'approved' %}success{% elif pdf.level2_status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                                                                {{ pdf.level2_status|default('pending')|upper }}
+                                                            </span>
+                                                            {% if pdf.level2_approval_date %}
+                                                            <small class="approval-date">
+                                                                {{ pdf.level2_approval_date }}
+                                                            </small>
+                                                            {% endif %}
+                                                            {% if pdf.level2_approver %}
+                                                            <small class="approval-date">
+                                                                By: {{ pdf.level2_approver }}
+                                                            </small>
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                   
+                                                    <!-- Level 3 Status with Date -->
+                                                    <td class="approval-status-cell">
+                                                        <div class="status-with-date">
+                                                            {% if pdf.level2_status == 'rejected' or pdf.level1_status == 'rejected' %}
+                                                            <span class="badge approval-badge bg-secondary">PENDING</span>
+                                                            {% else %}
+                                                            <span class="badge approval-badge bg-{% if pdf.level3_status == 'approved' %}success{% elif pdf.level3_status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                                                                {{ pdf.level3_status|default('pending')|upper }}
+                                                            </span>
+                                                            {% if pdf.level3_approval_date %}
+                                                            <small class="approval-date">
+                                                                {{ pdf.level3_approval_date }}
+                                                            </small>
+                                                            {% endif %}
+                                                            {% if pdf.level3_approver %}
+                                                            <small class="approval-date">
+                                                                By: {{ pdf.level3_approver }}
+                                                            </small>
+                                                            {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                   
+                                                    <td class="text-center">
+                                                        <div class="action-buttons">
+                                                            <!-- View, Download, Continue Buttons -->
+                                                            <a class="btn btn-sm btn-outline-info" href="{{ pdf.inline_url }}" target="_blank" title="View">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                            <a class="btn btn-sm btn-outline-success" href="{{ pdf.download_url }}" title="Download">
+                                                                <i class="bi bi-download"></i>
+                                                            </a>
+                                                            {% if current_user.designation not in ['level2', 'level3'] %}
+                                                            <button class="btn btn-sm btn-outline-primary"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#continueVersionModal"
+                                                                    onclick="setContinueVersionId({{ pdf.id }})"
+                                                                    title="Continue from this version">
+                                                                <i class="bi bi-arrow-clockwise"></i>
+                                                            </button>
+                                                            {% endif %}
+                                                           
+                                                            <!-- Level 1 Approval Buttons -->
+                                                            {% if current_user.designation == 'level1' and pdf.level1_status == 'pending' %}
+                                                            <div class="approval-action-buttons">
+                                                                <form method="POST" action="{{ url_for('main.approve_pdf', pdf_id=pdf.id, level='1') }}" style="display: inline;">
+                                                                    <button type="submit" class="btn btn-approve-sm"
+                                                                            onclick="return confirm('Are you sure you want to approve this PDF at Level 1?')"
+                                                                            title="Approve (Level 1)">
+                                                                        <i class="bi bi-check"></i> Approve
+                                                                    </button>
+                                                                </form>
+                                                                <button class="btn btn-reject-sm"
+                                                                        onclick="showRejectModal({{ pdf.id }}, '1', '{{ pdf.filename }}')"
+                                                                        title="Reject (Level 1)">
+                                                                    <i class="bi bi-x"></i> Reject
+                                                                </button>
+                                                            </div>
+                                                            {% endif %}
+                                                           
+                                                            <!-- Level 2 Approval Buttons -->
+                                                            {% if current_user.designation == 'level2' and pdf.level1_status == 'approved' and pdf.level2_status == 'pending' %}
+                                                            <div class="approval-action-buttons">
+                                                                <form method="POST" action="{{ url_for('main.approve_pdf', pdf_id=pdf.id, level='2') }}" style="display: inline;">
+                                                                    <button type="submit" class="btn btn-approve-sm"
+                                                                            onclick="return confirm('Are you sure you want to approve this PDF at Level 2?')"
+                                                                            title="Approve (Level 2)">
+                                                                        <i class="bi bi-check"></i> Approve
+                                                                    </button>
+                                                                </form>
+                                                                <button class="btn btn-reject-sm"
+                                                                        onclick="showRejectModal({{ pdf.id }}, '2', '{{ pdf.filename }}')"
+                                                                        title="Reject (Level 2)">
+                                                                    <i class="bi bi-x"></i> Reject
+                                                                </button>
+                                                            </div>
+                                                            {% endif %}
+                                                           
+                                                            <!-- Level 3 Approval Buttons -->
+                                                            {% if current_user.designation == 'level3' and pdf.level1_status == 'approved' and pdf.level2_status == 'approved' and pdf.level3_status == 'pending' %}
+                                                            <div class="approval-action-buttons">
+                                                                <form method="POST" action="{{ url_for('main.approve_pdf', pdf_id=pdf.id, level='3') }}" style="display: inline;">
+                                                                    <button type="submit" class="btn btn-approve-sm"
+                                                                            onclick="return confirm('Are you sure you want to approve this PDF at Level 3?')"
+                                                                            title="Approve (Level 3)">
+                                                                        <i class="bi bi-check"></i> Approve
+                                                                    </button>
+                                                                </form>
+                                                                <button class="btn btn-reject-sm"
+                                                                        onclick="showRejectModal({{ pdf.id }}, '3', '{{ pdf.filename }}')"
+                                                                        title="Reject (Level 3)">
+                                                                    <i class="bi bi-x"></i> Reject
+                                                                </button>
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center text-muted py-5">
+                                        <i class="bi bi-file-earmark-x display-4"></i>
+                                        <p class="mt-3">No PDFs yet for this project.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Delete Modal -->
+                <div class="modal fade" id="deleteModal{{ data.project.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Delete</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete this project?</p>
+                                <div class="alert alert-warning">
+                                    <strong>Project:</strong> {{ data.project.name }}<br>
+                                    <strong>Records:</strong> {{ data.total_rows }}
+                                </div>
+                                <p class="text-danger"><strong>Warning:</strong> This action cannot be undone.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form method="POST" action="{{ url_for('main.delete_project', project_id=data.project.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash"></i> Delete Project
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="text-center mt-4">
+                <p class="text-muted mb-4">Total Stations: {{ projects_data|length }}</p>
+            </div>
+            {% else %}
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card border-primary text-center py-5">
+                        <div class="card-body">
+                            <i class="bi bi-folder-plus display-1 text-primary mb-3"></i>
+                            <h4>No Projects Found</h4>
+                            <p class="text-muted mb-4">Create your first project to get started.</p>
+                            <a href="{{ url_for('main.new_project') }}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-plus-circle"></i> Create Your First ADI Station's Location Box & CTR
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="text-center mt-4">
+                <a href="{{ url_for('main.new_project') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle"></i> Create New ADI Station's Location Box & CTR
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- Beautiful Confirmation Modal for Continue from Version -->
+    <div class="modal fade" id="continueVersionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-teal">
+                    <h5 class="modal-title">
+                        <i class="bi bi-arrow-clockwise"></i> Continue from PDF Version
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="lead">Load data from this PDF version and continue drawing?</p>
+                    <div class="alert alert-warning">
+                        <strong>This will replace current project data.</strong><br>
+                        All existing drawings, terminals, circuits, etc., will be overwritten with the data from the selected PDF version.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmContinueBtn">
+                        <span id="continueBtnText">Continue Drawing</span>
+                        <span id="continueSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Rejection Reason Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="rejectModalTitle">
+                        <i class="bi bi-x-circle"></i> Reject PDF
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="rejectForm" method="POST">
+                    <div class="modal-body">
+                        <p>Are you sure you want to reject this PDF?</p>
+                        <div class="alert alert-warning">
+                            <strong id="rejectFilename"></strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Reason for rejection (optional):</label>
+                            <textarea class="form-control" id="rejectionReason" name="rejection_reason" rows="3" placeholder="Please provide reason for rejection..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger" id="confirmRejectBtn">
+                            <span id="rejectBtnText">Confirm Rejection</span>
+                            <span id="rejectSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let pendingPdfId = null;
+        let pendingRejectPdfId = null;
+        let pendingRejectLevel = null;
+        
+        function setContinueVersionId(pdfId) {
+            pendingPdfId = pdfId;
+        }
+        
+        function showRejectModal(pdfId, level, filename) {
+            pendingRejectPdfId = pdfId;
+            pendingRejectLevel = level;
+           
+            // Update modal title and filename
+            document.getElementById('rejectModalTitle').innerHTML = `<i class="bi bi-x-circle"></i> Reject PDF (Level ${level})`;
+            document.getElementById('rejectFilename').textContent = filename;
+           
+            // Update form action
+            document.getElementById('rejectForm').action = `/reject_pdf/${pdfId}/${level}`;
+           
+            // Clear previous reason
+            document.getElementById('rejectionReason').value = '';
+           
+            // Show modal
+            const rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+            rejectModal.show();
+        }
+        
+        // Handle reject form submission
+        document.getElementById('rejectForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('confirmRejectBtn');
+            const text = document.getElementById('rejectBtnText');
+            const spinner = document.getElementById('rejectSpinner');
+           
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+        });
+        
+        // Continue from version
+        document.getElementById('confirmContinueBtn').addEventListener('click', function () {
+            if (!pendingPdfId) return;
+            const btn = this;
+            const text = document.getElementById('continueBtnText');
+            const spinner = document.getElementById('continueSpinner');
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            fetch(`/continue_from_version/${pendingPdfId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to load version');
+                window.location.href = '/workflow/step/2';
+            })
+            .catch(err => {
+                alert('Error: ' + err.message);
+                btn.disabled = false;
+                text.classList.remove('d-none');
+                spinner.classList.add('d-none');
+            });
+        });
+        
+        // Existing Functions
+        function handleContinue(projectId) {
+            fetch('/set_continue_drawing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/workflow/step/2?project_id=' + projectId;
+                } else {
+                    alert('Error setting continue mode');
+                }
+            });
+        }
+        
+        function handleNewDrawing(projectId) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('newDrawingModal' + projectId));
+            if (modal) modal.hide();
+            const btn = event.target;
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Clearing...';
+            fetch('/new_drawing/' + projectId, { method: 'POST' })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        return fetch('/set_new_drawing', { method: 'POST' });
+                    }
+                    throw new Error(res.message || 'Failed');
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) window.location.href = '/workflow/step/2?project_id=' + projectId;
+                    else throw new Error('Set flag failed');
+                })
+                .catch(err => {
+                    alert('Error: ' + err.message);
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                });
+        }
+       
+        // Add smooth animations for cards
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('fade-in');
+            });
+        });
+    </script>
+</body>
+</html>

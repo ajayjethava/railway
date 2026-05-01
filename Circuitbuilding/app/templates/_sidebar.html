@@ -1,0 +1,96 @@
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-content">
+        <!-- Brand/Logo -->
+        <a class="sidebar-brand" href="{{ url_for('main.approval_tracking') }}">
+            <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+            <span>Railway Signalling</span>
+        </a>
+   
+        <!-- User Info Section -->
+        <div class="sidebar-user-section">
+            {% if current_user.is_authenticated %}
+            <div class="user-info">
+                <div class="user-icon">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name">{{ current_user.username }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+   
+        <!-- Navigation Buttons -->
+        <div class="sidebar-buttons">
+            <!-- Dashboard/Home Button - Only for creators (role 1) and admin (role 4) -->
+            {% if permissions.can_create_drawing or permissions.can_see_all %}
+            <a class="sidebar-btn" href="{{ url_for('main.approval_tracking') }}">
+                <i class="bi bi-house-door"></i>
+                <span>Dashboard</span>
+            </a>
+            {% endif %}
+       
+            <!-- Admin-specific buttons: New Station, New Drawing, Manage Users -->
+            {% if current_user.role_name == '4' %}
+            <!-- New Station Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.new_project') }}">
+                <i class="bi bi-plus-square"></i>
+                <span>New Station</span>
+            </a>
+
+            <!-- Manage Users Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.admin_users') }}">
+                <i class="bi bi-people"></i>
+                <span>Manage Users</span>
+            </a>
+
+            <!-- Roles Management Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.role_master_list') }}">
+                <i class="bi bi-person-badge"></i>
+                <span>Manage Roles</span>
+            </a>
+            
+            <!-- Designations Management Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.designation_master_list') }}">
+                <i class="bi bi-person-workspace"></i>
+                <span>Manage Designations</span>
+            </a>
+            <a class="sidebar-btn" href="{{ url_for('main.view_list') }}">
+                <i class="bi bi-card-list"></i>
+                <span>View List</span>
+            </a>
+            {% endif %}
+
+            {% if current_user.role_name in ['1', '4'] %}
+            <!-- New Drawing Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.new_drawing_selection') }}">
+                <i class="bi bi-file-earmark-plus"></i>
+                <span>New Drawing</span>
+            </a>
+
+            <!-- CTR Drawing Page Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.ctr_drawing') }}">
+                <i class="bi bi-file-earmark-excel"></i>
+                <span>CTR Drawing</span>
+            </a>
+            {% endif %}
+
+            {% if current_user.role_name in ['2', '3'] %}
+            <!-- CTR Drawing Page Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.ctr_drawing') }}">
+                <i class="bi bi-file-earmark-excel"></i>
+                <span>CTR Drawing</span>
+            </a>
+            {% endif %}
+       
+            <!-- Logout Button -->
+            {% if current_user.is_authenticated %}
+            <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>

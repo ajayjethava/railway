@@ -1,0 +1,254 @@
+Circuitbuilding/
+├── .env
+├── .git
+│   ├── FETCH_HEAD
+│   ├── HEAD
+│   ├── ORIG_HEAD
+│   ├── config
+│   ├── description
+│   ├── hooks
+│   │   ├── applypatch-msg.sample
+│   │   ├── commit-msg.sample
+│   │   ├── fsmonitor-watchman.sample
+│   │   ├── post-update.sample
+│   │   ├── pre-applypatch.sample
+│   │   ├── pre-commit.sample
+│   │   ├── pre-merge-commit.sample
+│   │   ├── pre-push.sample
+│   │   ├── pre-rebase.sample
+│   │   ├── pre-receive.sample
+│   │   ├── prepare-commit-msg.sample
+│   │   ├── push-to-checkout.sample
+│   │   ├── sendemail-validate.sample
+│   │   └── update.sample
+│   ├── index
+│   ├── info
+│   │   └── exclude
+│   ├── logs
+│   │   ├── HEAD
+│   │   └── refs
+│   │       ├── heads
+│   │       │   └── main
+│   │       ├── remotes
+│   │       │   └── origin
+│   │       │       ├── HEAD
+│   │       │       └── main
+│   │       └── stash
+│   ├── objects
+│   │   ├── 05
+│   │   │   └── a362f806ea18676bcf6facbf8862cbf537be57
+│   │   ├── 0a
+│   │   │   └── f329617917027f83f9826e8e4c988651f79cff
+│   │   ├── 13
+│   │   │   └── 65f6fd10eb73c0e823c5dfaf6204c2f3a84e54
+│   │   ├── 15
+│   │   │   └── 3be41e929cc3ee10bd8af54ea148978c48649a
+│   │   ├── 2d
+│   │   │   └── ed947f6ffcf3d3465d7913e8d7613b9a745cb0
+│   │   ├── 2e
+│   │   │   └── 955cae76a3b2b8c73fb947281dec5e0302a082
+│   │   ├── 3a
+│   │   │   └── 602084c56c5ce08f52bb49c7fefea830ee32ee
+│   │   ├── 3f
+│   │   │   └── 237037ee841793fc501b954162222c8b8a89ee
+│   │   ├── 4a
+│   │   │   └── db8cf8368c3d543a242469a45b3d7da2481da1
+│   │   ├── 4c
+│   │   │   └── ff22bd72f5b555a7bf39f0c61c2bf384da0afd
+│   │   ├── 50
+│   │   │   └── ffbcd76b7f2f3066c4de1e0ad246c547f34646
+│   │   ├── 55
+│   │   │   └── 56b49d244dc0f3d8f52d5a03ba3460d71de9b9
+│   │   ├── 5e
+│   │   │   └── 7ffd80173fc08e6b2889cc90b0c0bccd5684e9
+│   │   ├── 63
+│   │   │   └── f5fb2b4b03a7f185eddbd5fa5d2c0ab9e20f52
+│   │   ├── 64
+│   │   │   └── 8579f5704907deef804c74e6d9a772163711c2
+│   │   ├── 65
+│   │   │   └── ccc72ebffbc8b72764c333c44a4bc25e9ca11f
+│   │   ├── 6a
+│   │   │   └── 30a4ebfdce0354d58981b431ba2a96b6fc2541
+│   │   ├── 6e
+│   │   │   └── 67c7ded2b5e71d11fa921b0976b05dd03aa8ac
+│   │   ├── 7a
+│   │   │   └── 4bb9d4d8404e0c56121247b7f2510a175f46c7
+│   │   ├── 7e
+│   │   │   └── 96950ae89c98e089fcd916374f54a21934007d
+│   │   ├── 82
+│   │   │   └── a5792ff23fcd7950d52647533ef0200b3cfb9b
+│   │   ├── 84
+│   │   │   └── 79d11258e481738b3be481429922cdb3410154
+│   │   ├── 90
+│   │   │   └── aedfa9a6c95b64dd2fc251af9c7d04018269a3
+│   │   ├── 93
+│   │   │   └── d2a57979a92f6d1829a567a3687056f1a897c8
+│   │   ├── 9c
+│   │   │   └── 77b04f00bb631320e6a5a3be638cab69a32720
+│   │   ├── 9d
+│   │   │   └── 068ff87574862a8b1e889851522f0cc28f66aa
+│   │   ├── ac
+│   │   │   └── 50758d06503d5086e831b8340c85131e7ed025
+│   │   ├── b1
+│   │   │   └── ac0aa6e251896059f34f6f40b38b98b5a4766a
+│   │   ├── b2
+│   │   │   └── 61f170f649658bc024747d793dd86f38a2e8a9
+│   │   ├── b5
+│   │   │   └── a02646e7336092205503982b74dc9c1e188010
+│   │   ├── b7
+│   │   │   └── 08496dc97c32db94f568fda52be916503cfa91
+│   │   ├── cb
+│   │   │   └── 7408c84522d76cc3596e8d99346885d052a0b1
+│   │   ├── cd
+│   │   │   └── 8b8307b3a894d580f071fb42408ca09c39d13f
+│   │   ├── ce
+│   │   │   └── db636322d790622ef9a36e6ab5afa2f67bd44f
+│   │   ├── cf
+│   │   │   └── a002e89fddf807ace29105b1cd6a7c6876d95c
+│   │   ├── d9
+│   │   │   └── 56670b54718ceefd43f95374224b3e9e2e6554
+│   │   ├── e4
+│   │   │   └── 84aef2beef712549eb77c0a13ea6baa6f9d310
+│   │   ├── e7
+│   │   │   └── 5f3777f6b72895d252a6e52cddfc7ff0744ea9
+│   │   ├── ee
+│   │   │   └── 6c20f3d3ff7a3d7fb1dd35fc42a0f34467bfd9
+│   │   ├── f0
+│   │   │   └── a9aa16b3590c74aa1d78b230f71283a573523f
+│   │   ├── f6
+│   │   │   └── 8a8398632eb973806fd729987c96605290251f
+│   │   ├── info
+│   │   └── pack
+│   │       ├── pack-70f5c6acd61ddbd14462fae6f58d5542aa64abb0.idx
+│   │       ├── pack-70f5c6acd61ddbd14462fae6f58d5542aa64abb0.pack
+│   │       └── pack-70f5c6acd61ddbd14462fae6f58d5542aa64abb0.rev
+│   ├── packed-refs
+│   └── refs
+│       ├── heads
+│       │   └── main
+│       ├── remotes
+│       │   └── origin
+│       │       ├── HEAD
+│       │       └── main
+│       ├── stash
+│       └── tags
+├── .gitattributes
+├── README.md
+├── app
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-310.pyc
+│   │   ├── __init__.cpython-311.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── __init__.cpython-313.pyc
+│   │   ├── database.cpython-310.pyc
+│   │   ├── database.cpython-311.pyc
+│   │   ├── database.cpython-312.pyc
+│   │   ├── database.cpython-313.pyc
+│   │   ├── models.cpython-310.pyc
+│   │   ├── models.cpython-311.pyc
+│   │   ├── models.cpython-312.pyc
+│   │   ├── models.cpython-313.pyc
+│   │   ├── monitor.cpython-312.pyc
+│   │   ├── routes.cpython-310.pyc
+│   │   ├── routes.cpython-311.pyc
+│   │   ├── routes.cpython-312.pyc
+│   │   ├── routes.cpython-313.pyc
+│   │   ├── schemas.cpython-310.pyc
+│   │   ├── schemas.cpython-311.pyc
+│   │   ├── schemas.cpython-312.pyc
+│   │   └── schemas.cpython-313.pyc
+│   ├── create_initial_admin.py
+│   ├── database.py
+│   ├── models.py
+│   ├── routes
+│   │   └── new_project
+│   │       └── project_routes.py
+│   ├── routes.py
+│   ├── schemas.py
+│   ├── static
+│   │   ├── images
+│   │   │   └── railway_logo.jpg
+│   │   └── styles.css
+│   └── templates
+│       ├── admin
+│       │   ├── admin_base.html
+│       │   ├── admin_users.html
+│       │   ├── includes
+│       │   │   ├── flash_messages.html
+│       │   │   └── sidebar.html
+│       │   ├── partials
+│       │   │   ├── edit_user_modal.html
+│       │   │   ├── multi_select.html
+│       │   │   ├── stations_modal.html
+│       │   │   ├── user_filters.html
+│       │   │   ├── user_form.html
+│       │   │   └── users_table.html
+│       │   └── static
+│       │       ├── css
+│       │       │   └── admin_users.css
+│       │       └── js
+│       │           ├── admin_users.js
+│       │           ├── multi_select.js
+│       │           └── user_filters.js
+│       ├── admin_users.html
+│       ├── approval_tracking.html
+│       ├── base.html
+│       ├── designations
+│       │   ├── form.html
+│       │   └── list.html
+│       ├── edit_project.html
+│       ├── excel_to_pdf.html
+│       ├── index.html
+│       ├── login.html
+│       ├── new_drawing_selection.html
+│       ├── new_project.html
+│       ├── pdf_result.html
+│       ├── pdf_view.html
+│       ├── preview.html
+│       ├── project_selection.html
+│       ├── roles
+│       │   ├── form.html
+│       │   └── list.html
+│       ├── sheet_form.html
+│       ├── upload_sheet.html
+│       ├── view_list.html
+│       ├── workflow
+│       │   ├── comprehensive_view.html
+│       │   ├── includes
+│       │   │   ├── approval_buttons.html
+│       │   │   ├── approval_status_panel.html
+│       │   │   ├── comprehensive_modals.html
+│       │   │   ├── existing_records_table.html
+│       │   │   ├── progress_header.html
+│       │   │   ├── rejection_modal.html
+│       │   │   ├── success_error_modals.html
+│       │   │   └── view_project_data_modal.html
+│       │   ├── stage_data_view.html
+│       │   ├── step_1_station_info.html
+│       │   ├── step_2_locations
+│       │   │   ├── add_more_grid.html
+│       │   │   ├── main.html
+│       │   │   ├── modals
+│       │   │   │   ├── cable_config.html
+│       │   │   │   ├── cable_table.html
+│       │   │   │   ├── choke_config.html
+│       │   │   │   ├── group_config.html
+│       │   │   │   ├── header_config.html
+│       │   │   │   ├── resistor_config.html
+│       │   │   │   └── terminal_config.html
+│       │   │   └── scripts
+│       │   │       ├── add_more_flow.js
+│       │   │       └── main_flow.js
+│       │   ├── step_3_cables.html
+│       │   ├── step_4_terminals.html
+│       │   ├── step_5_headers.html
+│       │   ├── step_6_groups.html
+│       │   ├── step_7_choke_table.html
+│       │   ├── step_8_resistor_table.html
+│       │   └── step_9_cable_box.html
+│       ├── workflow_dashboard.html
+│       ├── workflow_edit.html
+│       └── workflow_step.html
+├── requirements.txt
+└── run.py

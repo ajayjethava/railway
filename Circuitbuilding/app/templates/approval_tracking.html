@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Signalling - PDF Approval Tracking</title>
+    <!-- Updated favicon to use railway logo image -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/approval_tracking.css') }}">
+</head>
+<body class="bg-light">
+    {% include '_sidebar.html' %}
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4"></i>
+                        <div>
+                            <strong>{% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong> {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    
+        <!-- Notification Section -->
+        <div class="container-fluid py-4 fade-in">
+       
+            <!-- Filters Card with Record Count -->
+            <div class="card shadow-sm">
+                <div class="card-header notification-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-filter-circle me-2"></i> Drawing Details</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm position-relative pulse" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell"></i>
+                            <span id="notificationCount" class="notification-badge">0</span>
+                        </button>
+                        <div class="dropdown-menu notification-dropdown" aria-labelledby="notificationDropdown">
+                            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                                <h6 class="mb-0">All Notifications</h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger me-1" id="clearAllNotificationsBtn" title="Clear All">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" id="dropdownMarkAllReadBtn">
+                                        <i class="bi bi-check-all"></i> Mark All Read
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="notificationList" class="py-2">
+                                <div class="notifications-empty">
+                                    <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                                    <p class="mb-0">No notifications</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    
+                    <form method="GET" action="{{ url_for('main.approval_tracking') }}" id="filterForm">
+                        <input type="hidden" name="page" value="1">
+                        <input type="hidden" name="rows_per_page" value="{{ pagination.rows_per_page }}">
+                        
+                        <!-- All filters in one line -->
+                        <div class="compact-filters">
+                            <!-- Station Filter -->
+                            <div class="filter-group">
+                                <label class="form-label fw-medium">Station</label>
+                                <select name="project_id" id="stationFilter" class="form-select">
+                                    <option value="all">All Stations</option>
+                                    {% for project in all_projects %}
+                                    <option value="{{ project.id }}" {% if current_filters.project_id == project.id|string %}selected{% endif %}>
+                                        {{ project.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                       
+                            <!-- Location Names Filter -->
+                            <div class="filter-group">
+                                <label class="form-label fw-medium">Location Names</label>
+                                <select name="junction_id" id="junctionFilter" class="form-select">
+                                    <option value="all">All Locations</option>
+                                    {% if all_projects %}
+                                        {% set all_junctions_list = [] %}
+                                        {% set seen_junction_keys = [] %}
+                                    
+                                        {% for project in all_projects %}
+                                            {% if project.junction_boxes %}
+                                                {% for jb in project.junction_boxes %}
+                                                    {% if jb.junction_name %}
+                                                        {% set junction_key = jb.junction_id ~ '|' ~ jb.junction_name %}
+                                                        {% if junction_key not in seen_junction_keys %}
+                                                            {% set _ = seen_junction_keys.append(junction_key) %}
+                                                            {% set _ = all_junctions_list.append({
+                                                                'id': jb.junction_id,
+                                                                'name': jb.junction_name,
+                                                                'project_id': project.id
+                                                            }) %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    
+                                        {% for junction in all_junctions_list %}
+                                            <option value="{{ junction.id }}|{{ junction.name }}"
+                                                    {% if current_filters.junction_id == (junction.id ~ '|' ~ junction.name) %}selected{% endif %}>
+                                                {{ junction.name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                       
+                            <!-- Approval Status Filter -->
+                            <div class="filter-group">
+                                <label class="form-label fw-medium">Approval Status</label>
+                                <select name="approval_status" class="form-select">
+                                    <option value="all" {% if current_filters.approval_status == 'all' %}selected{% endif %}>All Status</option>
+                                    <option value="approved" {% if current_filters.approval_status == 'approved' %}selected{% endif %}>Approved</option>
+                                    <option value="rejected" {% if current_filters.approval_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                    <option value="pending" {% if current_filters.approval_status == 'pending' %}selected{% endif %}>Pending</option>
+                                </select>
+                            </div>
+                       
+                            <!-- Filter and Clear Buttons -->
+                            <div class="filter-group filter-buttons-group">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-search"></i> Show
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+               
+                    <!-- Table Section -->
+                    <div class="mt-4">
+                        {% if pdfs or (all_projects and (current_filters.project_id == 'all' or current_filters.project_id != 'all')) %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0 compact-table" id="pdfTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="station-col">Station</th>
+                                        <th class="junction-col">Location Names</th>
+                                        <th class="status-col">Status</th>
+                                        <th class="actions-col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    {% for pdf in pdfs %}
+                                    {% set is_no_drawing = pdf.pdf_filename is none %}
+                                    {% set all_junctions_list = [] %}
+                                    {% set seen_junctions = [] %}
+                                    
+                                    <!-- Compute all junctions for this row with their status -->
+                                    {% if pdf.project.junction_boxes %}
+                                        {% for jb in pdf.project.junction_boxes %}
+                                            {% if jb.junction_name %}
+                                                {% set junction_key = jb.junction_id ~ '|' ~ jb.junction_name %}
+                                                {% if junction_key not in seen_junctions %}
+                                                    {% set has_data = False %}
+                                                    {% set junction_status = jb.status if jb.status else 1 %}
+                                                    
+                                                    <!-- Check if this junction box has any data in the current project -->
+                                                    {% if pdf.junction_boxes_with_data and jb.id in pdf.junction_boxes_with_data %}
+                                                        {% set has_data = True %}
+                                                    {% endif %}
+                                                    
+                                                    {% set _ = seen_junctions.append(junction_key) %}
+                                                    {% set _ = all_junctions_list.append({
+                                                        'id': jb.id, 
+                                                        'junction_id': jb.junction_id, 
+                                                        'name': jb.junction_name,
+                                                        'has_data': has_data,
+                                                        'status': junction_status
+                                                    }) %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    
+                                    <!-- Determine overall status for this project -->
+                                    {% set overall_status = 'pending' %}
+                                    {% set approved_count = 0 %}
+                                    {% set rejected_count = 0 %}
+                                    {% set pending_count = all_junctions_list|length %}
+                                    
+                                    {% if pdf.junction_approvals %}
+                                        {% for approval in pdf.junction_approvals %}
+                                            {% if approval.level3_status == 'approved' %}
+                                                {% set approved_count = approved_count + 1 %}
+                                                {% set pending_count = pending_count - 1 %}
+                                            {% elif approval.level1_status == 'rejected' or approval.level2_status == 'rejected' or approval.level3_status == 'rejected' %}
+                                                {% set rejected_count = rejected_count + 1 %}
+                                                {% set pending_count = pending_count - 1 %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                    
+                                    {% if approved_count == all_junctions_list|length and all_junctions_list|length > 0 %}
+                                        {% set overall_status = 'approved' %}
+                                    {% elif rejected_count > 0 %}
+                                        {% set overall_status = 'rejected' %}
+                                    {% elif approved_count > 0 %}
+                                        {% set overall_status = 'partial' %}
+                                    {% endif %}
+                                    
+                                    <tr class="table-row {% if is_no_drawing %}no-drawing-row{% endif %}" data-index="{{ loop.index0 }}" data-has-drawing="{% if is_no_drawing %}false{% else %}true{% endif %}" data-project-stage="{{ pdf.project.stage or 1 }}">
+                                        <!-- Station Column -->
+                                        <td class="station-col">
+                                            <strong>{{ pdf.project.name }}</strong><br>
+                                            <small class="text-muted">ID: {{ pdf.project.id }}</small><br>
+                                            {% if not is_no_drawing %}
+                                            <small class="text-muted">v{{ pdf.version }}</small>
+                                            {% endif %}
+                                            {% if pdf.project.stage %}
+                                            <div class="stage-progress">
+                                                <span class="badge {% if pdf.project.stage < 9 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                                    Stage {{ pdf.project.stage }}/9
+                                                </span>
+                                                <small class="text-muted">
+                                                    {% if pdf.project.stage < 9 %}Draft in progress{% else %}Completed{% endif %}
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                
+                                        <!-- Location Names Column - Color coded per location based on junction_box status -->
+                                        <td class="junction-col">
+                                            <div class="junction-names-container">
+                                                {% if all_junctions_list %}
+                                                    {% for junction in all_junctions_list %}
+                                                        <!-- Determine color for EACH location based on junction_box status -->
+                                                        {% if junction.status == 3 %}
+                                                            <!-- Status 3: Completed - Green -->
+                                                            {% set location_status_class = 'junction-status-3' %}
+                                                            {% set status_text = 'Completed' %}
+                                                        {% elif junction.status == 2 %}
+                                                            <!-- Status 2: Under Process - Yellow -->
+                                                            {% set location_status_class = 'junction-status-2' %}
+                                                            {% set status_text = 'Under Process' %}
+                                                        {% else %}
+                                                            <!-- Status 1: No Drawing Data - Red -->
+                                                            {% set location_status_class = 'junction-status-1' %}
+                                                            {% set status_text = 'No Drawing Data' %}
+                                                        {% endif %}
+                                                        
+                                                        <span class="badge junction-badge {{ location_status_class }} mb-1 location-name-item"
+                                                            onclick="continueDraftForLocationFromBadge({{ pdf.project.id }}, {{ junction.id }}, {{ pdf.project.stage or 1 }})"
+                                                            title="{{ junction.name }} - {{ status_text }} (Status: {{ junction.status }})">
+                                                            {{ junction.name|truncate(15) }}
+                                                        </span>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="text-muted">No locations</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                
+                                        <!-- Status Column - UPDATED: Simple eye button to view location status -->
+                                        <!-- Status Column - IMPROVED: Small gray eye button -->
+                                        <td class="status-col">
+                                            <div class="eye-icon-wrapper" 
+                                                onclick="showLocationStatusModalWithDetails({{ pdf.project.id }}, '{{ pdf.project.name }}')" 
+                                                title="View location approval status">
+                                                <i class="bi bi-eye eye-icon"></i>
+                                            </div>
+                                        </td>
+                                
+                                        <!-- Actions Column - NOW WITH LARGER BUTTONS -->
+                                        <td class="actions-col">
+                                            {% if is_no_drawing %}
+                                                <!-- For projects without drawings - same as before -->
+                                                {% if current_user.role_name in ['1', '4'] %}
+                                                    {% if all_junctions_list|length == 0 %}
+                                                        <a class="btn btn-sm start-new-drawing-btn" 
+                                                        href="/workflow/step/2?project_id={{ pdf.project.id }}" 
+                                                        title="Start New Drawing for {{ pdf.project.name }}">
+                                                            <i class="bi bi-pencil"></i> Start New Drawing
+                                                        </a>
+                                                    {% else %}
+                                                        <a class="btn btn-sm continue-draft-btn" 
+                                                        href="{{ url_for('main.continue_draft', project_id=pdf.project.id) }}" 
+                                                        title="Continue Draft">
+                                                            <i class="bi bi-pencil"></i> Continue From Left
+                                                        </a>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                <!-- For projects with drawings -->
+                                                <div class="d-flex flex-column gap-1">
+                                                    <!-- Row 1: Core Actions -->
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        <!-- View All PDFs Button -->
+                                                        <button class="btn btn-sm btn-outline-info view-all-pdfs-btn" 
+                                                                data-project-id="{{ pdf.project.id }}"
+                                                                data-project-name="{{ pdf.project.name }}"
+                                                                title="View All PDFs for this Station">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <!-- Download -->
+                                                        <a class="btn btn-sm btn-outline-success" href="{{ url_for('main.downloadpdf', filename=pdf.pdf_filename) }}" title="Download">
+                                                            <i class="bi bi-download"></i>
+                                                        </a>
+                                                        <!-- Edit Station (Admin only) -->
+                                                        {% if current_user.role_name == '4' %}
+                                                        <a class="btn btn-sm btn-outline-secondary" 
+                                                        href="{{ url_for('main.edit_project', project_id=pdf.project.id) }}" 
+                                                        target="_blank"
+                                                        title="Edit Station and Location Names">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        {% endif %}
+                                                        <!-- Approval History -->
+                                                        <button class="btn btn-sm btn-outline-secondary"
+                                                                onclick="showApprovalHistory({{ pdf.id }}, '{{ pdf.pdf_filename }}', '{{ pdf.project.name }}', {{ pdf.version }}, '{{ pdf.created_at_ist.strftime('%Y-%m-%d %H:%M:%S') if pdf.created_at_ist else pdf.created_at.strftime('%Y-%m-%d %H:%M:%S') if pdf.created_at else '' }}')"
+                                                                title="View Approval History">
+                                                            <i class="bi bi-clock-history"></i>
+                                                        </button>
+                                                        <!-- Create New Drawing -->
+                                                        <!-- Checksum button for fully approved drawings -->
+                                                        {% if pdf.level1_status == 'approved' and pdf.level2_status == 'approved' and pdf.level3_status == 'approved' %}
+                                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#checksumModal"
+                                                                onclick="showChecksum({{ pdf.id }})"
+                                                                title="View Checksum">
+                                                            <i class="bi bi-hash"></i>
+                                                        </button>
+                                                        {% endif %}
+                                                        <!-- Delete Project (Admin only) -->
+                                                        {% if current_user.role_name == '4' %}
+                                                        <button class="btn btn-sm btn-outline-danger"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#deleteProjectModal"
+                                                                onclick="setDeleteProjectData({{ pdf.project.id }}, '{{ pdf.project.name }}')"
+                                                                title="Delete Project">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                        {% endif %}
+                                                    </div>
+                                                    
+                                                    <!-- Row 2: Draft Actions -->
+                                                    {% if current_user.role_name in ['1', '4'] %}
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        {% if all_junctions_list|length == 0 %}
+                                                            <a class="btn btn-sm start-new-drawing-btn" 
+                                                            href="/workflow/step/2?project_id={{ pdf.project.id }}" 
+                                                            title="Start New Drawing for {{ pdf.project.name }}">
+                                                                <i class="bi bi-pencil"></i> Start New Drawing
+                                                            </a>
+                                                        {% else %}
+                                                            <a class="btn btn-sm continue-draft-btn" 
+                                                            href="{{ url_for('main.continue_draft', project_id=pdf.project.id) }}" 
+                                                            title="Continue Draft">
+                                                                <i class="bi bi-pencil"></i> Continue From Left
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% endif %}
+                                                    
+                                                    <!-- Per-Location Approval Section -->
+                                                    <div class="mt-2 pt-2 border-top">
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            {% for junction in all_junctions_list %}
+                                                                <div class="location-approval-group">
+                                                                    <span class="badge bg-secondary mb-1">{{ junction.name|truncate(15) }}</span>
+                                                                    <div class="d-flex gap-1">
+                                                                        {% set junction_approval = pdf.junction_approvals|selectattr("junction_box_id", "equalto", junction.id)|first %}
+                                                                        
+                                                                        <!-- Level 1 Button -->
+                                                                        {% if (not junction_approval or junction_approval.level1_status == 'pending') and permissions.can_approve_level1 %}
+                                                                            <button class="btn btn-xs btn-level-1"
+                                                                                    onclick="showJunctionApproveModal({{ junction.id }}, {{ pdf.id }}, '1', '{{ junction.name }}')"
+                                                                                    title="Approve {{ junction.name }} (Level 1)">
+                                                                                ✓ L1
+                                                                            </button>
+                                                                            <button class="btn btn-xs btn-danger"
+                                                                                    onclick="showJunctionRejectModal({{ junction.id }}, {{ pdf.id }}, '1', '{{ junction.name }}')"
+                                                                                    title="Reject {{ junction.name }} (Level 1)">
+                                                                                ✗ L1
+                                                                            </button>
+                                                                        
+                                                                        <!-- Level 2 Button (shows only if Level 1 is approved) -->
+                                                                        {% elif junction_approval and junction_approval.level1_status == 'approved' and junction_approval.level2_status == 'pending' and permissions.can_approve_level2 %}
+                                                                            <button class="btn btn-xs btn-level-2"
+                                                                                    onclick="showJunctionApproveModal({{ junction.id }}, {{ pdf.id }}, '2', '{{ junction.name }}')"
+                                                                                    title="Approve {{ junction.name }} (Level 2)">
+                                                                                ✓ L2
+                                                                            </button>
+                                                                            <button class="btn btn-xs btn-danger"
+                                                                                    onclick="showJunctionRejectModal({{ junction.id }}, {{ pdf.id }}, '2', '{{ junction.name }}')"
+                                                                                    title="Reject {{ junction.name }} (Level 2)">
+                                                                                ✗ L2
+                                                                            </button>
+                                                                        
+                                                                        <!-- Level 3 Button (shows only if Level 2 is approved) -->
+                                                                        {% elif junction_approval and junction_approval.level2_status == 'approved' and junction_approval.level3_status == 'pending' and permissions.can_approve_level3 %}
+                                                                            <button class="btn btn-xs btn-level-3"
+                                                                                    onclick="showJunctionApproveModal({{ junction.id }}, {{ pdf.id }}, '3', '{{ junction.name }}')"
+                                                                                    title="Approve {{ junction.name }} (Level 3 - Final)">
+                                                                                ✓ L3
+                                                                            </button>
+                                                                            <button class="btn btn-xs btn-danger"
+                                                                                    onclick="showJunctionRejectModal({{ junction.id }}, {{ pdf.id }}, '3', '{{ junction.name }}')"
+                                                                                    title="Reject {{ junction.name }} (Level 3)">
+                                                                                ✗ L3
+                                                                            </button>
+                                                                        
+                                                                        <!-- Show status if approved or rejected -->
+                                                                        {% elif junction_approval and junction_approval.level3_status == 'approved' %}
+                                                                            <span class="badge bg-success">✓ Fully Approved</span>
+                                                                        {% elif junction_approval and (junction_approval.level1_status == 'rejected' or junction_approval.level2_status == 'rejected' or junction_approval.level3_status == 'rejected') %}
+                                                                            <span class="badge bg-danger">✗ Rejected</span>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination Controls -->
+                        {% if pagination.total_records > 0 %}
+                        <div class="pagination-container">
+                            <div class="pagination-info">
+                                {% if pagination.total_records > 0 %}
+                                    Showing {{ pagination.start_idx }} to {{ pagination.end_idx }} of {{ pagination.total_records }} Stations
+                                {% else %}
+                                    Showing 0 entries
+                                {% endif %}
+                            </div>
+                            <div class="pagination-controls">
+                                <span class="pagination-label me-2">Station per page:</span>
+                                <select class="pagination-select" id="rowsPerPage" onchange="changeRowsPerPage(this.value)">
+                                    <option value="10" {% if pagination.rows_per_page == 10 %}selected{% endif %}>10</option>
+                                    <option value="25" {% if pagination.rows_per_page == 25 %}selected{% endif %}>25</option>
+                                    <option value="50" {% if pagination.rows_per_page == 50 %}selected{% endif %}>50</option>
+                                    <option value="100" {% if pagination.rows_per_page == 100 %}selected{% endif %}>100</option>
+                                </select>
+                                <nav aria-label="Table pagination">
+                                    <ul class="pagination mb-0">
+                                        <!-- Previous Button -->
+                                        <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                                            <a class="page-link" href="{% if pagination.page > 1 %}{{ build_pagination_url(page=pagination.page-1) }}{% else %}#{% endif %}" 
+                                               aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                        
+                                        <!-- Page Numbers -->
+                                        {% for num in range(1, pagination.page + 10) %}
+                                            <li class="page-item {% if num == pagination.page %}active{% endif %}">
+                                                <a class="page-link" href="{{ build_pagination_url(page=num) }}">{{ num }}</a>
+                                            </li>
+                                        {% endfor %}
+                                        
+                                        <!-- Next Button -->
+                                        <li class="page-item {% if pagination.page == pagination.total_pages %}disabled{% endif %}">
+                                            <a class="page-link" href="{% if pagination.page < pagination.total_pages %}{{ build_pagination_url(page=pagination.page+1) }}{% else %}#{% endif %}" 
+                                               aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+                            <p class="mt-3 text-muted">No PDFs found matching the selected filters.</p>
+                            {% if not permissions.can_see_all and not current_user.projects %}
+                            <div class="alert alert-warning w-75 mx-auto">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                You don't have access to any projects. Please contact an administrator.
+                            </div>
+                            {% endif %}
+                            <a href="{{ url_for('main.approval_tracking') }}" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise"></i> Reset Filters
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODALS -->
+    
+    <!-- All PDFs Modal -->
+    <div class="modal fade" id="allPdfsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-pdf"></i> All PDFs for Station: 
+                        <span id="modalProjectName"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="pdfsLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading PDFs...</p>
+                    </div>
+                    
+                    <div id="pdfsContainer" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Version</th>
+                                        <th>Created Date</th>
+                                        <th>Locations</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pdfsTableBody">
+                                    <!-- PDFs will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="noPdfsMessage" class="text-center py-5" style="display: none;">
+                        <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+                        <p class="mt-3 text-muted">No PDFs found for this station.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Viewer Modal -->
+    <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF Viewer: 
+                        <span id="viewerPdfName"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="pdf-info-panel">
+                                <h6>PDF List</h6>
+                                <div id="pdfListView" style="max-height: 60vh; overflow-y: auto;">
+                                    <!-- PDF list will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="pdf-viewer-container">
+                                <iframe id="pdfFrame" src="" frameborder="0"></iframe>
+                            </div>
+                            <div class="mt-3 d-flex justify-content-between">
+                                <div>
+                                    <a id="downloadPdfBtn" href="#" class="btn btn-success btn-sm">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                    <button class="btn btn-info btn-sm" onclick="openPdfInNewTab()">
+                                        <i class="bi bi-box-arrow-up-right"></i> Open in New Tab
+                                    </button>
+                                </div>
+                                <div>
+                                    <span class="text-muted" id="pdfInfo">PDF loaded</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Beautiful Confirmation Modal for Continue from Version -->
+    <div class="modal fade" id="continueVersionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-arrow-clockwise"></i> Continue from PDF Version
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="lead">Load data from this PDF version and continue drawing?</p>
+                    <div class="alert alert-warning">
+                        <strong>This will replace current project data.</strong><br>
+                        All existing drawings, terminals, circuits, etc., will be overwritten with the data from the selected PDF version.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmContinueBtn">
+                        <span id="continueBtnText">Continue Drawing</span>
+                        <span id="continueSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rejection Reason Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="rejectModalTitle">
+                        <i class="bi bi-x-circle"></i> Reject PDF
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="rejectForm" method="POST">
+                    <div class="modal-body">
+                        <p>Are you sure you want to reject this PDF?</p>
+                        <div class="alert alert-warning">
+                            <strong id="rejectFilename"></strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Reason for rejection (optional):</label>
+                            <textarea class="form-control" id="rejectionReason" name="rejection_reason" rows="3" placeholder="Please provide reason for rejection..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger" id="confirmRejectBtn">
+                            <span id="rejectBtnText">Confirm Rejection</span>
+                            <span id="rejectSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Approval Form Modal -->
+    <div class="modal fade" id="approvalFormModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="approvalModalTitle">
+                        <i class="bi bi-check-circle me-2"></i> Approve PDF
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="approvalForm" method="POST">
+                    <div class="modal-body">
+                        <p>Are you sure you want to approve this PDF?</p>
+                        <div class="alert alert-info">
+                            <strong id="approvalFilename"></strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="approvalRemarks" class="form-label">Approval remarks (optional):</label>
+                            <textarea class="form-control" id="approvalRemarks" name="approval_remarks" 
+                                    rows="3" placeholder="Add any remarks about this approval..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" id="confirmApproveBtn">
+                            <span id="approveBtnText">Confirm Approval</span>
+                            <span id="approveSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Approval History Modal -->
+    <div class="modal fade" id="approvalHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clock-history me-2"></i> Approval History
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6 id="historyPdfName" class="text-muted mb-2"></h6>
+                        <div class="d-flex align-items-center">
+                            <div class="me-4">
+                                <small class="text-muted">Project:</small>
+                                <h6 id="historyProjectName" class="mb-0"></h6>
+                            </div>
+                            <div class="me-4">
+                                <small class="text-muted">Version:</small>
+                                <h6 id="historyVersion" class="mb-0"></h6>
+                            </div>
+                            <div>
+                                <small class="text-muted">Created:</small>
+                                <h6 id="historyCreatedAt" class="mb-0"></h6>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title">Level 1</h6>
+                                    <span id="historyLevel1Status" class="badge mb-2"></span>
+                                    <p id="historyLevel1Approver" class="small mb-1"></p>
+                                    <p id="historyLevel1Date" class="small text-muted mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title">Level 2</h6>
+                                    <span id="historyLevel2Status" class="badge mb-2"></span>
+                                    <p id="historyLevel2Approver" class="small mb-1"></p>
+                                    <p id="historyLevel2Date" class="small text-muted mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title">Level 3</h6>
+                                    <span id="historyLevel3Status" class="badge mb-2"></span>
+                                    <p id="historyLevel3Approver" class="small mb-1"></p>
+                                    <p id="historyLevel3Date" class="small text-muted mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-list-check me-2"></i> Approval Timeline
+                    </h6>
+                    <div id="approvalTimeline" class="timeline">
+                        <!-- Timeline items will be loaded here -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Checksum Modal -->
+    <div class="modal fade" id="checksumModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-hash me-2"></i>PDF Checksum (MD5)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">PDF File:</label>
+                        <p id="checksumFilename" class="text-muted mb-1">  </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Checksum (MD5):</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control checksum-value" id="checksumValue" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyChecksum()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This checksum is available only for fully approved drawings (Level 1, 2 & 3 approved).
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Location Approval Status Modal - Updated to show per-location status -->
+    <div class="modal fade" id="locationStatusModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-eye me-2"></i> Location Approval Status
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <div class="alert alert-info">
+                            <div>
+                                <strong>Project:</strong> <span id="locationProjectNameText"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="location-status-list" id="locationsStatusContainer">
+                        <!-- Locations will be loaded here with per-location status -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Project Confirmation Modal -->
+    <div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Delete Project
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>WARNING: This action cannot be undone!</strong>
+                    </div>
+                    <p>Are you sure you want to delete the project:</p>
+                    <div class="alert alert-warning">
+                        <h6 id="deleteProjectName" class="mb-0"></h6>
+                        <small id="deleteProjectId" class="text-muted"></small>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>This will delete:</strong>
+                        <ul class="mb-0 small">
+                            <li>All PDF versions and drawings</li>
+                            <li>All junction boxes and cables</li>
+                            <li>All terminals and related data</li>
+                            <li>All notifications for this project</li>
+                            <li>Project record from database</li>
+                        </ul>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDeleteCheckbox">
+                        <label class="form-check-label text-danger fw-bold" for="confirmDeleteCheckbox">
+                            Yes, I understand this will permanently delete all project data
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                        <i class="bi bi-trash"></i> Delete Project
+                        <span id="deleteSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Store junction data for all projects
+        const junctionDataByProject = {};
+        
+        // Build the junction data object
+        {% for project in all_projects %}
+            {% if project.junction_boxes %}
+                junctionDataByProject[{{ project.id }}] = [
+                    {% for jb in project.junction_boxes %}
+                        {% if jb.junction_name %}
+                            {
+                                id: "{{ jb.id }}",
+                                junction_id: "{{ jb.junction_id }}",
+                                name: "{{ jb.junction_name }}",
+                                status: "{{ jb.status }}",
+                                uniqueKey: "{{ jb.id }}|{{ jb.junction_name }}"
+                            }{% if not loop.last %},{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                ];
+            {% else %}
+                junctionDataByProject[{{ project.id }}] = [];
+            {% endif %}
+        {% endfor %}
+
+        // Create a mapping of unique_key to project_id for quick lookup
+        const junctionToProjectMap = {};
+        {% for project in all_projects %}
+            {% if project.junction_boxes %}
+                {% for jb in project.junction_boxes %}
+                    {% if jb.junction_name %}
+                        junctionToProjectMap["{{ jb.id }}|{{ jb.junction_name }}"] = "{{ project.id }}";
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+
+        // DOM elements
+        const stationFilter = document.getElementById('stationFilter');
+        const junctionFilter = document.getElementById('junctionFilter');
+        const filterForm = document.getElementById('filterForm');
+        
+        // Approval variables
+        let pendingPdfId = null;
+        let pendingLevel = null;
+        let pendingRejectPdfId = null;
+        let pendingRejectLevel = null;
+        
+        // Delete Project variables
+        let pendingDeleteProjectId = null;
+        let pendingDeleteProjectName = null;
+        
+        // PDF viewer variables
+        let currentProjectPdfs = [];
+        let currentProjectId = null;
+        let currentProjectName = null;
+        let currentPdfUrl = null;
+        
+        // Function to build pagination URL with all current filters
+        function buildPaginationUrl(page, rowsPerPage) {
+            const url = new URL(window.location);
+            url.searchParams.set('page', page);
+            if (rowsPerPage) {
+                url.searchParams.set('rows_per_page', rowsPerPage);
+            }
+            return url.toString();
+        }
+
+        // Function to change rows per page
+        function changeRowsPerPage(rowsPerPage) {
+            const url = buildPaginationUrl(1, rowsPerPage);
+            window.location.href = url;
+        }
+
+        // Function to update junction filter
+        function updateJunctionFilter(selectedStationId) {
+            const allJunctionsOption = junctionFilter.querySelector('option[value="all"]');
+            junctionFilter.innerHTML = '';
+            junctionFilter.appendChild(allJunctionsOption);
+       
+            let allJunctions = [];
+        
+            if (selectedStationId === 'all') {
+                for (const projectId in junctionDataByProject) {
+                    const junctions = junctionDataByProject[projectId] || [];
+                    allJunctions = allJunctions.concat(junctions);
+                }
+            } else {
+                const junctions = junctionDataByProject[selectedStationId] || [];
+                allJunctions = junctions;
+            }
+        
+            const uniqueJunctions = [];
+            const seenKeys = new Set();
+        
+            allJunctions.forEach(junction => {
+                if (!junction || !junction.id || !junction.name || !junction.uniqueKey) {
+                    return;
+                }
+            
+                if (!seenKeys.has(junction.uniqueKey)) {
+                    seenKeys.add(junction.uniqueKey);
+                    uniqueJunctions.push(junction);
+                }
+            });
+        
+            uniqueJunctions.sort((a, b) => a.name.localeCompare(b.name));
+       
+            if (uniqueJunctions.length > 0) {
+                uniqueJunctions.forEach(junction => {
+                    const option = document.createElement('option');
+                    option.value = junction.id;
+                    option.textContent = junction.name;  // Only the name, no status
+               
+                    const currentJunctionId = "{{ current_filters.junction_id|default('') }}";
+                    if (currentJunctionId && currentJunctionId === junction.id) {
+                        option.selected = true;
+                    }
+               
+                    junctionFilter.appendChild(option);
+                });
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No locations available';
+                option.disabled = true;
+                junctionFilter.appendChild(option);
+            }
+        }
+
+        // Function to get status text
+        function getStatusText(status) {
+            switch(status) {
+                case '1': return 'No Drawing Data';
+                case '2': return 'Under Process';
+                case '3': return 'Completed';
+                default: return 'Unknown';
+            }
+        }
+
+        function handleJunctionSelection() {
+            // No auto-selection of station when junction is selected
+        }
+
+        function handleStationChange() {
+            const selectedStationId = stationFilter.value;
+            updateJunctionFilter(selectedStationId);
+        }
+     
+        // ENHANCED Notification System
+        let notificationCheckInterval;
+        let isPollingEnabled = true;
+        
+        function loadNotifications() {
+            if (!isPollingEnabled) return;
+          
+            fetch('/notifications')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateNotificationUI(data);
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    updateNotificationUI({ all_notifications: [], recent_notifications: [] });
+                });
+        }
+        
+        function updateNotificationUI(data) {
+            const notificationList = document.getElementById('notificationList');
+            const notificationCount = document.getElementById('notificationCount');
+
+            const allNotifications = data.all_notifications || [];
+
+            if (!allNotifications || allNotifications.length === 0) {
+                notificationList.innerHTML = `
+                    <div class="notifications-empty">
+                        <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                        <p class="mb-0">No notifications</p>
+                    </div>
+                `;
+                
+                notificationCount.textContent = '0';
+                notificationCount.style.display = 'none';
+                return;
+            }
+
+            const unreadNotifications = allNotifications.filter(n => !n.is_read);
+            const unreadCount = unreadNotifications.length;
+
+            notificationCount.textContent = unreadCount;
+            notificationCount.style.display = unreadCount > 0 ? 'block' : 'none';
+
+            const bellButton = document.querySelector('#notificationDropdown');
+            if (unreadCount > 0) {
+                bellButton.classList.add('pulse');
+            } else {
+                bellButton.classList.remove('pulse');
+            }
+
+            let dropdownHtml = '';
+            allNotifications.forEach(notification => {
+                const statusClass = notification.status === 'approved' ? 'success' :
+                                 notification.status === 'rejected' ? 'danger' :
+                                 notification.status === 'pending' ? 'warning' : 'secondary';
+
+                const levelBadge = notification.level === 'level1' ? 'bg-info' :
+                                 notification.level === 'level2' ? 'bg-warning' :
+                                 notification.level === 'level3' ? 'bg-danger' : 'bg-secondary';
+
+                dropdownHtml += `
+                    <div class="notification-item ${!notification.is_read ? 'unread' : 'read'}" data-id="${notification.id}" onclick="viewNotification(${notification.id})">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="badge ${levelBadge} me-2">${notification.level.toUpperCase()}</span>
+                                    <span class="badge bg-${statusClass}">${notification.status.toUpperCase()}</span>
+                                </div>
+                                <div class="mb-1">
+                                    <strong class="${notification.is_read ? 'notification-title' : 'text-dark'}">${notification.project_name}</strong>
+                                </div>
+                                <div class="small ${notification.is_read ? 'notification-message' : 'text-muted'} mb-2">
+                                    ${notification.message}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="time">
+                                        <i class="bi bi-clock"></i> ${notification.created_at}
+                                    </small>
+                                    <div class="actions">
+                                        ${!notification.is_read ? `
+                                        <button class="btn btn-sm mark-read-btn" onclick="markNotificationRead(${notification.id}, event)" title="Mark as read">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            notificationList.innerHTML = dropdownHtml;
+        }
+        
+        function viewNotification(notificationId) {
+            markNotificationRead(notificationId);
+        }
+        
+        function markNotificationRead(notificationId, event = null) {
+            if (event) {
+                event.stopPropagation();
+            }
+          
+            fetch(`/mark_notification_read/${notificationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                  
+                    if (notificationItem) {
+                        notificationItem.classList.remove('unread');
+                        notificationItem.classList.add('read');
+                        notificationItem.removeAttribute('onclick');
+                        notificationItem.style.cursor = 'default';
+                      
+                        const title = notificationItem.querySelector('strong');
+                        if (title) {
+                            title.classList.remove('text-dark');
+                            title.classList.add('notification-title');
+                        }
+                      
+                        const message = notificationItem.querySelector('.small');
+                        if (message) {
+                            message.classList.remove('text-muted');
+                            message.classList.add('notification-message');
+                        }
+                      
+                        const actionBtn = notificationItem.querySelector('.actions');
+                        if (actionBtn) actionBtn.innerHTML = '';
+                      
+                        const time = notificationItem.querySelector('.time');
+                        if (time) {
+                            time.style.color = '#6c757d';
+                            time.style.fontWeight = '400';
+                            time.style.background = 'none';
+                            time.style.padding = '0';
+                        }
+                    }
+                  
+                    const notificationCount = document.getElementById('notificationCount');
+                    let currentCount = parseInt(notificationCount.textContent) || 0;
+                    if (currentCount > 0) {
+                        currentCount--;
+                        notificationCount.textContent = currentCount;
+                        if (currentCount === 0) {
+                            notificationCount.style.display = 'none';
+                            document.querySelector('#notificationDropdown').classList.remove('pulse');
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+                alert('Failed to mark notification as read. Please try again.');
+            });
+        }
+        
+        function markAllNotificationsRead() {
+            const notificationItems = document.querySelectorAll('.notification-item.unread');
+          
+            notificationItems.forEach(item => {
+                item.classList.remove('unread');
+                item.classList.add('read');
+                item.removeAttribute('onclick');
+                item.style.cursor = 'default';
+              
+                const title = item.querySelector('strong');
+                if (title) {
+                    title.classList.remove('text-dark');
+                    title.classList.add('notification-title');
+                }
+              
+                const message = item.querySelector('.small');
+                if (message) {
+                    message.classList.remove('text-muted');
+                    message.classList.add('notification-message');
+                }
+              
+                const actionBtn = item.querySelector('.actions');
+                if (actionBtn) actionBtn.innerHTML = '';
+              
+                const time = item.querySelector('.time');
+                if (time) {
+                    time.style.color = '#6c757d';
+                    time.style.fontWeight = '400';
+                    time.style.background = 'none';
+                    time.style.padding = '0';
+                }
+            });
+          
+            const notificationCount = document.getElementById('notificationCount');
+            notificationCount.textContent = '0';
+            notificationCount.style.display = 'none';
+          
+            document.querySelector('#notificationDropdown').classList.remove('pulse');
+          
+            fetch('/mark_all_notifications_read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('All notifications marked as read');
+                }
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+                loadNotifications();
+            });
+        }
+        
+        function clearAllNotifications() {
+            if (confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+                fetch('/clear_all_notifications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const notificationList = document.getElementById('notificationList');
+                        const notificationCount = document.getElementById('notificationCount');
+                      
+                        notificationList.innerHTML = `
+                            <div class="notifications-empty">
+                                <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                                <p class="mb-0">No notifications</p>
+                            </div>
+                        `;
+                      
+                        notificationCount.textContent = '0';
+                        notificationCount.style.display = 'none';
+                        document.querySelector('#notificationDropdown').classList.remove('pulse');
+                      
+                        alert('All notifications have been cleared.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error clearing notifications:', error);
+                    alert('Failed to clear notifications. Please try again.');
+                });
+            }
+        }
+     
+        // Function to clear filters
+        function clearFilters() {
+            stationFilter.value = 'all';
+            junctionFilter.value = 'all';
+            document.querySelector('select[name="approval_status"]').value = 'all';
+           
+            filterForm.submit();
+        }
+        
+        // Approval History functionality
+        function showApprovalHistory(pdfId, pdfFilename, projectName, version, createdAt) {
+            document.getElementById('historyPdfName').textContent = pdfFilename;
+            document.getElementById('historyProjectName').textContent = projectName;
+            document.getElementById('historyVersion').textContent = `v${version}`;
+            document.getElementById('historyCreatedAt').textContent = createdAt;
+            
+            loadApprovalHistory(pdfId);
+            
+            const historyModal = new bootstrap.Modal(document.getElementById('approvalHistoryModal'));
+            historyModal.show();
+        }
+        
+        function loadApprovalHistory(pdfId) {
+            const timeline = document.getElementById('approvalTimeline');
+            timeline.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            
+            fetch(`/get_approval_history/${pdfId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCurrentStatus(data.current_status);
+                        buildTimeline(data.approval_history);
+                    } else {
+                        timeline.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Failed to load approval history
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading approval history:', error);
+                    timeline.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error loading approval history
+                        </div>
+                    `;
+                });
+        }
+        
+        function updateCurrentStatus(status) {
+            const level1Status = document.getElementById('historyLevel1Status');
+            const level1Approver = document.getElementById('historyLevel1Approver');
+            const level1Date = document.getElementById('historyLevel1Date');
+            
+            level1Status.textContent = status.level1.status.toUpperCase();
+            level1Status.className = `badge bg-${status.level1.status === 'approved' ? 'success' : 
+                                    status.level1.status === 'rejected' ? 'danger' : 'secondary'}`;
+            level1Approver.textContent = status.level1.approver || 'Pending';
+            level1Date.textContent = status.level1.date || '-';
+            
+            const level2Status = document.getElementById('historyLevel2Status');
+            const level2Approver = document.getElementById('historyLevel2Approver');
+            const level2Date = document.getElementById('historyLevel2Date');
+            
+            level2Status.textContent = status.level2.status.toUpperCase();
+            level2Status.className = `badge bg-${status.level2.status === 'approved' ? 'success' : 
+                                    status.level2.status === 'rejected' ? 'danger' : 'secondary'}`;
+            level2Approver.textContent = status.level2.approver || 'Pending';
+            level2Date.textContent = status.level2.date || '-';
+            
+            const level3Status = document.getElementById('historyLevel3Status');
+            const level3Approver = document.getElementById('historyLevel3Approver');
+            const level3Date = document.getElementById('historyLevel3Date');
+            
+            level3Status.textContent = status.level3.status.toUpperCase();
+            level3Status.className = `badge bg-${status.level3.status === 'approved' ? 'success' : 
+                                    status.level3.status === 'rejected' ? 'danger' : 'secondary'}`;
+            level3Approver.textContent = status.level3.approver || 'Pending';
+            level3Date.textContent = status.level3.date || '-';
+        }
+        
+        function buildTimeline(history) {
+            const timeline = document.getElementById('approvalTimeline');
+            
+            if (history.length === 0) {
+                timeline.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No approval history available yet
+                    </div>
+                `;
+                return;
+            }
+            
+            let timelineHTML = '';
+            
+            history.forEach(item => {
+                const statusClass = item.status === 'approved' ? 'approved' : 
+                                  item.status === 'rejected' ? 'rejected' : 'pending';
+                
+                timelineHTML += `
+                    <div class="timeline-item ${statusClass}">
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-${item.status === 'approved' ? 'success' : 'danger'} me-2">
+                                        Level ${item.level}
+                                    </span>
+                                    <span class="badge bg-${item.status === 'approved' ? 'success' : 'danger'}">
+                                        ${item.status.toUpperCase()}
+                                    </span>
+                                </div>
+                                <small class="text-muted">${item.time_ago}</small>
+                            </div>
+                            <div class="mb-2">
+                                <strong>${item.approver.username}</strong>
+                                <small class="text-muted ms-2">(${item.approver.designation})</small>
+                            </div>
+                            <div class="timeline-date">
+                                <i class="bi bi-calendar me-1"></i>${item.created_at}
+                            </div>
+                            ${item.remarks ? `
+                            <div class="timeline-remarks">
+                                <strong>Remarks:</strong>
+                                <p class="mb-0 mt-1">${item.remarks}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            timeline.innerHTML = timelineHTML;
+        }
+        
+        function showApproveModal(pdfId, level, filename) {
+            pendingPdfId = pdfId;
+            pendingLevel = level;
+            
+            document.getElementById('approvalModalTitle').innerHTML = `<i class="bi bi-check-circle"></i> Approve PDF (Level ${level})`;
+            document.getElementById('approvalFilename').textContent = filename;
+            
+            document.getElementById('approvalForm').action = `/approve_pdf/${pdfId}/${level}`;
+            
+            document.getElementById('approvalRemarks').value = '';
+            
+            const approveModal = new bootstrap.Modal(document.getElementById('approvalFormModal'));
+            approveModal.show();
+        }
+        
+        function showRejectModal(pdfId, level, filename) {
+            pendingRejectPdfId = pdfId;
+            pendingRejectLevel = level;
+       
+            document.getElementById('rejectModalTitle').innerHTML = `<i class="bi bi-x-circle"></i> Reject PDF (Level ${level})`;
+            document.getElementById('rejectFilename').textContent = filename;
+       
+            document.getElementById('rejectForm').action = `/reject_pdf/${pdfId}/${level}`;
+       
+            document.getElementById('rejectionReason').value = '';
+       
+            const rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+            rejectModal.show();
+        }
+
+        // Function to show approval modal for specific junction
+        function showJunctionApproveModal(junctionId, pdfId, level, junctionName) {
+            // Create a dynamic modal for junction approval
+            const modalHtml = `
+                <div class="modal fade" id="junctionApproveModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header ${level === '1' ? 'bg-success' : level === '2' ? 'bg-warning' : 'bg-primary'} text-white">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-check-circle me-2"></i> Approve Location (Level ${level})
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form id="junctionApproveForm" method="POST" action="/approve_junction/${junctionId}/${pdfId}/${level}">
+                                <div class="modal-body">
+                                    <p>Are you sure you want to approve this location?</p>
+                                    <div class="alert alert-info">
+                                        <strong>Location:</strong> ${junctionName}<br>
+                                        <strong>Level:</strong> ${level}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="junctionApprovalRemarks" class="form-label">Approval remarks (optional):</label>
+                                        <textarea class="form-control" id="junctionApprovalRemarks" name="approval_remarks" 
+                                                rows="3" placeholder="Add any remarks about this approval..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn ${level === '1' ? 'btn-success' : level === '2' ? 'btn-warning' : 'btn-primary'}" id="confirmJunctionApproveBtn">
+                                        <span id="junctionApproveBtnText">Confirm Approval (L${level})</span>
+                                        <span id="junctionApproveSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('junctionApproveModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('junctionApproveModal'));
+            modal.show();
+            
+            // Handle form submission
+            document.getElementById('junctionApproveForm').addEventListener('submit', function(e) {
+                const btn = document.getElementById('confirmJunctionApproveBtn');
+                const text = document.getElementById('junctionApproveBtnText');
+                const spinner = document.getElementById('junctionApproveSpinner');
+                
+                btn.disabled = true;
+                text.classList.add('d-none');
+                spinner.classList.remove('d-none');
+                
+                // Refresh page after submission to update UI
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            });
+        }
+
+        // Function to show rejection modal for specific junction
+        function showJunctionRejectModal(junctionId, pdfId, level, junctionName) {
+            // Create a dynamic modal for junction rejection
+            const modalHtml = `
+                <div class="modal fade" id="junctionRejectModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-x-circle me-2"></i> Reject Location (Level ${level})
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form id="junctionRejectForm" method="POST" action="/reject_junction/${junctionId}/${pdfId}/${level}">
+                                <div class="modal-body">
+                                    <p>Are you sure you want to reject this location?</p>
+                                    <div class="alert alert-warning">
+                                        <strong>Location:</strong> ${junctionName}<br>
+                                        <strong>Level:</strong> ${level}
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="junctionRejectionReason" class="form-label">Reason for rejection (optional):</label>
+                                        <textarea class="form-control" id="junctionRejectionReason" name="rejection_reason" 
+                                                rows="3" placeholder="Please provide reason for rejection..."></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger" id="confirmJunctionRejectBtn">
+                                        <span id="junctionRejectBtnText">Confirm Rejection (L${level})</span>
+                                        <span id="junctionRejectSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('junctionRejectModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('junctionRejectModal'));
+            modal.show();
+            
+            // Handle form submission
+            document.getElementById('junctionRejectForm').addEventListener('submit', function(e) {
+                const btn = document.getElementById('confirmJunctionRejectBtn');
+                const text = document.getElementById('junctionRejectBtnText');
+                const spinner = document.getElementById('junctionRejectSpinner');
+                
+                btn.disabled = true;
+                text.classList.add('d-none');
+                spinner.classList.remove('d-none');
+                
+                // Refresh page after submission to update UI
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            });
+        }
+        
+        // Delete Project functionality
+        function setDeleteProjectData(projectId, projectName) {
+            pendingDeleteProjectId = projectId;
+            pendingDeleteProjectName = projectName;
+            
+            document.getElementById('deleteProjectName').textContent = projectName;
+            document.getElementById('deleteProjectId').textContent = `Project ID: ${projectId}`;
+            
+            document.getElementById('confirmDeleteCheckbox').checked = false;
+            document.getElementById('confirmDeleteBtn').disabled = true;
+        }
+        
+        // FIXED: Toast notification function (Fixed z-index issue)
+        function showToast(type, message) {
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.style.position = 'fixed';
+                toastContainer.style.top = '20px';
+                toastContainer.style.right = '20px';
+                toastContainer.style.zIndex = '9999'; // FIXED: Changed z-index to zIndex
+                document.body.appendChild(toastContainer);
+            }
+            
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', function () {
+                toast.remove();
+            });
+        }
+        
+        function setContinueVersionId(pdfId) {
+            pendingPdfId = pdfId;
+        }
+     
+        // Continue from version
+        document.getElementById('confirmContinueBtn').addEventListener('click', function () {
+            if (!pendingPdfId) return;
+            const btn = this;
+            const text = document.getElementById('continueBtnText');
+            const spinner = document.getElementById('continueSpinner');
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            fetch(`/continue_from_version/${pendingPdfId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to load version');
+                window.location.href = '/workflow/step/2';
+            })
+            .catch(err => {
+                alert('Error: ' + err.message);
+                btn.disabled = false;
+                text.classList.remove('d-none');
+                spinner.classList.add('d-none');
+            });
+        });
+     
+        // Handle reject form submission
+        document.getElementById('rejectForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('confirmRejectBtn');
+            const text = document.getElementById('rejectBtnText');
+            const spinner = document.getElementById('rejectSpinner');
+       
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+        });
+        
+        // Handle approval form submission
+        document.getElementById('approvalForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('confirmApproveBtn');
+            const text = document.getElementById('approveBtnText');
+            const spinner = document.getElementById('approveSpinner');
+            
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+        });
+        
+        // Checksum functions
+        function showChecksum(pdfId) {
+            fetch(`/get_checksum/${pdfId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('checksumFilename').textContent = data.filename;
+                        document.getElementById('checksumValue').value = data.checksum;
+                    } else {
+                        alert(data.message || 'Failed to get checksum');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching checksum:', error);
+                    alert('Error fetching checksum. Please try again.');
+                });
+        }
+
+        function copyChecksum() {
+            const checksumInput = document.getElementById('checksumValue');
+            checksumInput.select();
+            checksumInput.setSelectionRange(0, 99999);
+            
+            try {
+                navigator.clipboard.writeText(checksumInput.value).then(() => {
+                    const copyBtn = document.querySelector('#checksumModal .btn-outline-secondary');
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="bi bi-check"></i>';
+                    copyBtn.classList.remove('btn-outline-secondary');
+                    copyBtn.classList.add('btn-success');
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.classList.remove('btn-success');
+                        copyBtn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                });
+            } catch (err) {
+                document.execCommand('copy');
+                alert('Checksum copied to clipboard!');
+            }
+        }
+        
+        // Function to continue draft directly from a badge click
+        function continueDraftForLocationFromBadge(projectId, locationId, projectStage = null) {
+            let targetStage = 9;
+            
+            if (projectStage) {
+                const stageNum = parseInt(projectStage);
+                if (stageNum < 9) {
+                    targetStage = stageNum;
+                } else {
+                    targetStage = 9;
+                }
+            }
+            
+            const url = `/project/${projectId}/stage/${targetStage}/view?location_id=${locationId}`;
+            console.log('Redirecting to:', url);
+            window.location.href = url;
+        }
+
+        // FIXED: Function to show location status modal with per-location details
+        function showLocationStatusModalWithDetails(projectId, projectName) {
+            document.getElementById('locationProjectNameText').textContent = projectName;
+            
+            // Load location status with per-location details
+            loadLocationStatusWithDetails(projectId);
+            
+            const locationModal = new bootstrap.Modal(document.getElementById('locationStatusModal'));
+            locationModal.show();
+        }
+
+        // FIXED: Function to load location status with per-location details
+        function loadLocationStatusWithDetails(projectId) {
+            const container = document.getElementById('locationsStatusContainer');
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            
+            fetch(`/get_location_approval_status/${projectId}/all`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Location status data:', data); // Debug log
+                    if (data.success) {
+                        renderLocationStatusWithDetails(data.locations);
+                    } else {
+                        container.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Failed to load location status
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading location status:', error);
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error loading location status
+                        </div>
+                    `;
+                });
+        }
+
+        // FIXED: Function to render location status with per-location details
+        function renderLocationStatusWithDetails(locations) {
+            const container = document.getElementById('locationsStatusContainer');
+            
+            if (!locations || locations.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No location data available
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            locations.forEach(location => {
+                // FIX: Check if the data structure has nested level objects
+                let level1Status = 'pending';
+                let level2Status = 'pending';
+                let level3Status = 'pending';
+                let level1Approver = null;
+                let level2Approver = null;
+                let level3Approver = null;
+                let level1Date = null;
+                let level2Date = null;
+                let level3Date = null;
+                let rejectionReason = null;
+                
+                // Check for nested structure (location.level1.status)
+                if (location.level1 && typeof location.level1 === 'object') {
+                    level1Status = location.level1.status || 'pending';
+                    level1Approver = location.level1.approver;
+                    level1Date = location.level1.date;
+                } else if (location.level1_status) {
+                    // Check for flat structure
+                    level1Status = location.level1_status;
+                }
+                
+                if (location.level2 && typeof location.level2 === 'object') {
+                    level2Status = location.level2.status || 'pending';
+                    level2Approver = location.level2.approver;
+                    level2Date = location.level2.date;
+                } else if (location.level2_status) {
+                    level2Status = location.level2_status;
+                }
+                
+                if (location.level3 && typeof location.level3 === 'object') {
+                    level3Status = location.level3.status || 'pending';
+                    level3Approver = location.level3.approver;
+                    level3Date = location.level3.date;
+                } else if (location.level3_status) {
+                    level3Status = location.level3_status;
+                }
+                
+                rejectionReason = location.rejection_reason || null;
+                
+                const locationName = location.name || location.junction_name || 'Unknown Location';
+                
+                // Helper function to get status badge class
+                function getStatusBadgeClass(status) {
+                    if (!status) return 'status-default';
+                    
+                    const statusLower = status.toLowerCase();
+                    switch(statusLower) {
+                        case 'approved': return 'status-approved';
+                        case 'rejected': return 'status-rejected';
+                        case 'pending': return 'status-pending';
+                        default: return 'status-default';
+                    }
+                }
+                
+                // Helper function to get status display text
+                function getStatusText(status) {
+                    if (!status || status === 'undefined') return 'Pending';
+                    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+                }
+                
+                html += `
+                    <div class="location-status-item">
+                        <div class="location-name-header">${locationName}</div>
+                        
+                        <div class="location-status-level">
+                            <div class="location-level-label">Level 1:</div>
+                            <div class="location-level-status ${getStatusBadgeClass(level1Status)}">
+                                ${getStatusText(level1Status)}
+                            </div>
+                        </div>
+                        ${level1Approver ? `<small class="text-muted ms-3">By: ${level1Approver} ${level1Date ? ' on ' + level1Date : ''}</small>` : ''}
+                        ${level1Status === 'rejected' && rejectionReason ? `
+                        <div class="mt-1 ms-3">
+                            <small class="text-danger">Reason: ${rejectionReason}</small>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="location-status-level">
+                            <div class="location-level-label">Level 2:</div>
+                            <div class="location-level-status ${getStatusBadgeClass(level2Status)}">
+                                ${getStatusText(level2Status)}
+                            </div>
+                        </div>
+                        ${level2Approver ? `<small class="text-muted ms-3">By: ${level2Approver} ${level2Date ? ' on ' + level2Date : ''}</small>` : ''}
+                        ${level2Status === 'rejected' && rejectionReason ? `
+                        <div class="mt-1 ms-3">
+                            <small class="text-danger">Reason: ${rejectionReason}</small>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="location-status-level">
+                            <div class="location-level-label">Level 3:</div>
+                            <div class="location-level-status ${getStatusBadgeClass(level3Status)}">
+                                ${getStatusText(level3Status)}
+                            </div>
+                        </div>
+                        ${level3Approver ? `<small class="text-muted ms-3">By: ${level3Approver} ${level3Date ? ' on ' + level3Date : ''}</small>` : ''}
+                        ${level3Status === 'rejected' && rejectionReason ? `
+                        <div class="mt-1 ms-3">
+                            <small class="text-danger">Reason: ${rejectionReason}</small>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="location-status-divider"></div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // All PDFs Modal Functions
+        function showAllPdfsModal(projectId, projectName) {
+            currentProjectId = projectId;
+            currentProjectName = projectName;
+            
+            // Set modal title
+            document.getElementById('modalProjectName').textContent = projectName;
+            
+            // Show loading state
+            document.getElementById('pdfsLoading').style.display = 'block';
+            document.getElementById('pdfsContainer').style.display = 'none';
+            document.getElementById('noPdfsMessage').style.display = 'none';
+            
+            console.log(`Fetching PDFs for project ${projectId}...`);
+            
+            // Fetch PDFs - Use the correct URL
+            fetch(`/project/${projectId}/all_pdfs`)
+                .then(response => {
+                    console.log(`Response status: ${response.status}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('PDF data received:', data);
+                    
+                    if (data.success) {
+                        currentProjectPdfs = data.pdfs || [];
+                        console.log(`Found ${currentProjectPdfs.length} PDFs`);
+                        renderPdfsTable(currentProjectPdfs);
+                        
+                        // Hide loading, show container
+                        document.getElementById('pdfsLoading').style.display = 'none';
+                        if (data.total_pdfs > 0) {
+                            document.getElementById('pdfsContainer').style.display = 'block';
+                        } else {
+                            document.getElementById('noPdfsMessage').style.display = 'block';
+                            document.getElementById('noPdfsMessage').innerHTML = `
+                                <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+                                <p class="mt-3 text-muted">No PDFs found for ${projectName}</p>
+                                <p class="small">Project ID: ${projectId}</p>
+                            `;
+                        }
+                    } else {
+                        console.error('Server returned error:', data.message);
+                        document.getElementById('pdfsLoading').style.display = 'none';
+                        document.getElementById('noPdfsMessage').style.display = 'block';
+                        document.getElementById('noPdfsMessage').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                ${data.message || 'Failed to load PDFs'}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading PDFs:', error);
+                    document.getElementById('pdfsLoading').style.display = 'none';
+                    document.getElementById('noPdfsMessage').style.display = 'block';
+                    document.getElementById('noPdfsMessage').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Error loading PDFs: ${error.message}<br>
+                            <small>URL: /project/${projectId}/all_pdfs</small><br>
+                            <small>Please check the console for details.</small>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-primary" onclick="showAllPdfsModal(${projectId}, '${projectName}')">
+                                <i class="bi bi-arrow-clockwise"></i> Try Again
+                            </button>
+                        </div>
+                    `;
+                });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('allPdfsModal'));
+            modal.show();
+        }
+
+        // Function to render PDFs table with correct IST time display
+        function renderPdfsTable(pdfs) {
+            const tableBody = document.getElementById('pdfsTableBody');
+            tableBody.innerHTML = '';
+            
+            if (pdfs.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            No PDFs found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            pdfs.forEach(pdf => {
+                // Create location badges HTML
+                let locationsHtml = '';
+                if (pdf.specific_locations && pdf.specific_locations.length > 0) {
+                    const displayLocations = pdf.specific_locations.slice(0, 3);
+                    displayLocations.forEach(loc => {
+                        locationsHtml += `<span class="badge bg-light text-dark me-1 mb-1">${loc}</span>`;
+                    });
+                    if (pdf.location_count > 3) {
+                        locationsHtml += `<span class="badge bg-secondary">+${pdf.location_count - 3} more</span>`;
+                    }
+                } else {
+                    locationsHtml = '<span class="text-muted">No locations</span>';
+                }
+                
+                // ---------- FIXED DATE PARSING ----------
+                // Parse the server-provided IST datetime string and format it in IST without timezone conversion
+                let displayDate = pdf.created_at || ''; // fallback to raw string
+                if (pdf.created_at) {
+                    // Try to parse common formats: "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS"
+                    const parts = pdf.created_at.split(/[- :T]/); // split by -, space, :, or T
+                    if (parts.length >= 6) {
+                        const year = parseInt(parts[0], 10);
+                        const month = parseInt(parts[1], 10) - 1; // month 0-index
+                        const day = parseInt(parts[2], 10);
+                        let hour = parseInt(parts[3], 10);
+                        const minute = parseInt(parts[4], 10);
+                        const second = parseInt(parts[5], 10) || 0;
+                        
+                        // Convert to 12-hour format with am/pm
+                        const ampm = hour >= 12 ? 'pm' : 'am';
+                        let hour12 = hour % 12;
+                        hour12 = hour12 ? hour12 : 12; // 0 -> 12
+                        const minuteStr = minute.toString().padStart(2, '0');
+                        const dayStr = day.toString().padStart(2, '0');
+                        const monthStr = (month + 1).toString().padStart(2, '0');
+                        
+                        displayDate = `${dayStr}/${monthStr}/${year} ${hour12}:${minuteStr} ${ampm}`;
+                    } else {
+                        console.warn(`Unexpected date format for PDF ${pdf.filename}: ${pdf.created_at}`);
+                        // Keep original string
+                    }
+                }
+                // ----------------------------------------
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <strong>v${pdf.version}</strong>
+                        ${pdf.source === 'filesystem' ? '<span class="badge bg-warning ms-1" title="Found in filesystem, not in database">FS</span>' : ''}
+                    </td>
+                    <td>
+                        ${displayDate}
+                        ${pdf.file_size ? `<br><small class="text-muted">${Math.round(pdf.file_size/1024)} KB</small>` : ''}
+                    </td>
+                    <td>${locationsHtml}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="${pdf.inline_url}" target="_blank" class="btn btn-outline-primary" title="View PDF">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="${pdf.download_url}" class="btn btn-outline-success" title="Download PDF" download>
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('fade-in');
+            });
+       
+            const junctionBadges = document.querySelectorAll('.junction-badge');
+            junctionBadges.forEach(badge => {
+                badge.setAttribute('data-bs-toggle', 'tooltip');
+            });
+       
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+       
+            const initialStationId = stationFilter.value || 'all';
+            updateJunctionFilter(initialStationId);
+        
+            stationFilter.addEventListener('change', handleStationChange);
+            junctionFilter.addEventListener('change', handleJunctionSelection);
+        
+            loadNotifications();
+            notificationCheckInterval = setInterval(loadNotifications, 20000);
+            
+            const dropdownMarkAllReadBtn = document.getElementById('dropdownMarkAllReadBtn');
+            if (dropdownMarkAllReadBtn) {
+                dropdownMarkAllReadBtn.addEventListener('click', markAllNotificationsRead);
+            }
+            
+            const clearAllNotificationsBtn = document.getElementById('clearAllNotificationsBtn');
+            if (clearAllNotificationsBtn) {
+                clearAllNotificationsBtn.addEventListener('click', clearAllNotifications);
+            }
+            
+            const confirmDeleteCheckbox = document.getElementById('confirmDeleteCheckbox');
+            if (confirmDeleteCheckbox) {
+                confirmDeleteCheckbox.addEventListener('change', function() {
+                    document.getElementById('confirmDeleteBtn').disabled = !this.checked;
+                });
+            }
+            
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', function() {
+                    if (!pendingDeleteProjectId) return;
+                    
+                    const btn = this;
+                    const spinner = document.getElementById('deleteSpinner');
+                    
+                    btn.disabled = true;
+                    spinner.classList.remove('d-none');
+                    
+                    fetch(`/delete_projects/${pendingDeleteProjectId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('success', data.message);
+                            
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteProjectModal'));
+                            modal.hide();
+                            
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            showToast('danger', data.message || 'Failed to delete project');
+                            btn.disabled = false;
+                            spinner.classList.add('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting project:', error);
+                        showToast('danger', 'Error deleting project. Please try again.');
+                        btn.disabled = false;
+                        spinner.classList.add('d-none');
+                    });
+                });
+            }
+            
+            // Add event listener for View All PDFs buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.view-all-pdfs-btn')) {
+                    const button = e.target.closest('.view-all-pdfs-btn');
+                    const projectId = button.getAttribute('data-project-id');
+                    const projectName = button.getAttribute('data-project-name');
+                    
+                    showAllPdfsModal(projectId, projectName);
+                }
+            });
+        });
+     
+        // Clean up interval when page is hidden
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (notificationCheckInterval) {
+                    clearInterval(notificationCheckInterval);
+                }
+                isPollingEnabled = false;
+            } else {
+                isPollingEnabled = true;
+                loadNotifications();
+                if (notificationCheckInterval) {
+                    clearInterval(notificationCheckInterval);
+                }
+                notificationCheckInterval = setInterval(loadNotifications, 20000);
+            }
+        });
+    </script>
+</body>
+</html>

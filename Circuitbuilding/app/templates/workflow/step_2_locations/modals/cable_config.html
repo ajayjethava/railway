@@ -1,0 +1,51 @@
+<!-- Cable Configuration Setup Modal -->
+<div class="modal fade" id="cableConfigModal" tabindex="-1" aria-labelledby="cableConfigModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="cableConfigModalLabel">
+          <i class="bi bi-gear"></i> Cables Configuration Setup
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="cableConfigForm">
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Please specify the row details for Cables configuration.
+          </div>
+          
+          <div class="table-responsive">
+              <table class="table table-bordered">
+                  <thead class="table-light">
+                      <tr>
+                          <th>Row #</th>
+                          <th>Location Row Name</th>
+                          <th>Cable Type</th>
+                          <th>Number of Cables</th>
+                      </tr>
+                  </thead>
+                  <tbody id="configTableBody">
+                      <!-- Rows will be generated dynamically based on Location Row value -->
+                  </tbody>
+              </table>
+          </div>
+          
+          <div class="mt-3">
+            <small class="text-muted">
+              <i class="bi bi-info-circle"></i> 
+              <strong>Location Row Name:</strong> Enter row name (e.g., A, B, C...) - This will be used as the default row value for all cables in this row.<br>
+              <strong>Cable Type:</strong> Select "cable" for regular cables or "relay_box" for relay boxes (will be saved in separate sheet).<br>
+              <strong>Number of Cables:</strong> How many Cables do you want to configure for this row?
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-arrow-right"></i> Continue to Cable Setup
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

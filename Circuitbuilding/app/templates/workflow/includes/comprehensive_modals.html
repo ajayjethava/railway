@@ -1,0 +1,948 @@
+<!-- Comprehensive Modal System for Stage Workflow (Modular JS compatible) -->
+<!-- All onclick handlers call App. functions -->
+
+<!-- ========== STEP 1: Station Information ========== -->
+<div class="modal fade" id="step1Modal" tabindex="-1" aria-labelledby="step1ModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="step1ModalLabel">
+                    <i class="bi bi-building"></i> Step 1: Station Information
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="step1LoadingSpinner" style="display: none;">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading station data...</p>
+                    </div>
+                </div>
+                <div id="step1Container" style="display: none;">
+                    <div class="row" id="step1Data">
+                        <!-- Station data will be loaded here -->
+                    </div>
+                </div>
+                <div id="step1Empty" class="text-center py-5" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No station information found.
+                    </div>
+                    <button class="btn btn-primary" onclick="App.editStationMaster(null)">
+                        <i class="bi bi-plus-circle"></i> Add Station Information
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="App.openNextStep(2)">
+                    Next: Junction Boxes <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== STEP 2: Editable Junction Boxes ========== -->
+<div class="modal fade" id="editableJunctionBoxesModal" tabindex="-1" aria-labelledby="editableJunctionBoxesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editableJunctionBoxesModalLabel">
+                    <i class="bi bi-geo-alt"></i> Step 2: Junction Boxes - Editable View
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-geo-alt"></i> Edit Junction Boxes</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Junction ID</th>
+                                        <th>Name</th>
+                                        <th>Size</th>
+                                        <th>Row</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="editableJunctionBoxesTableBody">
+                                    <!-- Junction boxes will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-success" onclick="App.saveAllJunctionBoxes()">
+                                <i class="bi bi-save"></i> Save All Changes
+                            </button>
+                            <button type="button" class="btn btn-primary ms-2" onclick="App.addNewJunctionBoxRow()">
+                                <i class="bi bi-plus-circle"></i> Add New Junction Box
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== PDF VIEW MODAL ========== -->
+<div class="modal fade" id="pdfViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-pdf me-2"></i> Latest PDF for Project
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Preview XLSX has been downloaded. Here's the latest PDF for this project:
+                    </div>
+                    <div class="d-flex justify-content-end mb-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="App.refreshLatestPdf()" id="refreshPdfBtn">
+                            <i class="bi bi-arrow-clockwise" id="refreshIcon"></i> Refresh PDF
+                        </button>
+                    </div>
+                    <div class="card mb-3" id="pdfInfoCard" style="display: none;">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 id="pdfFileName" class="mb-1">Loading...</h6>
+                                    <small class="text-muted" id="pdfProjectInfo">Project: Loading...</small><br>
+                                    <small class="text-muted" id="pdfVersionInfo">Version: Loading...</small><br>
+                                    <small class="text-muted" id="pdfCreatedInfo">Created: Loading...</small>
+                                    <small class="text-muted" id="pdfLastUpdated" style="display: none;">Last refreshed: Just now</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex flex-column gap-2">
+                                        <button class="btn btn-sm btn-success" id="viewPdfBtn" onclick="App.openPdfViewer()" disabled>
+                                            <i class="bi bi-eye"></i> View PDF
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" id="downloadPdfBtn" onclick="App.downloadPdf()" disabled>
+                                            <i class="bi bi-download"></i> Download
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="App.copyPdfLink()" id="copyLinkBtn">
+                                            <i class="bi bi-link-45deg"></i> Copy Link
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" id="noPdfCard" style="display: none;">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-file-earmark-x text-muted display-6 mb-3"></i>
+                            <h5 class="text-muted" id="noPdfTitle">No PDF Available Yet</h5>
+                            <p class="text-muted" id="noPdfMessage">This project doesn't have any saved PDFs yet.</p>
+                            <p class="text-muted small">Complete the drawing process and save to generate the first PDF.</p>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-outline-primary" onclick="App.refreshLatestPdf()">
+                                    <i class="bi bi-arrow-clockwise"></i> Check Again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" id="errorPdfCard" style="display: none;">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-exclamation-triangle text-danger display-6 mb-3"></i>
+                            <h5 class="text-danger" id="errorTitle">Error Loading PDF</h5>
+                            <p class="text-muted" id="errorMessage">Unable to load PDF information. Please try again.</p>
+                            <div class="mt-3">
+                                <button class="btn btn-sm btn-outline-primary me-2" onclick="App.refreshLatestPdf()">
+                                    <i class="bi bi-arrow-clockwise"></i> Try Again
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="App.showPdfModalForProject({{ project.id }})">
+                                    <i class="bi bi-arrow-left"></i> Go Back
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center py-4" id="pdfLoadingSpinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading PDF info...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Loading PDF information...</p>
+                    </div>
+                </div>
+                <div class="card mb-3" id="pdfStatusCard" style="display: none;">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-check-circle me-2"></i> Approval Status</h6>
+                        <small class="text-muted" id="statusLastUpdated">Updated: Just now</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary" id="level1Status">PENDING</span>
+                                </div>
+                                <small class="text-muted">Level 1</small>
+                                <div class="small" id="level1Approver"></div>
+                                <div class="small text-muted" id="level1Date"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary" id="level2Status">PENDING</span>
+                                </div>
+                                <small class="text-muted">Level 2</small>
+                                <div class="small" id="level2Approver"></div>
+                                <div class="small text-muted" id="level2Date"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-2">
+                                    <span class="badge bg-secondary" id="level3Status">PENDING</span>
+                                </div>
+                                <small class="text-muted">Level 3</small>
+                                <div class="small" id="level3Approver"></div>
+                                <div class="small text-muted" id="level3Date"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" id="pdfPreviewCard" style="display: none;">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-file-pdf me-2"></i> PDF Preview</h6>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary me-2" onclick="App.refreshPdfPreview()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh Preview
+                            </button>
+                            <button type="button" class="btn-close" onclick="App.closePdfPreview()"></button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 500px; border: none;"></iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="App.continueToNextStep()">
+                    <i class="bi bi-arrow-right"></i> Continue to Workflow
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== ENHANCED CABLE CONFIGURATION MODAL ========== -->
+<div class="modal fade" id="enhancedCableConfigModal" tabindex="-1" aria-labelledby="enhancedCableConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="enhancedCableConfigModalLabel">
+                    <i class="bi bi-gear"></i> Cables Configuration Setup
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Configuration Section -->
+                <div class="card mb-4" id="configSection">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0" id="configSectionTitle"></h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Row Name</th>
+                                        <th>Cable Type</th>
+                                        <th>Number of Cables</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="enhancedConfigTableBody">
+                                    <!-- Rows will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-success" onclick="App.saveEnhancedConfiguration()">
+                                <i class="bi bi-save"></i> Save & Continue to Cables
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Cables Section (Initially Hidden) -->
+                <div class="card" id="cablesSection" style="display: none;">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="bi bi-diagram-3"></i> Cables Setup</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="enhancedCablesInfo"></div>
+                        <div class="mt-4">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Cable ID</th>
+                                            <th>Cable Name</th>
+                                            <th>Junction Box</th>
+                                            <th>Row</th>
+                                            <th>Terminal</th>
+                                            <th>Start No</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="enhancedCablesTableBody">
+                                        <!-- Cables will be loaded here - DIRECTLY EDITABLE -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary me-2" onclick="App.showConfigSection()">
+                                <i class="bi bi-arrow-left"></i> Back to Configuration
+                            </button>
+                            <button type="button" class="btn btn-success" id="enhancedSaveAllCablesBtn" onclick="App.saveAllEnhancedCables()">
+                                <i class="bi bi-save"></i> Save All Cables
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== EDIT CABLE MODAL ========== -->
+<div class="modal fade" id="editCableModal" tabindex="-1" aria-labelledby="editCableModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editCableModalLabel">
+                    <i class="bi bi-pencil"></i> Edit Cable
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCableForm">
+                    <input type="hidden" id="editCableId" name="id">
+                    <div class="mb-3">
+                        <label for="editCableNumber" class="form-label">Cable ID</label>
+                        <input type="number" class="form-control" id="editCableNumber" name="cable_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCableName" class="form-label">Cable Name</label>
+                        <input type="text" class="form-control" id="editCableName" name="cable_name" placeholder="e.g., A T1-12">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editJunctionBox" class="form-label">Junction Box</label>
+                        <input type="text" class="form-control" id="editJunctionBox" name="junction_box" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRow" class="form-label">Row</label>
+                        <input type="text" class="form-control" id="editRow" name="row" placeholder="e.g., A" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTerminal" class="form-label">Number of Terminals</label>
+                        <input type="number" class="form-control" id="editTerminal" name="terminal" min="0" value="12">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editStartNo" class="form-label">Start Number</label>
+                        <input type="number" class="form-control" id="editStartNo" name="start_no" min="1" value="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCableType" class="form-label">Cable Type</label>
+                        <select class="form-select" id="editCableType" name="cable_type">
+                            <!-- Options will be populated dynamically based on stage -->
+                        </select>
+                    </div>
+		    <div class="mb-3">
+                        <label for="editOutput" class="form-label">Output</label>
+                        <input type="text" class="form-control" id="editOutput" name="output" placeholder="e.g., A">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger me-auto" onclick="App.deleteCableFromModal()">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="App.saveCableEdit()">
+                    <i class="bi bi-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== TERMINAL CONFIGURATION MODAL ========== -->
+<div class="modal fade" id="terminalConfigModal" tabindex="-1" aria-labelledby="terminalConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="terminalConfigModalLabel">
+                    <i class="bi bi-gear"></i> Configure Terminals
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="terminalCableInfo" class="alert alert-info mb-3"></div>
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Cable ID</th>
+                                <th>Terminal ID</th>
+                                <th>Terminal No</th>
+                                <th>Symbol</th>
+                                <th>Input Left</th>
+                                <th>Input Right</th>
+                                <th>Spare</th>
+                                <th>Input Connected</th>
+                                <th>Output Connected</th>
+                                <th>Input Connected Extra</th>
+                                <th>Output Connected Extra</th>
+                                <th>Output Left</th>
+                                <th>Output Right</th>
+                            </tr>
+                        </thead>
+                        <tbody id="terminalTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="App.goBackToCableConfigSimple()">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Close
+                </button>
+                <button type="button" class="btn btn-primary" id="saveAllTerminalsBtn" onclick="App.saveAllTerminals()">
+                    <i class="bi bi-check-circle"></i> Save All Terminals
+                </button>
+                <button type="button" class="btn btn-info" onclick="App.configureHeadersFromTerminal()">
+                    Configure Headers <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== HEADER CONFIGURATION MODAL ========== -->
+<div class="modal fade" id="headerConfigModal" tabindex="-1" aria-labelledby="headerConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="headerConfigModalLabel">
+                    <i class="bi bi-collection"></i> Configure Headers
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="headerCableId" value="">
+                <div id="headerLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading header information...</p>
+                </div>
+                <div id="headerContent" style="display: none;">
+                    <div id="headerCableInfo" class="alert alert-info mb-3"></div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Header Type</th>
+                                    <th>Terminal Start</th>
+                                    <th>Terminal End</th>
+                                    <th>Input/Output</th>
+                                    <th>Text</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="headerTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" id="addHeaderRowBtn">
+                            <i class="bi bi-plus-circle"></i> Add Header
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" id="headerPreviousBtn">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="App.saveAllHeaders()">
+                    <i class="bi bi-save"></i> Save All Headers
+                </button>
+                <button type="button" class="btn btn-info" id="configureGroupsBtn">
+                    Configure Groups <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== GROUP CONFIGURATION MODAL ========== -->
+<div class="modal fade" id="groupConfigModal" tabindex="-1" aria-labelledby="groupConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="groupConfigModalLabel">
+                    <i class="bi bi-diagram-3"></i> Configure Groups
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="groupCableId" value="">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Group ID</th>
+                                <th>Terminal Numbers</th>
+                                <th>Input/Output</th>
+                                <th>Text</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="groupTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-sm btn-success" id="addGroupRowBtn">
+                        <i class="bi bi-plus-circle"></i> Add Group Row
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="groupPreviousBtn">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveAllGroupsBtn">
+                    <i class="bi bi-check-circle"></i> Save All Groups
+                </button>
+                <button type="button" class="btn btn-info" id="configureChokeBtn">
+                    Configure Choke <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== CHOKE CONFIGURATION MODAL ========== -->
+<div class="modal fade" id="chokeConfigModal" tabindex="-1" aria-labelledby="chokeConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="chokeConfigModalLabel">
+                    <i class="bi bi-funnel"></i> Configure Choke
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="chokeCableId" value="">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cable ID</th>
+                                <th>Choke ID</th>
+                                <th>Input Terminal</th>
+                                <th>Output Terminal</th>
+                                <th>Terminal Name</th>
+                                <th>Output Type</th>
+                                <th>Output Text</th>
+                                <th>Output Connected</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="chokeTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-sm btn-success" id="addChokeRowBtn">
+                        <i class="bi bi-plus-circle"></i> Add Choke Row
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="chokePreviousBtn">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveAllChokesBtn">
+                    <i class="bi bi-check-circle"></i> Save All Chokes
+                </button>
+                <button type="button" class="btn btn-info" id="configureResistorBtn">
+                    Configure Resistor <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== RESISTOR CONFIGURATION MODAL ========== -->
+<div class="modal fade" id="resistorConfigModal" tabindex="-1" aria-labelledby="resistorConfigModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="resistorConfigModalLabel">
+                    <i class="bi bi-lightning-charge"></i> Configure Resistor
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="resistorCableId" value="">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cable ID</th>
+                                <th>Resistor ID</th>
+                                <th>Input Terminal</th>
+                                <th>Output Terminal</th>
+                                <th>Resistor Name</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resistorTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-sm btn-success" id="addResistorRowBtn">
+                        <i class="bi bi-plus-circle"></i> Add Resistor Row
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="resistorPreviousBtn">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveAllResistorsBtn">
+                    <i class="bi bi-check-circle"></i> Save All Resistors
+                </button>
+                <button type="button" class="btn btn-info" onclick="App.markStepComplete(8)">
+                    Complete Step 8 <i class="bi bi-check-circle"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== EDIT STATION DRAWING MODAL ========== -->
+<div class="modal fade" id="editStationDrawingModal" tabindex="-1" aria-labelledby="editStationDrawingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="editStationDrawingModalLabel">
+                    <i class="bi bi-drawing"></i> Edit Station Drawing
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editStationDrawingForm">
+                    <input type="hidden" id="stationDrawingId" name="id">
+                    <input type="hidden" name="project_id" value="{{ project.id }}">
+                    <!-- Basic Information Section -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="diagram_name" class="form-label">Diagram Name *</label>
+                                <input type="text" class="form-control" id="diagram_name" name="diagram_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="station_name" class="form-label">Station Name *</label>
+                                <input type="text" class="form-control" id="station_name" name="station_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="station_code" class="form-label">Station Code *</label>
+                                <input type="text" class="form-control" id="station_code" name="station_code" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="station_id" class="form-label">Station ID</label>
+                                <input type="text" class="form-control" id="station_id" name="station_id">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="version" class="form-label">Version *</label>
+                                <input type="text" class="form-control" id="version" name="version" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date">
+                            </div>
+                            <div class="mb-3">
+                                <label for="drawn_by" class="form-label">Drawn By *</label>
+                                <input type="text" class="form-control" id="drawn_by" name="drawn_by" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="checked_by" class="form-label">Checked By</label>
+                                <input type="text" class="form-control" id="checked_by" name="checked_by">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Railway Details Section -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="division" class="form-label">Division</label>
+                                <input type="text" class="form-control" id="division" name="division">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="zone" class="form-label">Zone</label>
+                                <input type="text" class="form-control" id="zone" name="zone">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="total_sheet" class="form-label">Total Sheets</label>
+                                <input type="text" class="form-control" id="total_sheet" name="total_sheet">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Designation Section -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="designation1" class="form-label">Designation 1</label>
+                                <input type="text" class="form-control" id="designation1" name="designation1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="designation2" class="form-label">Designation 2</label>
+                                <input type="text" class="form-control" id="designation2" name="designation2">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="designation3" class="form-label">Designation 3</label>
+                                <input type="text" class="form-control" id="designation3" name="designation3">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Checksum Section -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="checksum" class="form-label">Checksum (Auto-generated)</label>
+                                <input type="text" class="form-control" id="checksum" name="checksum" readonly>
+                                <small class="text-muted">This field is automatically generated based on drawing data</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Fields marked with * are required.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="App.saveStationDrawing()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== EDIT STATION MASTER MODAL ========== -->
+<div class="modal fade" id="editStationMasterModal" tabindex="-1" aria-labelledby="editStationMasterModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editStationMasterModalLabel">
+                    <i class="bi bi-building"></i> Edit Station Master
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editStationMasterForm">
+                    <input type="hidden" id="stationMasterId" name="id">
+                    <input type="hidden" name="project_id" value="{{ project.id }}">
+                    <div class="mb-3">
+                        <label for="station_id_master" class="form-label">Station ID</label>
+                        <input type="text" class="form-control" id="station_id_master" name="station_id">
+                    </div>
+                    <div class="mb-3">
+                        <label for="station_name_master" class="form-label">Station Name</label>
+                        <input type="text" class="form-control" id="station_name_master" name="station_name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="station_code_master" class="form-label">Station Code</label>
+                        <input type="text" class="form-control" id="station_code_master" name="station_code">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="App.saveStationMaster()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== CABLE DETAILS MODAL (OPTIONAL, KEPT FOR COMPATIBILITY) ========== -->
+<div class="modal fade" id="cableDetailsModal" tabindex="-1" aria-labelledby="cableDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="cableDetailsModalLabel">
+                    <i class="bi bi-cable"></i> Cable Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3" id="cableInfoSummary">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Cable ID:</strong> <span id="summaryCableId" class="badge bg-dark">-</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Name:</strong> <span id="summaryCableName">-</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Junction:</strong> <span id="summaryJunction">-</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Row:</strong> <span id="summaryRow">-</span>
+                        </div>
+                    </div>
+                </div>
+                <nav class="mb-4">
+                    <div class="nav nav-tabs" id="cableDetailTabs" role="tablist">
+                        <button class="nav-link active" id="cable-terminals-tab" data-bs-toggle="tab" data-bs-target="#cable-terminals" type="button" role="tab">
+                            <i class="bi bi-plug"></i> Terminals
+                        </button>
+                        <button class="nav-link" id="cable-headers-tab" data-bs-toggle="tab" data-bs-target="#cable-headers" type="button" role="tab">
+                            <i class="bi bi-collection"></i> Headers
+                        </button>
+                        <button class="nav-link" id="cable-groups-tab" data-bs-toggle="tab" data-bs-target="#cable-groups" type="button" role="tab">
+                            <i class="bi bi-diagram-3"></i> Groups
+                        </button>
+                        <button class="nav-link" id="cable-chokes-tab" data-bs-toggle="tab" data-bs-target="#cable-chokes" type="button" role="tab">
+                            <i class="bi bi-magnet"></i> Chokes
+                        </button>
+                        <button class="nav-link" id="cable-resistors-tab" data-bs-toggle="tab" data-bs-target="#cable-resistors" type="button" role="tab">
+                            <i class="bi bi-lightning-charge"></i> Resistors
+                        </button>
+                    </div>
+                </nav>
+                <div class="tab-content" id="cableDetailContent">
+                    <!-- Terminals tab -->
+                    <div class="tab-pane fade show active" id="cable-terminals" role="tabpanel">
+                        <div id="cableTerminalsLoading" class="text-center py-4"><div class="spinner-border text-info"></div><p class="mt-2">Loading terminals...</p></div>
+                        <div id="cableTerminalsContent" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover table-sm">
+                                    <thead class="table-light"><tr><th>Terminal ID</th><th>Terminal No</th><th>Symbol</th><th>Spare</th><th>Input Conn</th><th>Output Conn</th><th>Actions</th></tr></thead>
+                                    <tbody id="cableTerminalsTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="cableTerminalsEmpty" class="alert alert-info" style="display: none;">No terminals found for this cable</div>
+                    </div>
+                    <!-- Headers tab -->
+                    <div class="tab-pane fade" id="cable-headers" role="tabpanel">...</div>
+                    <!-- Groups tab -->
+                    <div class="tab-pane fade" id="cable-groups" role="tabpanel">...</div>
+                    <!-- Chokes tab -->
+                    <div class="tab-pane fade" id="cable-chokes" role="tabpanel">...</div>
+                    <!-- Resistors tab -->
+                    <div class="tab-pane fade" id="cable-resistors" role="tabpanel">...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="App.nextCableDetailTab()">Next <i class="bi bi-arrow-right"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== COMPACT NOTIFICATION CONTAINER ========== -->
+<div id="compactNotificationContainer"></div>
+
+<!-- ========== PROGRESS / SUCCESS / ERROR MODALS (KEPT FOR COMPATIBILITY) ========== -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-hourglass-split"></i> Processing...</h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3"></div>
+                    <p id="progressMessage">Please wait...</p>
+                    <div class="progress mb-3">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:0%"></div>
+                    </div>
+                    <small id="progressDetails" class="text-muted"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle"></i> Success!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="bi bi-check-circle-fill text-success display-1 mb-3"></i>
+                    <h5 id="successTitle">Operation Completed Successfully</h5>
+                    <p id="successMessage" class="mb-0"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Error</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="bi bi-exclamation-triangle-fill text-danger display-1 mb-3"></i>
+                    <h5 id="errorTitle">Operation Failed</h5>
+                    <p id="errorMessage" class="mb-0"></p>
+                    <div id="errorDetails" class="alert alert-danger mt-3" style="display: none;">
+                        <small id="errorDetailsText"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

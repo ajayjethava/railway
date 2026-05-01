@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Railway Signalling</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Emoji favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('main.index') }}">🚆 Railway Signalling</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div id="mainNav" class="collapse navbar-collapse">
+      <div class="ms-auto d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-light" href="{{ url_for('main.project_selection') }}">Switch Project</a>
+        <a class="btn btn-outline-light" href="{{ url_for('main.preview') }}">Preview All</a>
+        <a class="btn btn-outline-warning" href="{{ url_for('main.excel_to_pdf') }}">
+          <i class="bi bi-file-earmark-pdf"></i> Excel to PDF
+        </a>
+        <a class="btn btn-success" href="{{ url_for('main.download') }}">Download XLSX</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-info">
+        {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Options section -->
+  <div class="p-4 mb-4 bg-white border rounded-3">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h2 class="mb-2">Options</h2>
+        <p class="text-muted mb-3">Create a new drawing or enter data step-by-step for the station drawing workflow.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('main.new_project') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle"></i> Make New Drawing
+          </a>
+          <!-- CHANGED: View Station Drawing goes to project_selection, not workflow -->
+          <a href="{{ url_for('main.project_selection') }}" class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-eye"></i> View Station Drawing
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+        {% if current_project %}
+        <div class="small text-muted">
+          <div><span class="badge bg-primary">Project ID: {{ current_project.id }}</span></div>
+          <div class="mt-1">Rows in project: <strong>{{ total_rows }}</strong></div>
+        </div>
+        {% else %}
+        <div class="small text-muted">No project selected</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Upload/Edit by Sheet FIRST -->
+  {% if current_project %}
+  <div class="mb-3">
+    <h5 class="mb-2"><i class="bi bi-table"></i> Quick Edit Your Sheet</h5>
+  </div>
+  <div class="row">
+    {% for name, cols in SHEETS.items() %}
+    <div class="col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h6 class="card-title">
+            {{ name.replace('_', ' ').title() }}
+            {% if tables and tables.get(name) %}
+            <span class="badge bg-secondary">{{ tables[name] }} rows</span>
+            {% endif %}
+          </h6>
+          <p class="small text-muted mb-3">{{ HEADER_HINTS.get(name, "") }}</p>
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('main.upload_sheet', sheet_name=name) }}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-upload"></i> Bulk Import
+            </a>
+            <a href="{{ url_for('main.sheet_form', name=name) }}" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-pencil-square"></i> Edit Sheet
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Generated PDFs AFTER -->
+  {% if current_project %}
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0"><i class="bi bi-file-pdf"></i> Generated PDFs</h5>
+      <a href="{{ url_for('main.excel_to_pdf') }}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-upload"></i> Upload Excel to Generate PDF
+      </a>
+    </div>
+
+    {% if pdfs and pdfs|length > 0 %}
+    <div class="list-group">
+      {% for pdf in pdfs %}
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div class="me-3">
+          <div class="fw-semibold">{{ pdf.filename }}</div>
+          <div class="small text-muted">
+            Created: {{ pdf.created }} • Size: {{ pdf.size_kb }} KB
+            {% if pdf.checksum_md5 %}
+            • Checksum: <code>{{ pdf.checksum_md5 }}</code>
+            {% endif %}
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="{{ pdf.view_url }}" target="_blank" rel="noopener">
+            <i class="bi bi-eye"></i> View
+          </a>
+          <a class="btn btn-sm btn-success" href="{{ pdf.download_url }}">
+            <i class="bi bi-download"></i> Download
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-light border">No PDFs generated yet for this project.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+</main>
+
+<!-- Bootstrap JS (for navbar toggler) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

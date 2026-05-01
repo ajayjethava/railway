@@ -1,0 +1,11 @@
+venv/
+uploads/
+uploads_ctr/
+xlsx_download/
+static/
+temp_pdf/
+temp_xlsx/
+processed_excel/
+logs/
+flask_session/
+downloaded_xlsx_files/

@@ -1,0 +1,60 @@
+<div class="modal fade" id="headerConfigModal" tabindex="-1" aria-labelledby="headerConfigModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="headerConfigModalLabel">
+          <i class="bi bi-collection"></i> Configure Headers for Cable
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> Configure header entries for the current cable.
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label"><strong>Cable Id</strong></label>
+          <input type="text" class="form-control" id="headerCableId" readonly>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Header Type</th>
+                <th>Terminal Start</th>
+                <th>Terminal End</th>
+                <th>Input Output</th>
+                <th>Text</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="headerTableBody">
+              <!-- Header rows will be generated here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="mt-3">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="addHeaderRowBtn">
+            <i class="bi bi-plus-circle"></i> Add Header Row
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" id="headerPreviousBtn">
+          <i class="bi bi-arrow-left"></i> Previous
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <!-- ADDED: Save Draft Button -->
+        <button type="button" class="btn btn-info" id="saveTerminalHeaderDraftBtn">
+          <i class="bi bi-floppy"></i> Save Draft
+        </button>
+        <!-- REMOVED: Save All Headers Button -->
+        <button type="button" class="btn btn-primary" id="configureGroupsBtn">
+          <i class="bi bi-diagram-3"></i> Configure Groups
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

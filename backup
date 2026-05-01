@@ -1,0 +1,3539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Signalling - PDF Approval Tracking</title>
+    <!-- Updated favicon to use railway logo image -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    
+        /* Notification Bell Styles */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: linear-gradient(135deg, #dc3545, #bb2d3b);
+            color: white;
+            border-radius: 50%;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            min-width: 22px;
+            min-height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+    
+        .notification-dropdown {
+            min-width: 380px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border: 1px solid #dee2e6;
+        }
+    
+        .notification-item {
+            padding: 8px 12px !important;
+            border-bottom: 1px solid #f1f1f1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: auto !important;
+            line-height: 1.3 !important;
+        }
+    
+        /* ENHANCED UNREAD NOTIFICATION STYLES */
+        .notification-item.unread {
+            background: linear-gradient(90deg, #e8f4ff 0%, #d4e9ff 100%);
+            border-left: 3px solid #0d6efd;
+            border-radius: 0 5px 5px 0;
+            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+            position: relative;
+            margin-right: 2px;
+        }
+    
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -6px;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: #0d6efd;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
+        }
+    
+        .notification-item.unread:hover {
+            background: linear-gradient(90deg, #dbeafe 0%, #c7e2fe 100%);
+            transform: translateX(3px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+        }
+    
+        .notification-item.unread .notification-title {
+            color: #1a365d !important;
+            font-weight: 700 !important;
+            font-size: 1.05em;
+        }
+    
+        .notification-item.unread .notification-message {
+            color: #2d3748 !important;
+            font-weight: 500 !important;
+        }
+    
+        .notification-item.unread .time {
+            color: #0d6efd !important;
+            font-weight: 600 !important;
+            background: rgba(13, 110, 253, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            font-size: 0.75rem !important;
+        }
+    
+        /* ENHANCED READ NOTIFICATION STYLES */
+        .notification-item.read {
+            background-color: #f8f9fa;
+            border-left: 2px solid #e9ecef;
+            border-radius: 0 5px 5px 0;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+    
+        .notification-item.read:hover {
+            background-color: #f1f3f4;
+            opacity: 1;
+            transform: translateX(2px);
+        }
+    
+        .notification-item.read .notification-title {
+            color: #6c757d !important;
+            font-weight: 500 !important;
+        }
+    
+        .notification-item.read .notification-message {
+            color: #adb5bd !important;
+            font-weight: 400 !important;
+        }
+    
+        .notification-item.read .time {
+            color: #6c757d !important;
+            font-weight: 400 !important;
+            font-size: 0.75rem !important;
+        }
+    
+        .notification-item .actions {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+    
+        .notification-item:hover .actions {
+            opacity: 1;
+        }
+    
+        .mark-read-btn {
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(13, 110, 253, 0.2);
+        }
+    
+        .mark-read-btn:hover {
+            background: linear-gradient(135deg, #0a58ca, #0d6efd);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+        }
+    
+        .notifications-empty {
+            padding: 20px 15px;
+            text-align: center;
+            color: #6c757d;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 10px;
+        }
+    
+        /* Recent Notifications in Card Body */
+        .recent-notification-item {
+            padding: 8px 12px !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-height: auto !important;
+            line-height: 1.3 !important;
+        }
+    
+        .recent-notification-item:hover {
+            background-color: rgba(0, 105, 92, 0.05);
+        }
+    
+        /* ENHANCED RECENT UNREAD STYLES */
+        .recent-notification-item.unread {
+            background: linear-gradient(90deg, rgba(13, 110, 253, 0.15) 0%, rgba(13, 110, 253, 0.08) 100%);
+            border-left: 3px solid #0d6efd;
+            border-radius: 0 6px 6px 0;
+            padding-left: 12px;
+            margin: 2px 0;
+            box-shadow: 0 2px 5px rgba(13, 110, 253, 0.1);
+            position: relative;
+        }
+    
+        .recent-notification-item.unread::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -5px;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: #0d6efd;
+            border-radius: 50%;
+        }
+    
+        .recent-notification-item.unread:hover {
+            background: linear-gradient(90deg, rgba(13, 110, 253, 0.2) 0%, rgba(13, 110, 253, 0.12) 100%);
+            transform: translateX(3px);
+        }
+    
+        .recent-notification-item.unread strong {
+            color: #1a365d !important;
+            font-weight: 700 !important;
+        }
+    
+        .recent-notification-item.unread .small {
+            color: #2d3748 !important;
+            font-weight: 500 !important;
+        }
+    
+        .recent-notification-item.unread .time {
+            color: #0d6efd !important;
+            font-weight: 600 !important;
+            font-size: 0.75rem !important;
+        }
+
+    
+        /* ENHANCED RECENT READ STYLES */
+        .recent-notification-item.read {
+            background-color: #f8f9fa;
+            border-left: 2px solid #dee2e6;
+            opacity: 0.8;
+        }
+    
+        .recent-notification-item.read:hover {
+            background-color: #f1f3f4;
+            opacity: 1;
+        }
+    
+        .recent-notification-item.read strong {
+            color: #6c757d !important;
+            font-weight: 500 !important;
+        }
+    
+        .recent-notification-item.read .small {
+            color: #adb5bd !important;
+            font-weight: 400 !important;
+        }
+    
+        .recent-notification-item.read .time {
+            color: #6c757d !important;
+            font-weight: 400 !important;
+            font-size: 0.75rem !important;
+        }
+    
+        .recent-notification-item:last-child {
+            border-bottom: none;
+        }
+    
+        .recent-notifications-container {
+            max-height: 180px !important;
+            overflow-y: auto;
+            border-radius: 6px;
+            background: #fff;
+        }
+    
+        .recent-notifications-container::-webkit-scrollbar {
+            width: 5px;
+        }
+    
+        .recent-notifications-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+    
+        .recent-notifications-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 8px;
+        }
+    
+        .recent-notifications-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    
+        /* Notification header improvements */
+        .notification-header {
+            background: linear-gradient(135deg, #00695c, #00796b);
+            color: white;
+            border-radius: 6px 6px 0 0;
+            padding: 0.75rem 1rem !important;
+        }
+    
+        .notification-header .dropdown-menu {
+            margin-top: 8px !important;
+        }
+    
+        /* Card styling */
+        .card {
+            margin-bottom: 1.5rem !important;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+    
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+            border: none;
+            padding: 0.75rem 1.25rem !important;
+        }
+    
+        .card-body {
+            padding: 1rem !important;
+        }
+    
+        /* Status badges */
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+    
+        /* Table improvements */
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 105, 92, 0.08);
+            transform: translateY(-1px) !important;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+    
+        .pdf-link {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    
+        .approval-cell {
+            min-width: 120px;
+        }
+    
+        .junction-cell {
+            min-width: 150px;
+            max-width: 200px;
+        }
+    
+        .junction-badge {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.25rem !important;
+            margin-bottom: 2px;
+            display: inline-block;
+            border-radius: 4px;
+        }
+    
+        /* Custom teal background */
+        .bg-teal {
+            background: linear-gradient(135deg, #00695c, #00796b) !important;
+            color: white !important;
+        }
+    
+        /* Enhanced Sidebar Styling */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: linear-gradient(180deg, #00695c 0%, #00796b 100%);
+            color: white;
+            z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+    
+        .sidebar-content {
+            padding: 25px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+    
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+    
+        .sidebar-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+    
+        .sidebar-user-section {
+            padding: 20px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+    
+        .user-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #00695c, #004d40);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+    
+        .user-icon i {
+            font-size: 1.2rem;
+        }
+    
+        .user-details {
+            flex: 1;
+        }
+    
+        .user-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+    
+        .user-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+    
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+    
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            padding: 12px 18px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+    
+        .sidebar-btn i {
+            margin-right: 12px;
+            width: 22px;
+            text-align: center;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+    
+        .sidebar-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #26a69a;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+    
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    
+        .sidebar-btn:hover::before {
+            transform: scaleY(1);
+        }
+    
+        .sidebar-btn:hover i {
+            color: #26a69a;
+            transform: scale(1.1);
+        }
+    
+        .sidebar-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+    
+        .sidebar-btn.active::before {
+            transform: scaleY(1);
+        }
+    
+        .sidebar-btn.active i {
+            color: #26a69a;
+        }
+    
+        .sidebar-btn.logout {
+            color: #ff6b6b;
+            margin-top: auto;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            padding-top: 25px;
+            background: rgba(255, 107, 107, 0.1);
+        }
+    
+        .sidebar-btn.logout:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            transform: translateX(5px);
+        }
+    
+        .sidebar-btn.logout:hover i {
+            color: #ff6b6b;
+        }
+    
+        /* Main content area */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px !important;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+            transition: all 0.3s ease;
+        }
+        /* NEW: Edit button styling */
+        .btn-edit-sm {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #00695c;
+            color: #00695c;
+        }
+        
+        .btn-edit-sm:hover {
+            background-color: #00695c;
+            color: white;
+        }
+        
+        /* Add margin for approval buttons */
+        .approval-action-buttons {
+            margin-top: 4px;
+        }
+        
+        /* Style for edit button in action-buttons */
+        .action-buttons .btn-edit-sm {
+            margin-top: 0;
+        }
+    
+        /* Page header enhancement */
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+    
+        /* Enhanced button styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+        }
+    
+        .btn-primary {
+            background: linear-gradient(135deg, #00695c, #00796b);
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3);
+        }
+    
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #00796b, #00695c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 105, 92, 0.4);
+        }
+    
+        .btn-outline-primary {
+            color: #00695c;
+            border-color: #00695c;
+        }
+    
+        .btn-outline-primary:hover {
+            background-color: #00695c;
+            border-color: #00695c;
+            color: white;
+        }
+    
+        /* Form focus colors to match teal theme */
+        .form-control:focus, .form-select:focus {
+            border-color: #00695c;
+            box-shadow: 0 0 0 0.25rem rgba(0, 105, 92, 0.25);
+        }
+    
+        /* Enhanced table styling */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+    
+        .table thead th {
+            background: linear-gradient(135deg, #00695c, #00796b);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: 600;
+        }
+    
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+    
+        /* Form switch styling for latest version filter */
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+            cursor: pointer;
+        }
+    
+        .form-switch .form-check-input:checked {
+            background-color: #00695c;
+            border-color: #00695c;
+        }
+    
+        .form-switch .form-check-input:focus {
+            border-color: #00695c;
+            box-shadow: 0 0 0 0.25rem rgba(0, 105, 92, 0.25);
+        }
+    
+        .form-switch .form-check-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    
+        .form-switch .form-check-input:focus {
+            border-color: #00695c;
+            box-shadow: 0 0 0 0.25rem rgba(0, 105, 92, 0.25);
+        }
+    
+        .form-switch .form-check-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    
+        /* For the filter group with the toggle */
+        .filter-group:has(.form-switch) {
+            min-width: 200px;
+        }
+    
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                background: linear-gradient(180deg, #00695c 0%, #00796b 100%);
+            }
+        
+            .sidebar-brand span,
+            .user-name,
+            .user-badge,
+            .sidebar-btn span {
+                display: none;
+            }
+        
+            .sidebar-brand {
+                justify-content: center;
+                padding: 15px 0;
+                margin-bottom: 25px;
+            }
+        
+            .sidebar-logo {
+                margin-right: 0;
+                height: 35px;
+            }
+        
+            .sidebar-user-section {
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.1);
+                margin-bottom: 20px;
+            }
+        
+            .user-info {
+                justify-content: center;
+                margin-bottom: 0;
+            }
+        
+            .user-icon {
+                margin-right: 0;
+                width: 40px;
+                height: 40px;
+            }
+        
+            .sidebar-btn {
+                justify-content: center;
+                padding: 12px;
+                border-radius: 8px;
+            }
+        
+            .sidebar-btn i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+        
+            .main-content {
+                margin-left: 70px;
+                padding: 20px 15px !important;
+            }
+        
+            .page-header {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+        
+            .table-responsive {
+                font-size: 0.85rem;
+            }
+        
+            .junction-badge {
+                font-size: 0.6rem;
+            }
+        
+            .filter-row {
+                flex-direction: column;
+            }
+        
+            .filter-buttons {
+                flex-direction: row;
+                gap: 8px;
+            }
+        
+            .notification-dropdown {
+                min-width: 320px;
+                max-width: 320px;
+                left: -240px !important;
+            }
+        
+            .recent-notifications-container {
+                max-height: 150px !important;
+            }
+        
+            .notification-badge {
+                top: -8px;
+                right: -8px;
+                padding: 3px 7px;
+                font-size: 0.65rem;
+                min-width: 20px;
+                min-height: 20px;
+            }
+        }
+    
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+    
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+    
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+    
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+    
+        /* Action buttons styling */
+        .btn-approve-sm, .btn-reject-sm {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
+            min-width: 85px;
+            border-radius: 5px;
+        }
+    
+        .btn-approve-sm {
+            background: linear-gradient(135deg, #198754, #157347);
+            color: white;
+            border: none;
+        }
+    
+        .btn-reject-sm {
+            background: linear-gradient(135deg, #dc3545, #bb2d3b);
+            color: white;
+            border: none;
+        }
+    
+        .btn-approve-sm:hover {
+            background: linear-gradient(135deg, #157347, #198754);
+            transform: translateY(-1px);
+        }
+    
+        .btn-reject-sm:hover {
+            background: linear-gradient(135deg, #bb2d3b, #dc3545);
+            transform: translateY(-1px);
+        }
+    
+        .approval-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem !important;
+            border-radius: 10px;
+        }
+    
+        .approval-date {
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-top: 1px;
+        }
+    
+        .approval-action-buttons {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+    
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+    
+        .status-with-date {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1px !important;
+        }
+    
+        .approval-status-cell {
+            min-width: 120px;
+        }
+    
+        /* Junction filter styling */
+        .junction-filter-col {
+            opacity: 1;
+        }
+    
+        /* Filter buttons styling */
+        .filter-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+    
+        /* Single line filters */
+        .compact-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px !important;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+    
+        .compact-filters .filter-group {
+            flex: 1;
+            min-width: 140px;
+        }
+    
+        .compact-filters label {
+            font-size: 0.8rem !important;
+            margin-bottom: 3px !important;
+            font-weight: 500;
+            color: #495057;
+        }
+    
+        .compact-filters .form-control,
+        .compact-filters .form-select {
+            font-size: 0.85rem !important;
+            padding: 6px 10px !important;
+            height: 34px !important;
+        }
+    
+        /* Compact table styling */
+        .compact-table {
+            width: 100%;
+            min-width: 1200px;
+            font-size: 0.8rem !important;
+        }
+    
+        .compact-table th,
+        .compact-table td {
+            padding: 6px 8px !important;
+            white-space: nowrap;
+        }
+    
+        .compact-table th {
+            font-size: 0.75rem !important;
+            font-weight: 600;
+            padding: 8px !important;
+        }
+    
+        .compact-table .station-col {
+            width: 180px;
+            max-width: 180px;
+        }
+    
+        .compact-table .junction-col {
+            width: 180px;
+            max-width: 180px;
+        }
+    
+        .compact-table .file-col {
+            width: 180px;
+            max-width: 180px;
+        }
+    
+        .compact-table .date-col {
+            width: 100px;
+            max-width: 100px;
+        }
+    
+        .compact-table .user-col {
+            width: 120px;
+            max-width: 120px;
+        }
+    
+        .compact-table .remarks-col {
+            width: 150px;
+            max-width: 150px;
+        }
+    
+        .compact-table .level-col {
+            width: 100px;
+            max-width: 100px;
+        }
+    
+        .compact-table .overall-col {
+            width: 100px;
+            max-width: 100px;
+        }
+    
+        .compact-table .actions-col {
+            width: 180px; /* Increased from 160px to accommodate new button */
+            max-width: 180px;
+        }
+    
+        .compact-table .junction-badge {
+            font-size: 0.6rem !important;
+            padding: 0.08rem 0.2rem !important;
+            margin: 1px !important;
+        }
+    
+        .compact-table .pdf-link {
+            max-width: 170px;
+            font-size: 0.75rem !important;
+        }
+    
+        .compact-table .approval-badge {
+            font-size: 0.65rem !important;
+            padding: 0.1rem 0.3rem !important;
+        }
+    
+        .compact-table .approval-date {
+            font-size: 0.6rem !important;
+        }
+    
+        .compact-table .btn-sm {
+            padding: 0.15rem 0.3rem !important;
+            font-size: 0.7rem !important;
+        }
+    
+        .compact-table .btn-approve-sm,
+        .compact-table .btn-reject-sm {
+            padding: 0.15rem 0.3rem !important;
+            font-size: 0.65rem !important;
+            min-width: 70px;
+        }
+    
+        @media (max-width: 1200px) {
+            .compact-filters .filter-group {
+                min-width: 120px;
+            }
+        }
+    
+        @media (max-width: 992px) {
+            .compact-filters {
+                gap: 6px !important;
+            }
+        
+            .compact-filters .filter-group {
+                min-width: 110px;
+            }
+        }
+    
+        @media (max-width: 768px) {
+            .compact-filters {
+                flex-direction: column;
+                gap: 12px !important;
+            }
+        
+            .compact-filters .filter-group {
+                width: 100%;
+            }
+        
+            .filter-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    
+        /* Reduce vertical spacing in notification content */
+        .notification-item .d-flex {
+            margin-bottom: 0 !important;
+        }
+    
+        .notification-item .mb-1 {
+            margin-bottom: 0.1rem !important;
+        }
+    
+        .notification-item .mb-2 {
+            margin-bottom: 0.2rem !important;
+        }
+    
+        /* Reduce notification badge sizes */
+        .notification-item .badge,
+        .recent-notification-item .badge {
+            padding: 0.2rem 0.4rem !important;
+            font-size: 0.7rem !important;
+            line-height: 1 !important;
+        }
+        
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .pagination-select {
+            width: 80px;
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+        }
+        
+        .page-item {
+            margin: 0 2px;
+        }
+        
+        .page-link {
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            min-width: 34px;
+            text-align: center;
+            color: #00695c;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .page-link:hover {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+            color: #004d40;
+        }
+        
+        .page-item.active .page-link {
+            background-color: #00695c;
+            border-color: #00695c;
+            color: white;
+        }
+        
+        .page-item.disabled .page-link {
+            color: #6c757d;
+            pointer-events: none;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        .pagination-ellipsis {
+            padding: 4px 10px;
+            color: #6c757d;
+        }
+        
+        /* Checksum button styling */
+        .checksum-btn {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        
+        .checksum-value {
+            font-family: monospace;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        
+        /* Style for projects without drawings */
+        .no-drawing-row {
+            background-color: #f8f9fa !important;
+            opacity: 0.9;
+        }
+        
+        .no-drawing-row:hover {
+            background-color: #e9ecef !important;
+            opacity: 1;
+        }
+        
+        .no-drawing-badge {
+            background-color: #6c757d !important;
+            color: white !important;
+        }
+        
+        .create-drawing-btn {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            margin-top: 2px;
+        }
+        
+        /* Continue Draft button styling - UPDATED */
+        .continue-draft-btn {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            margin-top: 2px;
+            background: linear-gradient(135deg, #ffc107, #ffc107);
+            border: none;
+            color: black !important;
+        }
+        
+        .continue-draft-btn:hover {
+            background: linear-gradient(135deg, #00796b, #00695c);
+            color: white !important;
+            transform: translateY(-1px);
+        }
+        
+        /* Custom styles for show without drawings filter */
+        .show-without-drawings-group {
+            min-width: 220px;
+        }
+        
+        .show-without-drawings-group .form-check-label {
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        /* Delete button styling */
+        .delete-project-btn {
+            padding: 0.15rem 0.3rem !important;
+            font-size: 0.7rem !important;
+            border-color: #dc3545 !important;
+            color: #dc3545 !important;
+            background: transparent !important;
+        }
+        
+        .delete-project-btn:hover {
+            background: #dc3545 !important;
+            color: white !important;
+            transform: scale(1.05);
+        }
+        
+        /* Toast styling */
+        .toast {
+            min-width: 300px;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Toast container */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        /* Timeline styling */
+        .timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid;
+        }
+        
+        .timeline-item.approved::before {
+            border-color: #198754;
+        }
+        
+        .timeline-item.rejected::before {
+            border-color: #dc3545;
+        }
+        
+        .timeline-item.pending::before {
+            border-color: #ffc107;
+        }
+        
+        .timeline-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid;
+        }
+        
+        .timeline-item.approved .timeline-content {
+            border-left-color: #198754;
+        }
+        
+        .timeline-item.rejected .timeline-content {
+            border-left-color: #dc3545;
+        }
+        
+        .timeline-item.pending .timeline-content {
+            border-left-color: #ffc107;
+        }
+        
+        .timeline-date {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .timeline-remarks {
+            font-size: 0.9rem;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e9ecef;
+            background: rgba(0,0,0,0.02);
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        /* Stage progress indicator */
+        .stage-progress {
+            font-size: 0.65rem;
+            margin-top: 2px;
+        }
+        
+        .stage-progress .badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.3rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <!-- Brand/Logo -->
+            <a class="sidebar-brand" href="{{ url_for('main.approval_tracking') }}">
+                <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+                <span>Railway Signalling</span>
+            </a>
+       
+            <!-- User Info Section -->
+            <div class="sidebar-user-section">
+                {% if current_user.is_authenticated %}
+                <div class="user-info">
+                    <div class="user-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                        <span class="badge rounded-pill user-badge
+                            {% if current_user.role_name == '4' %}bg-danger
+                            {% elif current_user.role_name == '2' or current_user.role_name == '3' %}bg-warning text-dark
+                            {% else %}bg-primary{% endif %}">
+                            Role: {{ current_user.role_name }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+       
+            <!-- Navigation Buttons -->
+            <div class="sidebar-buttons">
+                <!-- Dashboard/Home Button - Only for creators (role 1) and admin (role 4) -->
+                {% if permissions.can_create_drawing or permissions.can_see_all %}
+                <a class="sidebar-btn" href="{{ url_for('main.approval_tracking') }}">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+           
+                <!-- Admin-specific buttons: New Station, New Drawing, Manage Users -->
+                {% if current_user.role_name == '4' %}
+                <!-- New Station Button -->
+                <a class="sidebar-btn" href="{{ url_for('main.new_project') }}">
+                    <i class="bi bi-plus-square"></i>
+                    <span>New Station</span>
+                </a>
+    
+                <!-- Manage Users Button -->
+                <a class="sidebar-btn" href="{{ url_for('main.admin_users') }}">
+                    <i class="bi bi-people"></i>
+                    <span>Manage Users</span>
+                </a>
+                <a class="sidebar-btn" href="{{ url_for('main.view_list') }}">
+                    <i class="bi bi-card-list"></i>
+                    <span>View List</span>
+                </a>
+                {% endif %}
+
+                {% if current_user.role_name in ['1', '4'] %}
+                <!-- New Drawing Button -->
+                <a class="sidebar-btn" href="{{ url_for('main.new_drawing_selection') }}">
+                    <i class="bi bi-file-earmark-plus"></i>
+                    <span>New Drawing</span>
+                </a>
+                {% endif %}
+           
+                <!-- Logout Button -->
+                {% if current_user.is_authenticated %}
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4"></i>
+                        <div>
+                            <strong>{% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong> {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    
+        <!-- Notification Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center notification-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bell me-2"></i> Notifications
+                    <small id="unreadCountText" class="ms-2 fw-normal" style="font-size: 0.85rem;"></small>
+                </h5>
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm position-relative pulse" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell"></i>
+                        <span id="notificationCount" class="notification-badge">0</span>
+                    </button>
+                    <div class="dropdown-menu notification-dropdown" aria-labelledby="notificationDropdown">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <h6 class="mb-0">All Notifications</h6>
+                            <div>
+                                <button class="btn btn-sm btn-outline-danger me-1" id="clearAllNotificationsBtn" title="Clear All">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary" id="dropdownMarkAllReadBtn">
+                                    <i class="bi bi-check-all"></i> Mark All Read
+                                </button>
+                            </div>
+                        </div>
+                        <div id="notificationList" class="py-2">
+                            <!-- All notifications will be loaded here via JavaScript -->
+                            <div class="notifications-empty">
+                                <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                                <p class="mb-0">No notifications</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Notifications</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" id="dismissAllBtn">
+                            <i class="bi bi-x-circle"></i> Dismiss All
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="markAllReadBtn">
+                            <i class="bi bi-check-all"></i> Mark All Read
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger ms-1" id="refreshNotificationsBtn" title="Refresh">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="recentNotificationsContainer" class="recent-notifications-container">
+                    <div id="recentNotificationsList">
+                        <!-- Will be populated by JS with all notifications -->
+                        <div class="text-muted text-center py-4">
+                            <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                            <p class="mb-0">No recent notifications</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <div class="container-fluid py-4 fade-in">
+       
+            <!-- Filters Card with Record Count -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-teal d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-filter-circle me-2"></i> Drawing Details Based On</h5>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-light text-dark me-2">{{ pagination.total_records }} records</span>
+                        {% if stats %}
+                        <small class="fs-6 fw-normal text-white">
+                            ({{ stats.approved }} approved, {{ stats.rejected }} rejected, {{ stats.pending }} pending, {{ stats.no_drawings }} no drawings)
+                        </small>
+                        {% endif %}
+                        {% if not permissions.can_see_all %}
+                        <small class="fs-6 fw-normal text-white ms-2">(Only showing your assigned projects)</small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('main.approval_tracking') }}" id="filterForm">
+                        <input type="hidden" name="page" value="1">
+                        <input type="hidden" name="rows_per_page" value="{{ pagination.rows_per_page }}">
+                        
+                        <div class="compact-filters">
+                            <!-- Station Filter -->
+                            <div class="filter-group">
+                                <label class="form-label fw-medium">Station</label>
+                                <select name="project_id" id="stationFilter" class="form-select">
+                                    <option value="all">All Stations</option>
+                                    {% for project in all_projects %}
+                                    <option value="{{ project.id }}" {% if current_filters.project_id == project.id|string %}selected{% endif %}>
+                                        {{ project.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                       
+                            <!-- Junction Filter (Always shows ALL junctions from ALL projects) -->
+                            <div class="filter-group junction-filter-col" id="junctionFilterCol">
+                                <label class="form-label fw-medium">Location Names</label>
+                                <select name="junction_id" id="junctionFilter" class="form-select">
+                                    <option value="all">All Locations</option>
+                                    <!-- Generate a flat list of ALL junctions from ALL projects -->
+                                    {% if all_projects %}
+                                        {% set all_junctions_list = [] %}
+                                        {% set seen_junction_keys = [] %}
+                                    
+                                        {% for project in all_projects %}
+                                            {% if project.junction_boxes %}
+                                                {% for jb in project.junction_boxes %}
+                                                    {% if jb.junction_name %}
+                                                        {% set junction_key = jb.junction_id ~ '|' ~ jb.junction_name %}
+                                                        {% if junction_key not in seen_junction_keys %}
+                                                            {% set _ = seen_junction_keys.append(junction_key) %}
+                                                            {% set _ = all_junctions_list.append({
+                                                                'id': jb.junction_id,
+                                                                'name': jb.junction_name,
+                                                                'project_id': project.id
+                                                            }) %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    
+                                        {% for junction in all_junctions_list %}
+                                            <option value="{{ junction.id }}|{{ junction.name }}"
+                                                    {% if current_filters.junction_id == (junction.id ~ '|' ~ junction.name) %}selected{% endif %}>
+                                                {{ junction.name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                       
+                            <!-- Approval Status Filter -->
+                            <div class="filter-group">
+                                <label class="form-label fw-medium">Approval Status</label>
+                                <select name="approval_status" class="form-select">
+                                    <option value="all" {% if current_filters.approval_status == 'all' %}selected{% endif %}>All Status</option>
+                                    <option value="approved" {% if current_filters.approval_status == 'approved' %}selected{% endif %}>Approved</option>
+                                    <option value="rejected" {% if current_filters.approval_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                    <option value="pending" {% if current_filters.approval_status == 'pending' %}selected{% endif %}>Pending</option>
+                                </select>
+                            </div>
+                       
+                            <!-- Show stations without drawings filter -->
+                            <div class="filter-group show-without-drawings-group">
+                                <label class="form-label fw-medium d-block">Show Stations</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" name="show_without_drawings" id="showWithoutDrawingsCheckbox"
+                                           {% if current_filters.show_without_drawings == 'on' %}checked{% endif %}
+                                           value="on">
+                                    <label class="form-check-label" for="showWithoutDrawingsCheckbox">
+                                        Show only stations without drawings
+                                    </label>
+                                </div>
+                            </div>
+                       
+                            <!-- Latest Version Only Checkbox -->
+                            <div class="filter-group">
+                                <label class="form-label fw-medium d-block">Show Filter</label>
+                                <div class="form-check form-switch mt-2">
+                                    <!-- Hidden input to ensure parameter is always sent -->
+                                    {% if current_filters.latest_only %}
+                                        <input type="hidden" name="latest_only" value="{{ current_filters.latest_only }}">
+                                    {% else %}
+                                        <!-- Default to true when page loads for the first time -->
+                                        <input type="hidden" name="latest_only" value="true">
+                                    {% endif %}
+                                    <input class="form-check-input" type="checkbox" name="latest_only" id="latestOnlyCheckbox"
+                                           {% if not current_filters.latest_only or current_filters.latest_only == 'true' %}checked{% endif %}
+                                           value="true"
+                                           onchange="this.previousElementSibling.value = this.checked ? 'true' : 'false'">
+                                    <label class="form-check-label" for="latestOnlyCheckbox">
+                                        Show only latest versions
+                                    </label>
+                                </div>
+                            </div>
+                       
+                            <!-- Filter and Clear Buttons -->
+                            <div class="filter-group filter-buttons">
+                                <div class="d-flex gap-2" style="margin-top: 18px;">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-search"></i> Filter
+                                    </button>
+                                    <a href="{{ url_for('main.approval_tracking') }}" class="btn btn-outline-secondary" onclick="clearFilters()">
+                                        <i class="bi bi-x-circle"></i> Clear
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+               
+                    <!-- Table Section -->
+                    <div class="mt-4">
+                        {% if pdfs %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0 compact-table" id="pdfTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th class="station-col">Station</th>
+                                        <th class="junction-col">Location Names</th>
+                                        <th class="file-col">PDF Details</th>
+                                        <th class="date-col">Created Date</th>
+                                        <th class="user-col">Created By</th>
+                                        <th class="remarks-col">Remarks</th>
+                                        <th class="level-col">Level 1</th>
+                                        <th class="level-col">Level 2</th>
+                                        <th class="level-col">Level 3</th>
+                                        <th class="overall-col">Overall</th>
+                                        <th class="actions-col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    {% for pdf in pdfs %}
+                                    {% set is_no_drawing = pdf.pdf_filename is none %}
+                                    <tr class="table-row {% if is_no_drawing %}no-drawing-row{% endif %}" data-index="{{ loop.index0 }}" data-has-drawing="{% if is_no_drawing %}false{% else %}true{% endif %}">
+                                        <!-- Station Column -->
+                                        <td class="station-col">
+                                            <strong>{{ pdf.project.name }}</strong><br>
+                                            <small class="text-muted">ID: {{ pdf.project.id }}</small><br>
+                                            {% if not is_no_drawing %}
+                                            <small class="text-muted">v{{ pdf.version }}</small>
+                                            {% endif %}
+                                            <!-- Show stage progress for all projects -->
+                                            {% if pdf.project.stage %}
+                                            <div class="stage-progress">
+                                                <span class="badge {% if pdf.project.stage < 9 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                                    Stage {{ pdf.project.stage }}/9
+                                                </span>
+                                                <small class="text-muted">
+                                                    {% if pdf.project.stage < 9 %}Draft in progress{% else %}Completed{% endif %}
+                                                </small>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Junction Names Column -->
+                                        <td class="junction-col">
+                                            {% if not is_no_drawing and pdf.parsed_junction_data %}
+                                                {% set unique_junctions = [] %}
+                                                {% set seen_junctions = [] %}
+                                           
+                                                <!-- Use stored junction data from PDF -->
+                                                {% for jb in pdf.parsed_junction_data %}
+                                                    {% if jb.junction_name %}
+                                                        {% set junction_key = jb.junction_id ~ '|' ~ jb.junction_name %}
+                                                        {% if junction_key not in seen_junctions %}
+                                                            {% set _ = seen_junctions.append(junction_key) %}
+                                                            {% set _ = unique_junctions.append({'id': jb.junction_id, 'name': jb.junction_name}) %}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                           
+                                                {% if unique_junctions %}
+                                                    <div class="junction-names-container">
+                                                        {% for junction in unique_junctions[:3] %}
+                                                            <span class="badge junction-badge bg-secondary mb-1"
+                                                                  title="ID: {{ junction.id }} - {{ junction.name }}">
+                                                                {{ junction.name|truncate(12) }}
+                                                            </span>
+                                                            {% if not loop.last %}<br>{% endif %}
+                                                        {% endfor %}
+                                                        {% if unique_junctions|length > 3 %}
+                                                            <small class="text-muted d-block mt-1">+{{ unique_junctions|length - 3 }} more</small>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">No junctions</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <!-- For projects without drawings or fallback -->
+                                                {% if pdf.project.junction_boxes %}
+                                                    {% set unique_junctions = [] %}
+                                                    {% set seen_junctions = [] %}
+                                               
+                                                    {% for jb in pdf.project.junction_boxes %}
+                                                        {% if jb.junction_name %}
+                                                            {% set junction_key = jb.junction_id ~ '|' ~ jb.junction_name %}
+                                                            {% if junction_key not in seen_junctions %}
+                                                                {% set _ = seen_junctions.append(junction_key) %}
+                                                                {% set _ = unique_junctions.append({'id': jb.junction_id, 'name': jb.junction_name}) %}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                               
+                                                    {% if unique_junctions %}
+                                                        <div class="junction-names-container">
+                                                            {% for junction in unique_junctions[:3] %}
+                                                                <span class="badge junction-badge bg-secondary mb-1"
+                                                                      title="ID: {{ junction.id }} - {{ junction.name }}">
+                                                                    {{ junction.name|truncate(12) }}
+                                                                </span>
+                                                                {% if not loop.last %}<br>{% endif %}
+                                                            {% endfor %}
+                                                            {% if unique_junctions|length > 3 %}
+                                                                <small class="text-muted d-block mt-1">+{{ unique_junctions|length - 3 }} more</small>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">No junctions</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- PDF Details Column -->
+                                        <td class="file-col">
+                                            {% if is_no_drawing %}
+                                                <div class="text-muted" title="No drawing available">
+                                                    <i class="bi bi-file-earmark-excel text-secondary me-1"></i>
+                                                    No drawing
+                                                </div>
+                                            {% else %}
+                                                <div class="pdf-link" title="{{ pdf.pdf_filename }}">
+                                                    <i class="bi bi-file-pdf text-danger me-1"></i>
+                                                    {{ pdf.pdf_filename|truncate(25) }}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Created Date Column -->
+                                        <td class="date-col">
+                                            {{ pdf.created_at.strftime('%d-%m-%Y') if pdf.created_at else '-' }}<br>
+                                            {% if pdf.created_at %}
+                                            <small class="text-muted">{{ pdf.created_at.strftime('%H:%M') }}</small>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Created By Column -->
+                                        <td class="user-col">
+                                            {% if is_no_drawing %}
+                                                <small>-</small>
+                                            {% else %}
+                                                <small>{{ pdf.creator.username if pdf.creator else '-' }}</small>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Remarks Column -->
+                                        <td class="remarks-col">
+                                            {% if is_no_drawing %}
+                                                <small>-</small>
+                                            {% else %}
+                                                <small>{{ pdf.remarks or '-'|truncate(20) }}</small>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Level 1 Column -->
+                                        <td class="level-col">
+                                            {% if is_no_drawing %}
+                                                <div class="status-with-date">
+                                                    <span class="badge approval-badge no-drawing-badge">N/A</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="status-with-date">
+                                                    <span class="badge approval-badge bg-{% if pdf.level1_status == 'approved' %}success{% elif pdf.level1_status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                                                        {{ pdf.level1_status|default('pending')|upper }}
+                                                    </span>
+                                                    {% if pdf.level1_approval_date %}
+                                                    <small class="approval-date">
+                                                        {{ pdf.level1_approval_date.strftime('%d-%m-%Y') }}
+                                                    </small>
+                                                    {% endif %}
+                                                    {% if pdf.level1_approver %}
+                                                    <small class="text-muted">
+                                                        {{ pdf.level1_approver.username }}
+                                                    </small>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Level 2 Column -->
+                                        <td class="level-col">
+                                            {% if is_no_drawing %}
+                                                <div class="status-with-date">
+                                                    <span class="badge approval-badge no-drawing-badge">N/A</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="status-with-date">
+                                                    {% if pdf.level1_status == 'rejected' %}
+                                                    <span class="badge approval-badge bg-secondary">PENDING</span>
+                                                    {% else %}
+                                                    <span class="badge approval-badge bg-{% if pdf.level2_status == 'approved' %}success{% elif pdf.level2_status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                                                        {{ pdf.level2_status|default('pending')|upper }}
+                                                    </span>
+                                                    {% if pdf.level2_approval_date %}
+                                                    <small class="approval-date">
+                                                        {{ pdf.level2_approval_date.strftime('%d-%m-%Y') }}
+                                                    </small>
+                                                    {% endif %}
+                                                    {% if pdf.level2_approver %}
+                                                    <small class="text-muted">
+                                                        {{ pdf.level2_approver.username }}
+                                                    </small>
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Level 3 Column -->
+                                        <td class="level-col">
+                                            {% if is_no_drawing %}
+                                                <div class="status-with-date">
+                                                    <span class="badge approval-badge no-drawing-badge">N/A</span>
+                                                </div>
+                                            {% else %}
+                                                <div class="status-with-date">
+                                                    {% if pdf.level2_status == 'rejected' or pdf.level1_status == 'rejected' %}
+                                                    <span class="badge approval-badge bg-secondary">PENDING</span>
+                                                    {% else %}
+                                                    <span class="badge approval-badge bg-{% if pdf.level3_status == 'approved' %}success{% elif pdf.level3_status == 'rejected' %}danger{% else %}secondary{% endif %}">
+                                                        {{ pdf.level3_status|default('pending')|upper }}
+                                                    </span>
+                                                    {% if pdf.level3_approval_date %}
+                                                    <small class="approval-date">
+                                                        {{ pdf.level3_approval_date.strftime('%d-%m-%Y') }}
+                                                    </small>
+                                                    {% endif %}
+                                                    {% if pdf.level3_approver %}
+                                                    <small class="text-muted">
+                                                        {{ pdf.level3_approver.username }}
+                                                    </small>
+                                                    {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Overall Status Column -->
+                                        <td class="overall-col">
+                                            {% if is_no_drawing %}
+                                                <span class="badge no-drawing-badge">NO DRAWING</span>
+                                            {% elif pdf.level3_status == 'approved' %}
+                                                <div class="d-flex align-items-center flex-wrap">
+                                                    <span class="badge bg-success me-1">APPROVED</span>
+                                                    {% if pdf.level1_status == 'approved' and pdf.level2_status == 'approved' and pdf.level3_status == 'approved' %}
+                                                    <button class="btn btn-sm checksum-btn btn-outline-secondary mt-1" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#checksumModal"
+                                                            onclick="showChecksum({{ pdf.id }})"
+                                                            title="View Checksum">
+                                                        <i class="bi bi-hash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                                </div>
+                                            {% elif pdf.level1_status == 'rejected' or pdf.level2_status == 'rejected' or pdf.level3_status == 'rejected' %}
+                                                <span class="badge bg-danger">REJECTED</span>
+                                            {% elif pdf.level2_status == 'approved' %}
+                                                <span class="badge bg-warning">PENDING L3</span>
+                                            {% elif pdf.level1_status == 'approved' %}
+                                                <span class="badge bg-info">PENDING L2</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">PENDING L1</span>
+                                            {% endif %}
+                                        </td>
+                                   
+                                        <!-- Actions Column -->
+                                        <td class="actions-col">
+                                            {% if is_no_drawing %}
+                                                <!-- For projects without drawings -->
+                                                {% if current_user.role_name in ['1', '4'] %}
+                                                    <!-- ALWAYS show Continue Draft button for all stations without drawings -->
+                                                    <a class="btn btn-sm continue-draft-btn" 
+                                                       href="{{ url_for('main.continue_draft', project_id=pdf.project.id) }}" 
+                                                       title="{% if pdf.project.stage and pdf.project.stage < 9 %}Continue Draft from Stage {{ pdf.project.stage }}{% else %}Start New Drawing for {{ pdf.project.name }}{% endif %}">
+                                                        <i class="bi bi-pencil"></i> Continue Draft
+                                                    </a>
+                                                {% else %}
+                                                <span class="text-muted">-</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <!-- For projects with drawings -->
+                                                <div class="action-buttons">
+                                                    <!-- View, Download, Continue Buttons -->
+                                                    <a class="btn btn-sm btn-outline-info" href="{{ url_for('main.inlinepdf', filename=pdf.pdf_filename) }}" target="_blank" title="View PDF">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    <a class="btn btn-sm btn-outline-success" href="{{ url_for('main.downloadpdf', filename=pdf.pdf_filename) }}" title="Download">
+                                                        <i class="bi bi-download"></i>
+                                                    </a>
+                                                    {% if current_user.role_name == '4' %}
+                                                    <a class="btn btn-edit-sm edit-project-link" 
+                                                       href="{{ url_for('main.edit_project', project_id=pdf.project.id) }}" 
+                                                       target="_blank"
+                                                       title="Edit Station and Location Names">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                    
+                                                    <!-- Approval History Button -->
+                                                    <button class="btn btn-sm btn-outline-secondary"
+                                                            onclick="showApprovalHistory({{ pdf.id }}, '{{ pdf.pdf_filename }}', '{{ pdf.project.name }}', {{ pdf.version }}, '{{ pdf.created_at.strftime('%Y-%m-%d %H:%M:%S') if pdf.created_at else '' }}')"
+                                                            title="View Approval History">
+                                                        <i class="bi bi-clock-history"></i>
+                                                    </button>
+                                                                                                        
+                                                    <!-- Continue Draft button for ALL projects (with drawings) -->
+                                                    {% if current_user.role_name in ['1', '4'] %}
+                                                    <a class="btn btn-sm continue-draft-btn mt-1" 
+                                                       href="{{ url_for('main.continue_draft', project_id=pdf.project.id) }}" 
+                                                       title="{% if pdf.project.stage and pdf.project.stage < 9 %}Continue Draft from Stage {{ pdf.project.stage }}{% else %}Create New Drawing for {{ pdf.project.name }}{% endif %}">
+                                                        <i class="bi bi-pencil"></i> Continue Draft
+                                                    </a>
+                                                    {% endif %}
+                                                    
+                                                    <!-- Create Drawing button for stations with existing drawings -->
+                                                    {% if current_user.role_name in ['1', '4'] %}
+                                                    <a class="btn btn-sm btn-outline-secondary create-drawing-btn mt-1" 
+                                                       href="{{ url_for('main.new_drawing_selection', project_id=pdf.project.id) }}" 
+                                                       title="Create New Drawing for this Project">
+                                                        <i class="bi bi-plus-circle"></i> 
+                                                    </a>
+                                                    {% endif %}
+                                                    
+                                                    
+                                                    <!-- DELETE BUTTON - Only for admin users (role 4) -->
+                                                    {% if current_user.role_name == '4' %}
+                                                    <button class="btn btn-sm btn-outline-danger delete-project-btn mt-1"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#deleteProjectModal"
+                                                            onclick="setDeleteProjectData({{ pdf.project.id }}, '{{ pdf.project.name }}')"
+                                                            title="Delete Project">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                    {% endif %}
+                                               
+                                                    <!-- Level 1 Approval Buttons - ROLE BASED -->
+                                                    {% if permissions.can_approve_level1 and pdf.level1_status == 'pending' %}
+                                                    <div class="approval-action-buttons mt-1">
+                                                        <button class="btn btn-approve-sm"
+                                                                onclick="showApproveModal({{ pdf.id }}, '1', '{{ pdf.pdf_filename }}')"
+                                                                title="Approve (Level 1)">
+                                                            <i class="bi bi-check"></i>
+                                                        </button>
+                                                        <button class="btn btn-reject-sm"
+                                                                onclick="showRejectModal({{ pdf.id }}, '1', '{{ pdf.pdf_filename }}')"
+                                                                title="Reject (Level 1)">
+                                                            <i class="bi bi-x"></i>
+                                                        </button>
+                                                    </div>
+                                                    {% endif %}
+                                               
+                                                    <!-- Level 2 Approval Buttons - ROLE BASED -->
+                                                    {% if permissions.can_approve_level2 and pdf.level1_status == 'approved' and pdf.level2_status == 'pending' %}
+                                                    <div class="approval-action-buttons mt-1">
+                                                        <button class="btn btn-approve-sm"
+                                                                onclick="showApproveModal({{ pdf.id }}, '2', '{{ pdf.pdf_filename }}')"
+                                                                title="Approve (Level 2)">
+                                                            <i class="bi bi-check"></i>
+                                                        </button>
+                                                        <button class="btn btn-reject-sm"
+                                                                onclick="showRejectModal({{ pdf.id }}, '2', '{{ pdf.pdf_filename }}')"
+                                                                title="Reject (Level 2)">
+                                                            <i class="bi bi-x"></i>
+                                                        </button>
+                                                    </div>
+                                                    {% endif %}
+                                               
+                                                    <!-- Level 3 Approval Buttons - ROLE BASED -->
+                                                    {% if permissions.can_approve_level3 and pdf.level1_status == 'approved' and pdf.level2_status == 'approved' and pdf.level3_status == 'pending' %}
+                                                    <div class="approval-action-buttons mt-1">
+                                                        <button class="btn btn-approve-sm"
+                                                                onclick="showApproveModal({{ pdf.id }}, '3', '{{ pdf.pdf_filename }}')"
+                                                                title="Approve (Level 3)">
+                                                            <i class="bi bi-check"></i>
+                                                        </button>
+                                                        <button class="btn btn-reject-sm"
+                                                                onclick="showRejectModal({{ pdf.id }}, '3', '{{ pdf.pdf_filename }}')"
+                                                                title="Reject (Level 3)">
+                                                            <i class="bi bi-x"></i>
+                                                        </button>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination Controls -->
+                        {% if pagination.total_records > 0 %}
+                        <div class="pagination-container">
+                            <div class="pagination-info">
+                                {% if pagination.total_records > 0 %}
+                                    Showing {{ pagination.start_idx }} to {{ pagination.end_idx }} of {{ pagination.total_records }} entries
+                                {% else %}
+                                    Showing 0 entries
+                                {% endif %}
+                            </div>
+                            <div class="pagination-controls">
+                                <span class="me-2">Rows per page:</span>
+                                <select class="pagination-select" id="rowsPerPage" onchange="changeRowsPerPage(this.value)">
+                                    <option value="10" {% if pagination.rows_per_page == 10 %}selected{% endif %}>10</option>
+                                    <option value="25" {% if pagination.rows_per_page == 25 %}selected{% endif %}>25</option>
+                                    <option value="50" {% if pagination.rows_per_page == 50 %}selected{% endif %}>50</option>
+                                    <option value="100" {% if pagination.rows_per_page == 100 %}selected{% endif %}>100</option>
+                                </select>
+                                <nav aria-label="Table pagination">
+                                    <ul class="pagination mb-0">
+                                        <!-- Previous Button -->
+                                        <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                                            <a class="page-link" href="{% if pagination.page > 1 %}{{ build_pagination_url(page=pagination.page-1) }}{% else %}#{% endif %}" 
+                                               aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                        
+                                        <!-- Page Numbers -->
+                                        {% for num in pagination.pagination_numbers %}
+                                            {% if num == '...' %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item {% if num == pagination.page %}active{% endif %}">
+                                                    <a class="page-link" href="{{ build_pagination_url(page=num) }}">{{ num }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        <!-- Next Button -->
+                                        <li class="page-item {% if pagination.page == pagination.total_pages %}disabled{% endif %}">
+                                            <a class="page-link" href="{% if pagination.page < pagination.total_pages %}{{ build_pagination_url(page=pagination.page+1) }}{% else %}#{% endif %}" 
+                                               aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+                            <p class="mt-3 text-muted">No PDFs found matching the selected filters.</p>
+                            {% if not permissions.can_see_all and not current_user.projects %}
+                            <div class="alert alert-warning w-75 mx-auto">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                You don't have access to any projects. Please contact an administrator.
+                            </div>
+                            {% endif %}
+                            <a href="{{ url_for('main.approval_tracking') }}" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise"></i> Reset Filters
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODALS -->
+    
+    <!-- Beautiful Confirmation Modal for Continue from Version -->
+    <div class="modal fade" id="continueVersionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-arrow-clockwise"></i> Continue from PDF Version
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="lead">Load data from this PDF version and continue drawing?</p>
+                    <div class="alert alert-warning">
+                        <strong>This will replace current project data.</strong><br>
+                        All existing drawings, terminals, circuits, etc., will be overwritten with the data from the selected PDF version.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmContinueBtn">
+                        <span id="continueBtnText">Continue Drawing</span>
+                        <span id="continueSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rejection Reason Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="rejectModalTitle">
+                        <i class="bi bi-x-circle"></i> Reject PDF
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="rejectForm" method="POST">
+                    <div class="modal-body">
+                        <p>Are you sure you want to reject this PDF?</p>
+                        <div class="alert alert-warning">
+                            <strong id="rejectFilename"></strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label">Reason for rejection (optional):</label>
+                            <textarea class="form-control" id="rejectionReason" name="rejection_reason" rows="3" placeholder="Please provide reason for rejection..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger" id="confirmRejectBtn">
+                            <span id="rejectBtnText">Confirm Rejection</span>
+                            <span id="rejectSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Approval Form Modal -->
+    <div class="modal fade" id="approvalFormModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="approvalModalTitle">
+                        <i class="bi bi-check-circle me-2"></i> Approve PDF
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="approvalForm" method="POST">
+                    <div class="modal-body">
+                        <p>Are you sure you want to approve this PDF?</p>
+                        <div class="alert alert-info">
+                            <strong id="approvalFilename"></strong>
+                        </div>
+                        <div class="mb-3">
+                            <label for="approvalRemarks" class="form-label">Approval remarks (optional):</label>
+                            <textarea class="form-control" id="approvalRemarks" name="approval_remarks" 
+                                    rows="3" placeholder="Add any remarks about this approval..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" id="confirmApproveBtn">
+                            <span id="approveBtnText">Confirm Approval</span>
+                            <span id="approveSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW: Approval History Modal -->
+    <div class="modal fade" id="approvalHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clock-history me-2"></i> Approval History
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6 id="historyPdfName" class="text-muted mb-2"></h6>
+                        <div class="d-flex align-items-center">
+                            <div class="me-4">
+                                <small class="text-muted">Project:</small>
+                                <h6 id="historyProjectName" class="mb-0"></h6>
+                            </div>
+                            <div class="me-4">
+                                <small class="text-muted">Version:</small>
+                                <h6 id="historyVersion" class="mb-0"></h6>
+                            </div>
+                            <div>
+                                <small class="text-muted">Created:</small>
+                                <h6 id="historyCreatedAt" class="mb-0"></h6>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title">Level 1</h6>
+                                    <span id="historyLevel1Status" class="badge mb-2"></span>
+                                    <p id="historyLevel1Approver" class="small mb-1"></p>
+                                    <p id="historyLevel1Date" class="small text-muted mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title">Level 2</h6>
+                                    <span id="historyLevel2Status" class="badge mb-2"></span>
+                                    <p id="historyLevel2Approver" class="small mb-1"></p>
+                                    <p id="historyLevel2Date" class="small text-muted mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title">Level 3</h6>
+                                    <span id="historyLevel3Status" class="badge mb-2"></span>
+                                    <p id="historyLevel3Approver" class="small mb-1"></p>
+                                    <p id="historyLevel3Date" class="small text-muted mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-list-check me-2"></i> Approval Timeline
+                    </h6>
+                    <div id="approvalTimeline" class="timeline">
+                        <!-- Timeline items will be loaded here -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW: Checksum Modal -->
+    <div class="modal fade" id="checksumModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-hash me-2"></i>PDF Checksum (MD5)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">PDF File:</label>
+                        <p id="checksumFilename" class="text-muted mb-1">-</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Checksum (MD5):</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control checksum-value" id="checksumValue" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyChecksum()">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This checksum is available only for fully approved drawings (Level 1, 2 & 3 approved).
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW: Delete Project Confirmation Modal -->
+    <div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Delete Project
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>WARNING: This action cannot be undone!</strong>
+                    </div>
+                    <p>Are you sure you want to delete the project:</p>
+                    <div class="alert alert-warning">
+                        <h6 id="deleteProjectName" class="mb-0"></h6>
+                        <small id="deleteProjectId" class="text-muted"></small>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>This will delete:</strong>
+                        <ul class="mb-0 small">
+                            <li>All PDF versions and drawings</li>
+                            <li>All junction boxes and cables</li>
+                            <li>All terminals and related data</li>
+                            <li>All notifications for this project</li>
+                            <li>Project record from database</li>
+                        </ul>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDeleteCheckbox">
+                        <label class="form-check-label text-danger fw-bold" for="confirmDeleteCheckbox">
+                            Yes, I understand this will permanently delete all project data
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled>
+                        <i class="bi bi-trash"></i> Delete Project
+                        <span id="deleteSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Store junction data for all projects
+        const junctionDataByProject = {};
+        
+        // Build the junction data object - WITH UNIQUE KEYS
+        {% for project in all_projects %}
+            {% if project.junction_boxes %}
+                junctionDataByProject[{{ project.id }}] = [
+                    {% for jb in project.junction_boxes %}
+                        {% if jb.junction_name %}
+                            {
+                                id: "{{ jb.junction_id }}",
+                                name: "{{ jb.junction_name }}",
+                                uniqueKey: "{{ jb.junction_id }}|{{ jb.junction_name }}"
+                            }{% if not loop.last %},{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                ];
+            {% else %}
+                junctionDataByProject[{{ project.id }}] = [];
+            {% endif %}
+        {% endfor %}
+
+        // Create a mapping of unique_key to project_id for quick lookup
+        const junctionToProjectMap = {};
+        {% for project in all_projects %}
+            {% if project.junction_boxes %}
+                {% for jb in project.junction_boxes %}
+                    {% if jb.junction_name %}
+                        junctionToProjectMap["{{ jb.junction_id }}|{{ jb.junction_name }}"] = "{{ project.id }}";
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+
+        // DOM elements
+        const stationFilter = document.getElementById('stationFilter');
+        const junctionFilter = document.getElementById('junctionFilter');
+        const filterForm = document.getElementById('filterForm');
+        const latestOnlyCheckbox = document.getElementById('latestOnlyCheckbox');
+        const showWithoutDrawingsCheckbox = document.getElementById('showWithoutDrawingsCheckbox');
+        
+        // Approval variables
+        let pendingPdfId = null;
+        let pendingLevel = null;
+        let pendingRejectPdfId = null;
+        let pendingRejectLevel = null;
+        
+        // Delete Project variables
+        let pendingDeleteProjectId = null;
+        let pendingDeleteProjectName = null;
+        
+        // Function to build pagination URL with all current filters
+        function buildPaginationUrl(page, rowsPerPage) {
+            const url = new URL(window.location);
+            url.searchParams.set('page', page);
+            if (rowsPerPage) {
+                url.searchParams.set('rows_per_page', rowsPerPage);
+            }
+            return url.toString();
+        }
+
+        // Function to change rows per page
+        function changeRowsPerPage(rowsPerPage) {
+            const url = buildPaginationUrl(1, rowsPerPage);
+            window.location.href = url;
+        }
+
+        // Function to update junction filter - Filters based on selected station
+        function updateJunctionFilter(selectedStationId) {
+            const allJunctionsOption = junctionFilter.querySelector('option[value="all"]');
+            junctionFilter.innerHTML = '';
+            junctionFilter.appendChild(allJunctionsOption);
+       
+            // Show junctions based on selected station
+            let allJunctions = [];
+        
+            if (selectedStationId === 'all') {
+                // Show ALL junctions from ALL projects
+                for (const projectId in junctionDataByProject) {
+                    const junctions = junctionDataByProject[projectId] || [];
+                    allJunctions = allJunctions.concat(junctions);
+                }
+            } else {
+                // Show only junctions from the selected station
+                const junctions = junctionDataByProject[selectedStationId] || [];
+                allJunctions = junctions;
+            }
+        
+            // Remove duplicates by unique key (id|name)
+            const uniqueJunctions = [];
+            const seenKeys = new Set();
+        
+            allJunctions.forEach(junction => {
+                if (!junction || !junction.id || !junction.name || !junction.uniqueKey) {
+                    return;
+                }
+            
+                if (!seenKeys.has(junction.uniqueKey)) {
+                    seenKeys.add(junction.uniqueKey);
+                    uniqueJunctions.push(junction);
+                }
+            });
+        
+            // Sort by name
+            uniqueJunctions.sort((a, b) => a.name.localeCompare(b.name));
+       
+            // Populate junction filter
+            if (uniqueJunctions.length > 0) {
+                uniqueJunctions.forEach(junction => {
+                    const option = document.createElement('option');
+                    option.value = junction.uniqueKey; // Use unique key
+                    option.textContent = `${junction.name}`;
+               
+                    // Check if this junction was previously selected (full unique match)
+                    const currentJunctionId = "{{ current_filters.junction_id|default('') }}";
+                    if (currentJunctionId && currentJunctionId === junction.uniqueKey) {
+                        option.selected = true;
+                    }
+               
+                    junctionFilter.appendChild(option);
+                });
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No junctions available';
+                option.disabled = true;
+                junctionFilter.appendChild(option);
+            }
+        }
+
+        // Function to handle when junction is selected
+        function handleJunctionSelection() {
+            // No auto-selection of station when junction is selected
+        }
+
+        // Function to handle when station is changed
+        function handleStationChange() {
+            const selectedStationId = stationFilter.value;
+            // Update the junction filter to show only junctions from the selected station
+            updateJunctionFilter(selectedStationId);
+        }
+     
+        // ENHANCED Notification System
+        let notificationCheckInterval;
+        let isPollingEnabled = true;
+        
+        function loadNotifications() {
+            if (!isPollingEnabled) return;
+          
+            fetch('/notifications')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateNotificationUI(data);
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    // Show empty state on error
+                    updateNotificationUI({ all_notifications: [], recent_notifications: [] });
+                });
+        }
+        
+        function updateNotificationUI(data) {
+            const notificationList = document.getElementById('notificationList');
+            const notificationCount = document.getElementById('notificationCount');
+            const recentList = document.getElementById('recentNotificationsList');
+            const unreadCountText = document.getElementById('unreadCountText');
+
+            // Separate all and recent notifications
+            const allNotifications = data.all_notifications || [];
+            const recentNotifications = data.recent_notifications || [];
+
+            if (!allNotifications || allNotifications.length === 0) {
+                // Show empty state for dropdown (All Notifications)
+                notificationList.innerHTML = `
+                    <div class="notifications-empty">
+                        <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                        <p class="mb-0">No notifications</p>
+                    </div>
+                `;
+                
+                // Show empty state for recent
+                recentList.innerHTML = `
+                    <div class="text-muted text-center py-4">
+                        <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                        <p class="mb-0">No recent notifications</p>
+                    </div>
+                `;
+                notificationCount.textContent = '0';
+                notificationCount.style.display = 'none';
+                unreadCountText.textContent = '';
+                return;
+            }
+
+            // Filter unread notifications from ALL notifications
+            const unreadNotifications = allNotifications.filter(n => !n.is_read);
+            const unreadCount = unreadNotifications.length;
+
+            // Update badge count and text
+            notificationCount.textContent = unreadCount;
+            notificationCount.style.display = unreadCount > 0 ? 'block' : 'none';
+
+            // Update header text
+            if (unreadCount > 0) {
+                unreadCountText.textContent = `(${unreadCount} unread)`;
+                unreadCountText.style.color = '#ffcc00';
+            } else {
+                unreadCountText.textContent = '(all read)';
+                unreadCountText.style.color = '#28a745';
+            }
+
+            // Add pulse animation to bell if there are unread notifications
+            const bellButton = document.querySelector('#notificationDropdown');
+            if (unreadCount > 0) {
+                bellButton.classList.add('pulse');
+            } else {
+                bellButton.classList.remove('pulse');
+            }
+
+            // Update dropdown notification list (ALL notifications)
+            let dropdownHtml = '';
+            allNotifications.forEach(notification => {
+                const statusClass = notification.status === 'approved' ? 'success' :
+                                 notification.status === 'rejected' ? 'danger' :
+                                 notification.status === 'pending' ? 'warning' : 'secondary';
+
+                const levelBadge = notification.level === 'level1' ? 'bg-info' :
+                                 notification.level === 'level2' ? 'bg-warning' :
+                                 notification.level === 'level3' ? 'bg-danger' : 'bg-secondary';
+
+                dropdownHtml += `
+                    <div class="notification-item ${!notification.is_read ? 'unread' : 'read'}" data-id="${notification.id}" onclick="viewNotification(${notification.id})">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="badge ${levelBadge} me-2">${notification.level.toUpperCase()}</span>
+                                    <span class="badge bg-${statusClass}">${notification.status.toUpperCase()}</span>
+                                </div>
+                                <div class="mb-1">
+                                    <strong class="${notification.is_read ? 'notification-title' : 'text-dark'}">${notification.project_name}</strong>
+                                </div>
+                                <div class="small ${notification.is_read ? 'notification-message' : 'text-muted'} mb-2">
+                                    ${notification.message}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="time">
+                                        <i class="bi bi-clock"></i> ${notification.created_at}
+                                    </small>
+                                    <div class="actions">
+                                        ${!notification.is_read ? `
+                                        <button class="btn btn-sm mark-read-btn" onclick="markNotificationRead(${notification.id}, event)" title="Mark as read">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            notificationList.innerHTML = dropdownHtml;
+
+            // Update recent notifications list (only non-dismissed)
+            let recentHtml = '';
+            if (recentNotifications.length > 0) {
+                recentNotifications.forEach(notification => {
+                    const statusClass = notification.status === 'approved' ? 'success' :
+                                     notification.status === 'rejected' ? 'danger' :
+                                     notification.status === 'pending' ? 'warning' : 'secondary';
+
+                    const levelBadge = notification.level === 'level1' ? 'bg-info' :
+                                     notification.level === 'level2' ? 'bg-warning' :
+                                     notification.level === 'level3' ? 'bg-danger' : 'bg-secondary';
+
+                    recentHtml += `
+                        <div class="recent-notification-item ${!notification.is_read ? 'unread' : 'read'}" data-id="${notification.id}" onclick="viewNotification(${notification.id})">
+                            <div class="d-flex align-items-start w-100">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge ${levelBadge} me-2">${notification.level.toUpperCase()}</span>
+                                        <span class="badge bg-${statusClass}">${notification.status.toUpperCase()}</span>
+                                    </div>
+                                    <div class="mb-1">
+                                        <strong class="${notification.is_read ? 'notification-title' : 'text-dark'}">${notification.project_name}</strong>
+                                    </div>
+                                    <div class="small ${notification.is_read ? 'notification-message' : 'text-muted'} mb-1">
+                                        ${notification.message}
+                                    </div>
+                                    <small class="time">
+                                        <i class="bi bi-clock me-1"></i>${notification.created_at}
+                                    </small>
+                                </div>
+                                <button class="btn-close btn-close-sm ms-2" onclick="dismissNotification(event, ${notification.id})" title="Dismiss notification" aria-label="Dismiss"></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                recentHtml = `
+                    <div class="text-muted text-center py-4">
+                        <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                        <p class="mb-0">No recent notifications</p>
+                    </div>
+                `;
+            }
+
+            recentList.innerHTML = recentHtml;
+        }
+        
+        function viewNotification(notificationId) {
+            // Navigate to the relevant page or show details
+            // For now, just mark as read when clicked
+            markNotificationRead(notificationId);
+        }
+        
+        function markNotificationRead(notificationId, event = null) {
+            if (event) {
+                event.stopPropagation();
+            }
+          
+            fetch(`/mark_notification_read/${notificationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the specific notification in the UI without reloading
+                    const notificationItem = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                    const recentItem = document.querySelector(`.recent-notification-item[data-id="${notificationId}"]`);
+                  
+                    if (notificationItem) {
+                        notificationItem.classList.remove('unread');
+                        notificationItem.classList.add('read');
+                        notificationItem.removeAttribute('onclick');
+                        notificationItem.style.cursor = 'default';
+                      
+                        // Update text colors
+                        const title = notificationItem.querySelector('strong');
+                        if (title) {
+                            title.classList.remove('text-dark');
+                            title.classList.add('notification-title');
+                        }
+                      
+                        const message = notificationItem.querySelector('.small');
+                        if (message) {
+                            message.classList.remove('text-muted');
+                            message.classList.add('notification-message');
+                        }
+                      
+                        // Hide the mark as read button
+                        const actionBtn = notificationItem.querySelector('.actions');
+                        if (actionBtn) actionBtn.innerHTML = '';
+                      
+                        // Update time styling
+                        const time = notificationItem.querySelector('.time');
+                        if (time) {
+                            time.style.color = '#6c757d';
+                            time.style.fontWeight = '400';
+                            time.style.background = 'none';
+                            time.style.padding = '0';
+                        }
+                    }
+                  
+                    if (recentItem) {
+                        recentItem.classList.remove('unread');
+                        recentItem.classList.add('read');
+                        recentItem.removeAttribute('onclick');
+                        recentItem.style.cursor = 'default';
+                      
+                        const title = recentItem.querySelector('strong');
+                        if (title) {
+                            title.classList.remove('text-dark');
+                            title.classList.add('notification-title');
+                        }
+                      
+                        const message = recentItem.querySelector('.small');
+                        if (message) {
+                            message.classList.remove('text-muted');
+                            message.classList.add('notification-message');
+                        }
+                      
+                        // Update time styling
+                        const time = recentItem.querySelector('.time');
+                        if (time) {
+                            time.style.color = '#6c757d';
+                            time.style.fontWeight = '400';
+                        }
+                    }
+                  
+                    // Update the notification count
+                    const notificationCount = document.getElementById('notificationCount');
+                    let currentCount = parseInt(notificationCount.textContent) || 0;
+                    if (currentCount > 0) {
+                        currentCount--;
+                        notificationCount.textContent = currentCount;
+                        if (currentCount === 0) {
+                            notificationCount.style.display = 'none';
+                            document.querySelector('#notificationDropdown').classList.remove('pulse');
+                        }
+                    }
+                  
+                    // Update header text
+                    const unreadCountText = document.getElementById('unreadCountText');
+                    const newCount = currentCount;
+                    if (newCount > 0) {
+                        unreadCountText.textContent = `(${newCount} unread)`;
+                        unreadCountText.style.color = '#ffcc00';
+                    } else {
+                        unreadCountText.textContent = '(all read)';
+                        unreadCountText.style.color = '#28a745';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+                alert('Failed to mark notification as read. Please try again.');
+            });
+        }
+        
+        function dismissNotification(event, notificationId) {
+            event.stopPropagation();
+            
+            fetch(`/dismiss_notification/${notificationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the notification from recent list
+                    const item = event.target.closest('.recent-notification-item');
+                    if (item) {
+                        item.remove();
+                        // Check if recent list is now empty
+                        const recentList = document.getElementById('recentNotificationsList');
+                        const remainingItems = recentList.querySelectorAll('.recent-notification-item');
+                        if (remainingItems.length === 0) {
+                            recentList.innerHTML = `
+                                <div class="text-muted text-center py-4">
+                                    <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                                    <p class="mb-0">No recent notifications</p>
+                                </div>
+                            `;
+                        }
+                    }
+                } else {
+                    alert('Failed to dismiss notification');
+                }
+            })
+            .catch(error => {
+                console.error('Error dismissing notification:', error);
+                alert('Error dismissing notification');
+            });
+        }
+        
+        function markAllNotificationsRead() {
+            // First, update the UI immediately for better UX
+            const notificationItems = document.querySelectorAll('.notification-item.unread');
+            const recentItems = document.querySelectorAll('.recent-notification-item.unread');
+          
+            // Update all unread notifications to read style
+            notificationItems.forEach(item => {
+                item.classList.remove('unread');
+                item.classList.add('read');
+                item.removeAttribute('onclick');
+                item.style.cursor = 'default';
+              
+                // Update text colors
+                const title = item.querySelector('strong');
+                if (title) {
+                    title.classList.remove('text-dark');
+                    title.classList.add('notification-title');
+                }
+              
+                const message = item.querySelector('.small');
+                if (message) {
+                    message.classList.remove('text-muted');
+                    message.classList.add('notification-message');
+                }
+              
+                // Hide the mark as read button
+                const actionBtn = item.querySelector('.actions');
+                if (actionBtn) actionBtn.innerHTML = '';
+              
+                // Update time styling
+                const time = item.querySelector('.time');
+                if (time) {
+                    time.style.color = '#6c757d';
+                    time.style.fontWeight = '400';
+                    time.style.background = 'none';
+                    time.style.padding = '0';
+                }
+            });
+          
+            recentItems.forEach(item => {
+                item.classList.remove('unread');
+                item.classList.add('read');
+                item.removeAttribute('onclick');
+                item.style.cursor = 'default';
+              
+                const title = item.querySelector('strong');
+                if (title) {
+                    title.classList.remove('text-dark');
+                    title.classList.add('notification-title');
+                }
+              
+                const message = item.querySelector('.small');
+                if (message) {
+                    message.classList.remove('text-muted');
+                    message.classList.add('notification-message');
+                }
+              
+                // Update time styling
+                const time = item.querySelector('.time');
+                if (time) {
+                    time.style.color = '#6c757d';
+                    time.style.fontWeight = '400';
+                }
+            });
+          
+            // Update the notification count
+            const notificationCount = document.getElementById('notificationCount');
+            notificationCount.textContent = '0';
+            notificationCount.style.display = 'none';
+          
+            // Remove pulse animation
+            document.querySelector('#notificationDropdown').classList.remove('pulse');
+          
+            // Update header text
+            const unreadCountText = document.getElementById('unreadCountText');
+            unreadCountText.textContent = '(all read)';
+            unreadCountText.style.color = '#28a745';
+          
+            // Then send the request to the server
+            fetch('/mark_all_notifications_read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('All notifications marked as read');
+                }
+            })
+            .catch(error => {
+                console.error('Error marking all notifications as read:', error);
+                // On error, reload notifications to sync with server
+                loadNotifications();
+            });
+        }
+        
+        function clearAllNotifications() {
+            if (confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+                fetch('/clear_all_notifications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update UI
+                        const notificationList = document.getElementById('notificationList');
+                        const recentList = document.getElementById('recentNotificationsList');
+                        const notificationCount = document.getElementById('notificationCount');
+                        const unreadCountText = document.getElementById('unreadCountText');
+                      
+                        notificationList.innerHTML = `
+                            <div class="notifications-empty">
+                                <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                                <p class="mb-0">No notifications</p>
+                            </div>
+                        `;
+                      
+                        recentList.innerHTML = `
+                            <div class="text-muted text-center py-4">
+                                <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                                <p class="mb-0">No recent notifications</p>
+                            </div>
+                        `;
+                      
+                        notificationCount.textContent = '0';
+                        notificationCount.style.display = 'none';
+                        unreadCountText.textContent = '';
+                        document.querySelector('#notificationDropdown').classList.remove('pulse');
+                      
+                        alert('All notifications have been cleared.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error clearing notifications:', error);
+                    alert('Failed to clear notifications. Please try again.');
+                });
+            }
+        }
+     
+        // Function to clear filters - also resets the version filter to default (checked)
+        function clearFilters() {
+            // Reset form elements
+            stationFilter.value = 'all';
+            junctionFilter.value = 'all';
+            document.querySelector('select[name="approval_status"]').value = 'all';
+           
+            // Reset the latest version checkbox to checked (default)
+            const latestOnlyCheckbox = document.getElementById('latestOnlyCheckbox');
+            const hiddenInput = latestOnlyCheckbox.previousElementSibling;
+           
+            latestOnlyCheckbox.checked = true;
+            hiddenInput.value = 'true';
+           
+            // Reset the show without drawings checkbox to unchecked (default - show only stations with drawings)
+            const showWithoutDrawingsCheckbox = document.getElementById('showWithoutDrawingsCheckbox');
+            showWithoutDrawingsCheckbox.checked = false;
+           
+            // Submit the form to load data with default filters
+            filterForm.submit();
+        }
+        
+        // Approval History functionality
+        function showApprovalHistory(pdfId, pdfFilename, projectName, version, createdAt) {
+            // Set modal header info
+            document.getElementById('historyPdfName').textContent = pdfFilename;
+            document.getElementById('historyProjectName').textContent = projectName;
+            document.getElementById('historyVersion').textContent = `v${version}`;
+            document.getElementById('historyCreatedAt').textContent = createdAt;
+            
+            // Load approval history
+            loadApprovalHistory(pdfId);
+            
+            // Show modal
+            const historyModal = new bootstrap.Modal(document.getElementById('approvalHistoryModal'));
+            historyModal.show();
+        }
+        
+        function loadApprovalHistory(pdfId) {
+            const timeline = document.getElementById('approvalTimeline');
+            timeline.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            
+            fetch(`/get_approval_history/${pdfId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update current status
+                        updateCurrentStatus(data.current_status);
+                        
+                        // Build timeline
+                        buildTimeline(data.approval_history);
+                    } else {
+                        timeline.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Failed to load approval history
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading approval history:', error);
+                    timeline.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error loading approval history
+                        </div>
+                    `;
+                });
+        }
+        
+        function updateCurrentStatus(status) {
+            // Update Level 1 status
+            const level1Status = document.getElementById('historyLevel1Status');
+            const level1Approver = document.getElementById('historyLevel1Approver');
+            const level1Date = document.getElementById('historyLevel1Date');
+            
+            level1Status.textContent = status.level1.status.toUpperCase();
+            level1Status.className = `badge bg-${status.level1.status === 'approved' ? 'success' : 
+                                    status.level1.status === 'rejected' ? 'danger' : 'secondary'}`;
+            level1Approver.textContent = status.level1.approver || 'Pending';
+            level1Date.textContent = status.level1.date || '-';
+            
+            // Update Level 2 status
+            const level2Status = document.getElementById('historyLevel2Status');
+            const level2Approver = document.getElementById('historyLevel2Approver');
+            const level2Date = document.getElementById('historyLevel2Date');
+            
+            level2Status.textContent = status.level2.status.toUpperCase();
+            level2Status.className = `badge bg-${status.level2.status === 'approved' ? 'success' : 
+                                    status.level2.status === 'rejected' ? 'danger' : 'secondary'}`;
+            level2Approver.textContent = status.level2.approver || 'Pending';
+            level2Date.textContent = status.level2.date || '-';
+            
+            // Update Level 3 status
+            const level3Status = document.getElementById('historyLevel3Status');
+            const level3Approver = document.getElementById('historyLevel3Approver');
+            const level3Date = document.getElementById('historyLevel3Date');
+            
+            level3Status.textContent = status.level3.status.toUpperCase();
+            level3Status.className = `badge bg-${status.level3.status === 'approved' ? 'success' : 
+                                    status.level3.status === 'rejected' ? 'danger' : 'secondary'}`;
+            level3Approver.textContent = status.level3.approver || 'Pending';
+            level3Date.textContent = status.level3.date || '-';
+        }
+        
+        function buildTimeline(history) {
+            const timeline = document.getElementById('approvalTimeline');
+            
+            if (history.length === 0) {
+                timeline.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No approval history available yet
+                    </div>
+                `;
+                return;
+            }
+            
+            let timelineHTML = '';
+            
+            history.forEach(item => {
+                const statusClass = item.status === 'approved' ? 'approved' : 
+                                  item.status === 'rejected' ? 'rejected' : 'pending';
+                
+                timelineHTML += `
+                    <div class="timeline-item ${statusClass}">
+                        <div class="timeline-content">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-${item.status === 'approved' ? 'success' : 'danger'} me-2">
+                                        Level ${item.level}
+                                    </span>
+                                    <span class="badge bg-${item.status === 'approved' ? 'success' : 'danger'}">
+                                        ${item.status.toUpperCase()}
+                                    </span>
+                                </div>
+                                <small class="text-muted">${item.time_ago}</small>
+                            </div>
+                            <div class="mb-2">
+                                <strong>${item.approver.username}</strong>
+                                <small class="text-muted ms-2">(${item.approver.designation})</small>
+                            </div>
+                            <div class="timeline-date">
+                                <i class="bi bi-calendar me-1"></i>${item.created_at}
+                            </div>
+                            ${item.remarks ? `
+                            <div class="timeline-remarks">
+                                <strong>Remarks:</strong>
+                                <p class="mb-0 mt-1">${item.remarks}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            timeline.innerHTML = timelineHTML;
+        }
+        
+        // Enhanced approval/rejection functions
+        function showApproveModal(pdfId, level, filename) {
+            pendingPdfId = pdfId;
+            pendingLevel = level;
+            
+            // Update modal title and filename
+            document.getElementById('approvalModalTitle').innerHTML = `<i class="bi bi-check-circle"></i> Approve PDF (Level ${level})`;
+            document.getElementById('approvalFilename').textContent = filename;
+            
+            // Update form action
+            document.getElementById('approvalForm').action = `/approve_pdf/${pdfId}/${level}`;
+            
+            // Clear previous remarks
+            document.getElementById('approvalRemarks').value = '';
+            
+            // Show modal
+            const approveModal = new bootstrap.Modal(document.getElementById('approvalFormModal'));
+            approveModal.show();
+        }
+        
+        function showRejectModal(pdfId, level, filename) {
+            pendingRejectPdfId = pdfId;
+            pendingRejectLevel = level;
+       
+            // Update modal title and filename
+            document.getElementById('rejectModalTitle').innerHTML = `<i class="bi bi-x-circle"></i> Reject PDF (Level ${level})`;
+            document.getElementById('rejectFilename').textContent = filename;
+       
+            // Update form action
+            document.getElementById('rejectForm').action = `/reject_pdf/${pdfId}/${level}`;
+       
+            // Clear previous reason
+            document.getElementById('rejectionReason').value = '';
+       
+            // Show modal
+            const rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+            rejectModal.show();
+        }
+        
+        // Delete Project functionality
+        function setDeleteProjectData(projectId, projectName) {
+            pendingDeleteProjectId = projectId;
+            pendingDeleteProjectName = projectName;
+            
+            // Update modal content
+            document.getElementById('deleteProjectName').textContent = projectName;
+            document.getElementById('deleteProjectId').textContent = `Project ID: ${projectId}`;
+            
+            // Reset checkbox and button state
+            document.getElementById('confirmDeleteCheckbox').checked = false;
+            document.getElementById('confirmDeleteBtn').disabled = true;
+        }
+        
+        // Toast notification function
+        function showToast(type, message) {
+            // Create toast container if it doesn't exist
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.style.position = 'fixed';
+                toastContainer.style.top = '20px';
+                toastContainer.style.right = '20px';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Create toast
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Initialize and show toast
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+            
+            // Remove toast after it's hidden
+            toast.addEventListener('hidden.bs.toast', function () {
+                toast.remove();
+            });
+        }
+        
+        function setContinueVersionId(pdfId) {
+            pendingPdfId = pdfId;
+        }
+     
+        // Continue from version
+        document.getElementById('confirmContinueBtn').addEventListener('click', function () {
+            if (!pendingPdfId) return;
+            const btn = this;
+            const text = document.getElementById('continueBtnText');
+            const spinner = document.getElementById('continueSpinner');
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            fetch(`/continue_from_version/${pendingPdfId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('Failed to load version');
+                window.location.href = '/workflow/step/2';
+            })
+            .catch(err => {
+                alert('Error: ' + err.message);
+                btn.disabled = false;
+                text.classList.remove('d-none');
+                spinner.classList.add('d-none');
+            });
+        });
+     
+        // Handle reject form submission
+        document.getElementById('rejectForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('confirmRejectBtn');
+            const text = document.getElementById('rejectBtnText');
+            const spinner = document.getElementById('rejectSpinner');
+       
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+       
+            // Let the form submit normally
+            // The spinner will show until page reloads
+        });
+        
+        // Handle approval form submission
+        document.getElementById('approvalForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('confirmApproveBtn');
+            const text = document.getElementById('approveBtnText');
+            const spinner = document.getElementById('approveSpinner');
+            
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            
+            // Let the form submit normally
+        });
+        
+        // Checksum functions
+        function showChecksum(pdfId) {
+            fetch(`/get_checksum/${pdfId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('checksumFilename').textContent = data.filename;
+                        document.getElementById('checksumValue').value = data.checksum;
+                    } else {
+                        alert(data.message || 'Failed to get checksum');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching checksum:', error);
+                    alert('Error fetching checksum. Please try again.');
+                });
+        }
+
+        function copyChecksum() {
+            const checksumInput = document.getElementById('checksumValue');
+            checksumInput.select();
+            checksumInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                navigator.clipboard.writeText(checksumInput.value).then(() => {
+                    // Show temporary feedback
+                    const copyBtn = document.querySelector('#checksumModal .btn-outline-secondary');
+                    const originalHTML = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="bi bi-check"></i>';
+                    copyBtn.classList.remove('btn-outline-secondary');
+                    copyBtn.classList.add('btn-success');
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHTML;
+                        copyBtn.classList.remove('btn-success');
+                        copyBtn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                });
+            } catch (err) {
+                // Fallback for older browsers
+                document.execCommand('copy');
+                alert('Checksum copied to clipboard!');
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add smooth animations
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.classList.add('fade-in');
+            });
+       
+            // Add tooltips for junction badges
+            const junctionBadges = document.querySelectorAll('.junction-badge');
+            junctionBadges.forEach(badge => {
+                badge.setAttribute('data-bs-toggle', 'tooltip');
+            });
+       
+            // Initialize Bootstrap tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+       
+            // Initialize junction filter based on current station selection
+            const initialStationId = stationFilter.value || 'all';
+            updateJunctionFilter(initialStationId);
+        
+            // Add event listeners
+            stationFilter.addEventListener('change', handleStationChange);
+            junctionFilter.addEventListener('change', handleJunctionSelection);
+        
+            // Load notifications
+            loadNotifications();
+            // Set up notification polling (every 20 seconds)
+            notificationCheckInterval = setInterval(loadNotifications, 20000);
+            
+            // Dismiss all button
+            const dismissAllBtn = document.getElementById('dismissAllBtn');
+            if (dismissAllBtn) {
+                dismissAllBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to dismiss all recent notifications?')) {
+                        fetch('/dismiss_all_notifications', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Clear recent notifications list
+                                const recentList = document.getElementById('recentNotificationsList');
+                                recentList.innerHTML = `
+                                    <div class="text-muted text-center py-4">
+                                        <i class="bi bi-bell-slash fs-4 mb-2"></i>
+                                        <p class="mb-0">No recent notifications</p>
+                                    </div>
+                                `;
+                                alert(`Dismissed all recent notifications`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error dismissing all notifications:', error);
+                            alert('Error dismissing all notifications');
+                        });
+                    }
+                });
+            }
+            
+            // Mark all read button
+            const markAllReadBtn = document.getElementById('markAllReadBtn');
+            if (markAllReadBtn) {
+                markAllReadBtn.addEventListener('click', markAllNotificationsRead);
+            }
+          
+            // Dropdown mark all read button
+            const dropdownMarkAllReadBtn = document.getElementById('dropdownMarkAllReadBtn');
+            if (dropdownMarkAllReadBtn) {
+                dropdownMarkAllReadBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    markAllNotificationsRead();
+                    // Close dropdown after marking all as read
+                    const dropdown = bootstrap.Dropdown.getInstance(document.getElementById('notificationDropdown'));
+                    dropdown.hide();
+                });
+            }
+          
+            // Clear all notifications button
+            const clearAllNotificationsBtn = document.getElementById('clearAllNotificationsBtn');
+            if (clearAllNotificationsBtn) {
+                clearAllNotificationsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearAllNotifications();
+                });
+            }
+          
+            // Refresh notifications button
+            const refreshNotificationsBtn = document.getElementById('refreshNotificationsBtn');
+            if (refreshNotificationsBtn) {
+                refreshNotificationsBtn.addEventListener('click', function() {
+                    loadNotifications();
+                    // Add loading animation
+                    this.querySelector('i').classList.add('spin');
+                    setTimeout(() => {
+                        this.querySelector('i').classList.remove('spin');
+                    }, 500);
+                });
+            }
+            
+            // Delete project checkbox event listener
+            const confirmDeleteCheckbox = document.getElementById('confirmDeleteCheckbox');
+            if (confirmDeleteCheckbox) {
+                confirmDeleteCheckbox.addEventListener('change', function() {
+                    document.getElementById('confirmDeleteBtn').disabled = !this.checked;
+                });
+            }
+            
+            // Delete project button event listener
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', function() {
+                    if (!pendingDeleteProjectId) return;
+                    
+                    const btn = this;
+                    const spinner = document.getElementById('deleteSpinner');
+                    
+                    // Disable button and show spinner
+                    btn.disabled = true;
+                    spinner.classList.remove('d-none');
+                    
+                    // Send delete request
+                    fetch(`/delete_projects/${pendingDeleteProjectId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            showToast('success', data.message);
+                            
+                            // Close modal
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteProjectModal'));
+                            modal.hide();
+                            
+                            // Refresh the page after a short delay
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            // Show error
+                            showToast('danger', data.message || 'Failed to delete project');
+                            btn.disabled = false;
+                            spinner.classList.add('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting project:', error);
+                        showToast('danger', 'Error deleting project. Please try again.');
+                        btn.disabled = false;
+                        spinner.classList.add('d-none');
+                    });
+                });
+            }
+        });
+     
+        // Clean up interval when page is hidden
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (notificationCheckInterval) {
+                    clearInterval(notificationCheckInterval);
+                }
+                isPollingEnabled = false;
+            } else {
+                isPollingEnabled = true;
+                loadNotifications(); // Reload immediately when page becomes visible
+                if (notificationCheckInterval) {
+                    clearInterval(notificationCheckInterval);
+                }
+                notificationCheckInterval = setInterval(loadNotifications, 20000);
+            }
+        });
+    </script>
+</body>
+</html>

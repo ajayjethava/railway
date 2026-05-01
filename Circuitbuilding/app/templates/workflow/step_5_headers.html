@@ -1,0 +1,251 @@
+<!-- Step 5: Headers Configuration -->
+<div class="alert alert-info">
+  <h5><i class="bi bi-info-circle"></i> Headers Configuration</h5>
+  <p class="mb-0">Configure header entries with cable details.</p>
+</div>
+
+<!-- Button to trigger header modal -->
+<div class="text-center mb-4">
+  <button type="button" class="btn btn-primary btn-lg" id="openHeaderModalBtn">
+    <i class="bi bi-plus-circle"></i> Configure Headers
+  </button>
+</div>
+
+<!-- Existing Headers Table -->
+{% if rows %}
+<div class="card mb-4">
+  <div class="card-header">
+    <h6 class="mb-0">Existing Terminal Headers Records (<span id="headerRecordCount">{{ rows|length }}</span>)</h6>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th> 
+            <th>Cable Id</th>
+            <th>Cable Name</th>
+            <th>Header Type</th>
+            <th>Terminal Start</th>
+            <th>Terminal End</th>
+            <th>Input Output</th>
+            <th>Text</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="headerTableBody">
+          {% for row in rows|sort_terminal_headers %}
+            <tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.cable_id or '-' }}</td>
+              <td>{{ cable_name_map.get(row.cable_id, '-') }}</td>
+              <td>{{ row.header_type or '-' }}</td>
+              <td>{{ row.terminal_start or '-' }}</td>
+              <td>{{ row.terminal_end or '-' }}</td>
+              <td>{{ row.input_output or '-' }}</td>
+              <td>{{ row.text or '-' }}</td>
+              <td class="text-nowrap">
+                <a href="{{ url_for('main.workflow_edit_row', sheet_name=sheet_name, row_id=row.id, step=step) }}" 
+                  class="btn btn-sm btn-warning" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="POST" 
+                      action="{{ url_for('main.workflow_delete_row', sheet_name=sheet_name, row_id=row.id, step=step) }}" 
+                      style="display:inline;">
+                  <button type="submit" 
+                          class="btn btn-sm btn-danger" 
+                          onclick="return confirm('Are you sure you want to delete this header?')"
+                          title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+  <h5>No Headers Configured</h5>
+  <p>No header records have been added yet. Please use the button above to add header configurations.</p>
+</div>
+{% endif %}
+
+<!-- Header Configuration Modal -->
+<div class="modal fade" id="headerModal" tabindex="-1" aria-labelledby="headerModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="headerModalLabel">
+          <i class="bi bi-collection"></i> Configure Headers
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> Enter details for all header fields below.
+        </div>
+        
+        <div class="form-grid">
+          <!-- Two separate fields for Cable ID and Cable Name -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label"><strong>Cable ID *</strong></label>
+              <input type="text" class="form-control" id="headerCableId" placeholder="Enter cable ID" required>
+              <div class="form-text">Unique identifier for the cable</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><strong>Cable Name</strong></label>
+              <input type="text" class="form-control" id="headerCableName" placeholder="Enter cable name">
+              <div class="form-text">Name or description of the cable</div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label"><strong>Header Type</strong></label>
+            <select class="form-select" id="headerType" required>
+                <option value="">Select Header Type</option>
+                <option value="WIREFROM">WIREFROM</option>
+                <option value="WIRETO">WIRETO</option>
+                <option value="RELAY">RELAY</option>
+                <option value="RELAY_BOX">RELAY BOX</option>
+                <option value="RELAY_CONTACT_BOX">RELAY CONTACT BOX</option> 
+            </select>
+            <div class="form-text">Type of header</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label"><strong>Terminal Start</strong></label>
+            <input type="number" class="form-control" id="headerTerminalStart" placeholder="Enter terminal start number" required>
+            <div class="form-text">Starting terminal number</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label"><strong>Terminal End</strong></label>
+            <input type="number" class="form-control" id="headerTerminalEnd" placeholder="Enter terminal end number" required>
+            <div class="form-text">Ending terminal number</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label"><strong>Input Output</strong></label>
+            <select class="form-select" id="headerInputOutput" required>
+              <option value="">Select Input/Output</option>
+              <option value="Input">Input</option>
+              <option value="Output">Output</option>
+            </select>
+            <div class="form-text">Input/Output configuration</div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label"><strong>Text</strong></label>
+            <input type="text" class="form-control" id="headerText" placeholder="Enter header text">
+            <div class="form-text">Additional text or description</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="saveHeaderBtn">
+          <i class="bi bi-check-circle"></i> Save Header Configuration
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var headerModal = new bootstrap.Modal(document.getElementById('headerModal'));
+    var successModal = new bootstrap.Modal(document.getElementById('successFlashModal'));
+    var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+
+    // Open header modal only when button is clicked - REMOVED AUTO-OPEN
+    document.getElementById('openHeaderModalBtn').addEventListener('click', function() {
+      // Reset form fields when opening modal
+      document.getElementById('headerCableId').value = '';
+      document.getElementById('headerCableName').value = '';
+      document.getElementById('headerType').value = '';
+      document.getElementById('headerTerminalStart').value = '';
+      document.getElementById('headerTerminalEnd').value = '';
+      document.getElementById('headerInputOutput').value = '';
+      document.getElementById('headerText').value = '';
+      
+      headerModal.show();
+    });
+
+    // Handle header form submission
+    document.getElementById('saveHeaderBtn').addEventListener('click', function() {
+      var saveBtn = this;
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+      var headerData = {
+        cable_id: document.getElementById('headerCableId').value,
+        cable_name: document.getElementById('headerCableName').value,
+        header_type: document.getElementById('headerType').value,
+        terminal_start: document.getElementById('headerTerminalStart').value,
+        terminal_end: document.getElementById('headerTerminalEnd').value,
+        input_output: document.getElementById('headerInputOutput').value,
+        text: document.getElementById('headerText').value
+      };
+
+      // Validation
+      if (!headerData.cable_id || !headerData.header_type || !headerData.terminal_start || 
+          !headerData.terminal_end || !headerData.input_output) {
+        document.getElementById('errorMessage').textContent = 'Please fill in all required fields.';
+        errorModal.show();
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Header Configuration';
+        return;
+      }
+
+      fetch('/add_header_ajax', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(headerData)
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            throw new Error(`Failed to save header: ${response.status} - ${text}`);
+          });
+        }
+        return response.json();
+      })
+      .then(result => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Header Configuration';
+        
+        if (result.success) {
+          headerModal.hide();
+          successModal.show();
+          setTimeout(() => { 
+            successModal.hide();
+            window.location.reload(); // Reload to show the new header in the table
+          }, 1500);
+        } else {
+          document.getElementById('errorMessage').textContent = result.message || 'Failed to save header configuration.';
+          errorModal.show();
+        }
+      })
+      .catch(error => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Header Configuration';
+        document.getElementById('errorMessage').textContent = error.message || 'An error occurred while saving the header.';
+        errorModal.show();
+      });
+    });
+  });
+</script>
+
+<div class="d-flex justify-content-between mt-4">
+  <form method="POST" style="display: inline;">
+    <button type="submit" name="action" value="prev" class="btn btn-secondary">Previous</button>
+  </form>
+  <form method="POST" style="display: inline;">
+    <button type="submit" name="action" value="next" class="btn btn-success">Next: Groups</button>
+  </form>
+</div>

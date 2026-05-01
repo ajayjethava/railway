@@ -1,0 +1,71 @@
+<!-- Existing Records Table (SHOWS FOR ALL STEPS EXCEPT STEP 3, 5, 6, 7, 8) -->
+<div class="card mt-4" id="existingJunctionsCard">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h6 class="mb-0">
+        Existing {{ display_name }} Records
+        (<span id="{% if step == 2 %}recordCount{% else %}recordCount{% endif %}">{{ rows|length }}</span>)
+      </h6>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm table-striped table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            {% for column in columns %}
+              {% if step == 2 and column == 'junction_name' %}
+                <th>Location Name</th>
+              {% elif step == 2 and column == 'junction_id' %}
+                <th>Location ID</th>
+              {% elif step == 2 and column == 'junction_size' %}
+                <th>Location Size</th>
+              {% elif step == 2 and column == 'junction_row' %}
+                <th>Location Row</th>
+              {% else %}
+                <th>{{ column|replace('_',' ')|title }}</th>
+              {% endif %}
+            {% endfor %}
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="{% if step == 2 %}junctionTableBody{% else %}tableBody{% endif %}">
+          {% for row in rows | sort_junction_boxes %}
+            <tr>
+              <td>{{ row.id }}</td>
+              {% for column in columns %}
+                <td>{{ row[column] or '-' }}</td>
+              {% endfor %}
+              <td class="text-nowrap">
+                {% if step == 2 %}
+                  <button type="button" class="btn btn-info btn-sm"
+                          onclick="openFilteredCablesModal('{{ row.junction_id }}', '{{ row.junction_name }}')">
+                    <i class="bi bi-eye"></i> View Cables
+                  </button>
+                {% else %}
+                  <button type="button" class="btn btn-info btn-sm"
+                          onclick="openStepModal(1, {{ current_project.id }})">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                {% endif %}
+                <form method="POST"
+                      action="{{ url_for('main.workflow_delete_row', sheet_name=sheet_name, row_id=row.id, step=step) }}"
+                      style="display:inline;">
+                  <button type="submit"
+                          class="btn btn-sm btn-danger"
+                          onclick="return confirm('Are you sure you want to delete this record?')"
+                          title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- Include the View Project Data Modal -->
+{% include 'workflow/includes/view_project_data_modal.html' %}

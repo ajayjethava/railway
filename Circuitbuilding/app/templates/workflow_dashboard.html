@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Railway Signalling - Project Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('main.index') }}">🚆 Railway Signalling</a>
+    <div class="ms-auto">
+      <a class="btn btn-outline-light me-2" href="{{ url_for('main.project_selection') }}">Switch Project</a>
+      <a class="btn btn-outline-light me-2" href="{{ url_for('main.preview') }}">Preview All</a>
+      <a class="btn btn-outline-warning me-2" href="{{ url_for('main.excel_to_pdf') }}">
+        <i class="bi bi-file-earmark-pdf"></i> Excel to PDF
+      </a>
+      <a class="btn btn-success" href="{{ url_for('main.download') }}">Download XLSX</a>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-info">
+        {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% if current_project %}
+  <div class="alert alert-success">
+    <div class="row">
+      <div class="col-md-8">
+        <strong>Current Project:</strong> 
+        <span class="badge bg-primary me-2">ID: {{ current_project.id }}</span>
+        {{ current_project.name }}
+        {% if current_project.description %}
+        <br><small class="text-muted">{{ current_project.description }}</small>
+        {% endif %}
+      </div>
+      <div class="col-md-4 text-end">
+        <small class="text-muted">
+          Created: {{ current_project.created_date.strftime('%d %b %Y at %I:%M %p IST') }}<br>
+          {% if current_project.updated_date != current_project.created_date %}
+          Updated: {{ current_project.updated_date.strftime('%d %b %Y at %I:%M %p IST') }}<br>
+          {% endif %}
+          Total Rows: <strong>{{ total_rows }}</strong>
+        </small>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3>Data Entry Progress</h3>
+      <div class="badge bg-info fs-6">{{ completed_tables }}/{{ total_tables }} Tables Completed</div>
+    </div>
+
+    {% set pct = (completed_tables / total_tables * 100) if total_tables > 0 else 0 %}
+    <div class="progress mb-3" style="height: 20px;">
+      <div class="progress-bar" role="progressbar"
+           data-progress="{{ '%.0f'|format(pct) }}"
+           aria-valuenow="{{ '%.0f'|format(pct) }}" aria-valuemin="0" aria-valuemax="100">
+        {{ '%.0f'|format(pct) }}%
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    {% for step in progress %}
+    <div class="col-md-6 col-lg-4 mb-3">
+      <div class="card h-100 {% if step.completed %}border-success{% else %}border-light{% endif %}">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="card-title mb-0">
+              <span class="badge bg-secondary me-2">{{ step.step }}</span>
+              {{ step.display_name }}
+            </h6>
+            {% if step.completed %}
+            <span class="badge bg-success"><i class="bi bi-check-circle"></i></span>
+            {% else %}
+            <span class="badge bg-light text-dark"><i class="bi bi-circle"></i></span>
+            {% endif %}
+          </div>
+          <p class="small text-muted mb-2">
+            {% if step.count > 0 %}
+              {{ step.count }} record{{ 's' if step.count != 1 else '' }} added
+            {% else %}
+              No data added yet
+            {% endif %}
+          </p>
+          <a href="{{ step.url }}" class="btn btn-primary btn-sm">
+            {% if step.completed %}
+            <i class="bi bi-pencil"></i> Edit Data
+            {% else %}
+            <i class="bi bi-plus"></i> Add Data
+            {% endif %}
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-4 d-flex flex-wrap gap-2">
+    <a href="{{ url_for('main.new_project') }}" class="btn btn-outline-primary">
+      <i class="bi bi-plus-circle"></i> New Project
+    </a>
+    <a href="{{ url_for('main.project_selection') }}" class="btn btn-outline-info">
+      <i class="bi bi-arrow-left-right"></i> Switch Project
+    </a>
+
+    {% set next_step = progress | selectattr('completed', 'false') | first %}
+    {% if next_step %}
+    <a href="{{ next_step.url }}" class="btn btn-success">
+      <i class="bi bi-play-circle"></i> Continue Data Entry
+    </a>
+    {% else %}
+    <span class="btn btn-success disabled">
+      <i class="bi bi-check-circle"></i> All Data Complete
+    </span>
+    {% endif %}
+
+    {% if current_project %}
+    <form method="post" action="{{ url_for('main.clear_current_project') }}" style="display: inline;">
+      <button class="btn btn-outline-danger" onclick="return confirm('Clear all data from Project ID {{ current_project.id }}?\n\nThis will delete {{ total_rows }} total records!')">
+        <i class="bi bi-trash"></i> Clear Project Data
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if current_project %}
+  <div class="mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h4 class="mb-0"><i class="bi bi-file-pdf"></i> Generated PDFs</h4>
+      <a href="{{ url_for('main.excel_to_pdf') }}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-upload"></i> Upload Excel to Generate PDF
+      </a>
+    </div>
+
+    {% if pdfs and pdfs|length > 0 %}
+    <div class="list-group">
+      {% for pdf in pdfs %}
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div class="me-3">
+          <div class="fw-semibold">{{ pdf.filename }}</div>
+          <div class="small text-muted">Created: {{ pdf.created }} • Size: {{ pdf.size_kb }} KB</div>
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="{{ pdf.view_url }}" target="_blank">
+            <i class="bi bi-eye"></i> View
+          </a>
+          <a class="btn btn-sm btn-success" href="{{ pdf.download_url }}">
+            <i class="bi bi-download"></i> Download
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-light border">
+      No PDFs generated yet for this project. Use "Convert Excel to PDF" to create one.
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</main>
+
+<script>
+/* Apply progress width from data-progress to avoid inline Jinja CSS */
+document.querySelectorAll('.progress-bar[data-progress]').forEach(function(el){
+  var pct = parseInt(el.getAttribute('data-progress') || '0', 10);
+  pct = Math.max(0, Math.min(100, pct));
+  el.style.width = pct + '%';
+});
+</script>
+</body>
+</html>

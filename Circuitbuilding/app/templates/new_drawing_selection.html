@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Signalling - Select Station for New Drawing</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Teal Theme Colors */
+        :root {
+            --primary-teal: #00695c;
+            --secondary-teal: #00796b;
+            --light-teal: #26a69a;
+            --dark-teal: #004d40;
+            --gradient-teal: linear-gradient(135deg, #00695c 0%, #00796b 100%);
+            --gradient-light: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+        }
+        
+        .card {
+            margin-bottom: 1.5rem;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            font-weight: 600;
+        }
+        
+        /* Sidebar Styling */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: linear-gradient(180deg, #00695c 0%, #00796b 100%);
+            color: white;
+            z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+        }
+
+        .sidebar-content {
+            padding: 25px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar-logo {
+            height: 38px;
+            width: auto;
+            margin-right: 12px;
+            border-radius: 6px;
+        }
+
+        .sidebar-user-section {
+            padding: 18px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .user-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #00695c, #004d40);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+
+        .user-icon i {
+            font-size: 1.15rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.98rem;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 25px;
+        }
+
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            padding: 11px 16px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .sidebar-btn i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+            font-size: 1.05rem;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .sidebar-btn.logout {
+            color: #ff6b6b;
+            margin-top: auto;
+            padding-top: 20px;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .sidebar-btn.logout:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+            background: var(--gradient-light);
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-teal);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--secondary-teal), var(--primary-teal));
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            border: none;
+            color: #000;
+        }
+        
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #ff9800, #ffc107);
+            transform: translateY(-2px);
+        }
+        
+        .badge {
+            border-radius: 20px;
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+        
+        /* Station Selection Card */
+        .station-selection-card {
+            background: linear-gradient(145deg, #ffffff, #f8fcff);
+        }
+        
+        .station-selection-card .card-body {
+            padding: 2rem;
+        }
+        
+        /* Custom Dropdown */
+        .dropdown-search-container {
+            position: relative;
+        }
+        
+        .dropdown-toggle-custom {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            color: #6c757d;
+            font-size: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+        
+        .dropdown-toggle-custom:hover {
+            border-color: var(--primary-teal);
+            color: #495057;
+        }
+        
+        .dropdown-toggle-custom .btn-text {
+            flex: 1;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .dropdown-menu-custom {
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 0;
+            margin-top: 5px;
+        }
+        
+        .dropdown-search-input {
+            padding: 12px 16px;
+            border: none;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.95rem;
+        }
+        
+        .station-option {
+            padding: 10px 16px;
+            border-bottom: 1px solid #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .station-option:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .station-option.active {
+            background-color: var(--primary-teal);
+            color: white;
+        }
+        
+        .station-name {
+            font-weight: 500;
+            flex: 1;
+        }
+        
+        .station-location-boxes {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        
+        .station-option.active .station-location-boxes {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .no-results {
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        /* Project Info Display */
+        .project-info {
+            background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid var(--primary-teal);
+        }
+        
+        .project-info h6 {
+            color: var(--dark-teal);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .project-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .project-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+            flex: 1;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+            border-radius: 12px;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--primary-teal);
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        /* Modal */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #000;
+            border-radius: 12px 12px 0 0;
+            border: none;
+            padding: 20px 25px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar-brand span,
+            .user-name,
+            .sidebar-btn span {
+                display: none;
+            }
+            
+            .sidebar-brand {
+                justify-content: center;
+                padding: 15px 0;
+                margin-bottom: 25px;
+            }
+            
+            .sidebar-logo {
+                margin-right: 0;
+                height: 35px;
+            }
+            
+            .sidebar-user-section {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .user-info {
+                justify-content: center;
+                margin-bottom: 0;
+            }
+            
+            .user-icon {
+                margin-right: 0;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .sidebar-btn {
+                justify-content: center;
+                padding: 12px;
+            }
+            
+            .sidebar-btn i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+                padding: 20px 15px;
+            }
+        }
+        
+        /* Scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <!-- Brand/Logo -->
+            <a class="sidebar-brand" href="{{ url_for('main.approval_tracking') }}">
+                <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+                <span>Railway Signalling</span>
+            </a>
+       
+            <!-- User Info Section -->
+            <div class="sidebar-user-section">
+                {% if current_user.is_authenticated %}
+                <div class="user-info">
+                    <div class="user-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+       
+            <!-- Navigation Buttons -->
+            <div class="sidebar-buttons">
+                <!-- Dashboard/Home Button -->
+                {% if permissions.can_create_drawing or permissions.can_see_all %}
+                <a class="sidebar-btn" href="{{ url_for('main.approval_tracking') }}">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+           
+                <!-- Admin-specific buttons -->
+                {% if current_user.role_name == '4' %}
+                <a class="sidebar-btn" href="{{ url_for('main.new_project') }}">
+                    <i class="bi bi-plus-square"></i>
+                    <span>New Station</span>
+                </a>
+    
+                <a class="sidebar-btn" href="{{ url_for('main.admin_users') }}">
+                    <i class="bi bi-people"></i>
+                    <span>Manage Users</span>
+                </a>
+
+                <a class="sidebar-btn" href="{{ url_for('main.role_master_list') }}">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Manage Roles</span>
+                </a>
+                
+                <a class="sidebar-btn" href="{{ url_for('main.designation_master_list') }}">
+                    <i class="bi bi-person-workspace"></i>
+                    <span>Manage Designations</span>
+                </a>
+                
+                <a class="sidebar-btn" href="{{ url_for('main.view_list') }}">
+                    <i class="bi bi-card-list"></i>
+                    <span>View List</span>
+                </a>
+                {% endif %}
+
+                <!-- Drawing-related buttons -->
+                {% if current_user.role_name in ['1', '4'] %}
+                <a class="sidebar-btn active" href="{{ url_for('main.new_drawing_selection') }}">
+                    <i class="bi bi-file-earmark-plus"></i>
+                    <span>New Drawing</span>
+                </a>
+                
+                <!-- CTR Drawing Page Button -->
+                <a class="sidebar-btn" href="{{ url_for('main.ctr_drawing') }}">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span>CTR Drawing</span>
+                </a>
+                {% endif %}
+           
+                <!-- Logout Button -->
+                {% if current_user.is_authenticated %}
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4"></i>
+                        <div>
+                            <strong>{% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong> {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="container-fluid py-4 fade-in">
+            {% if projects_data %}
+            <!-- Main Selection Card -->
+            <div class="row justify-content-center">
+                <div class="col-md-10 col-lg-8">
+                    <div class="card station-selection-card">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-teal text-black">
+                            <strong><i class="bi bi-search me-2"></i>Station Selection</strong>
+                            <span class="badge bg-light text-dark">{{ projects_data|length }} stations available</span>
+                        </div>
+                        <div class="card-body">
+                            <form id="newDrawingForm">
+                                <div class="mb-4">
+                                    <label for="stationDropdown" class="form-label fw-bold mb-3">
+                                        <i class="bi bi-building me-2"></i>Select Station (Project)
+                                    </label>
+                                    
+                                    <!-- Custom Searchable Dropdown -->
+                                    <div class="dropdown dropdown-search-container" id="stationDropdown">
+                                        <button class="btn dropdown-toggle-custom" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <span class="btn-text" id="dropdownBtnText">Choose Station</span>
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                        <div class="dropdown-menu dropdown-menu-custom p-0" aria-labelledby="dropdownMenuButton">
+                                            <!-- Search input -->
+                                            <div class="p-2 border-bottom">
+                                                <input type="text" class="form-control dropdown-search-input" placeholder="Type to search stations..." id="stationSearch">
+                                            </div>
+                                            
+                                            <!-- Stations list -->
+                                            <div class="stations-list" id="stationsList" style="max-height: 250px; overflow-y: auto;">
+                                                {% for project_data in projects_data %}
+                                                {% set project = project_data.project %}
+                                                <div class="station-option" 
+                                                     data-id="{{ project.id }}" 
+                                                     data-name="{{ project.name }}"
+                                                     data-location-boxes="{{ project_data.location_box_count }}"
+                                                     data-description="{{ project.description or 'No description' }}">
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="station-name">{{ project.name }}</span>
+                                                    </div>
+                                                    <span class="station-location-boxes">
+                                                        {% if project_data.location_box_count > 0 %}
+                                                        {{ project_data.location_box_count }} location boxes
+                                                        {% else %}
+                                                        No location boxes
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                                {% endfor %}
+                                                
+                                                <!-- No results message -->
+                                                <div class="no-results d-none" id="noResults">
+                                                    <i class="bi bi-search me-2"></i>No stations found
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Selected Project Info -->
+                                    <div id="projectInfo" class="project-info d-none">
+                                        <h6 id="selectedProjectName">No station selected</h6>
+                                        <div class="project-details">
+                                            <div class="project-description" id="selectedProjectDescription">
+                                                Select a station from the dropdown above to view details.
+                                            </div>
+                                            <span class="badge" id="selectedProjectBadge"></span>
+                                        </div>
+                                        <input type="hidden" id="selectedProjectId" name="project_id">
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="button" class="btn btn-warning btn-lg py-3" id="startDrawingBtn" disabled>
+                                        <i class="bi bi-file-earmark-plus me-2"></i> Start New Drawing
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="text-center mt-4">
+                                <a href="{{ url_for('main.approval_tracking') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <!-- Empty State -->
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="empty-state">
+                        <i class="bi bi-folder-x"></i>
+                        <h4>No Stations Found</h4>
+                        <p class="text-muted mb-4">You don't have any stations assigned to you.</p>
+                        {% if current_user.role in ['admin', 'user'] %}
+                        <a href="{{ url_for('main.new_project') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-circle"></i> Create New Station
+                        </a>
+                        {% endif %}
+                        <div class="mt-3">
+                            <a href="{{ url_for('main.approval_tracking') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Start New Drawing
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="modalMessage">Are you sure you want to start a new drawing for <strong id="projectName"></strong>?</p>
+                    
+                    <div id="noDataMessage" class="alert alert-info d-none">
+                        <i class="bi bi-info-circle me-2"></i>
+                        This station has no existing drawing data. You can start a new drawing immediately.
+                    </div>
+                    
+                    <div id="existingDataMessage" class="d-none">
+                        <div class="alert alert-warning">
+                            <strong>Warning:</strong> This station has existing drawing data.
+                        </div>
+                        <div id="recordsWarning" class="alert alert-danger">
+                            <i class="bi bi-exclamation-octagon me-2"></i>
+                             This drawing has <span id="recordCount" class="fw-bold"></span> location boxes that will be deleted if you choose to delete!
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    
+                    <!-- Buttons for no existing data -->
+                    <div id="noDataButtons" class="d-none">
+                        <button type="button" class="btn btn-primary" id="confirmStartBtn">
+                            <span id="startBtnText">Start New Drawing</span>
+                            <span id="startSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </div>
+                    
+                    <!-- Buttons for existing data -->
+                    <div id="existingDataButtons" class="d-none">
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                            Delete & Start New
+                            <span id="deleteSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                        <button type="button" class="btn btn-primary" id="confirmContinueBtn">
+                            Continue with Existing Data
+                            <span id="continueSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedProjectId = null;
+        let selectedProjectName = null;
+        let selectedProjectLocationBoxes = 0;
+        let selectedProjectDescription = '';
+        let confirmationModal = null;
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownButton = document.getElementById('dropdownMenuButton');
+            const dropdownBtnText = document.getElementById('dropdownBtnText');
+            const stationSearch = document.getElementById('stationSearch');
+            const stationsList = document.getElementById('stationsList');
+            const stationOptions = stationsList.querySelectorAll('.station-option');
+            const noResults = document.getElementById('noResults');
+            const startDrawingBtn = document.getElementById('startDrawingBtn');
+            const projectInfo = document.getElementById('projectInfo');
+            const selectedProjectIdInput = document.getElementById('selectedProjectId');
+            
+            // Initialize modal
+            const modalElement = document.getElementById('confirmationModal');
+            confirmationModal = new bootstrap.Modal(modalElement);
+            
+            // Function to reset modal state
+            function resetModal() {
+                document.getElementById('noDataMessage').classList.add('d-none');
+                document.getElementById('existingDataMessage').classList.add('d-none');
+                document.getElementById('noDataButtons').classList.add('d-none');
+                document.getElementById('existingDataButtons').classList.add('d-none');
+                
+                const startBtn = document.getElementById('confirmStartBtn');
+                const deleteBtn = document.getElementById('confirmDeleteBtn');
+                const continueBtn = document.getElementById('confirmContinueBtn');
+                
+                startBtn.disabled = false;
+                deleteBtn.disabled = false;
+                continueBtn.disabled = false;
+                
+                document.getElementById('startSpinner').classList.add('d-none');
+                document.getElementById('deleteSpinner').classList.add('d-none');
+                document.getElementById('continueSpinner').classList.add('d-none');
+                
+                document.getElementById('startBtnText').classList.remove('d-none');
+            }
+            
+            // Reset modal when it's hidden
+            modalElement.addEventListener('hidden.bs.modal', resetModal);
+            
+            // Function to update the selected station display
+            function updateSelectedStation(option) {
+                selectedProjectId = option.dataset.id;
+                selectedProjectName = option.dataset.name;
+                selectedProjectLocationBoxes = parseInt(option.dataset.locationBoxes) || 0;
+                selectedProjectDescription = option.dataset.description;
+                
+                // Update dropdown button text (without ID)
+                if (dropdownBtnText) {
+                    dropdownBtnText.textContent = selectedProjectName;
+                    dropdownBtnText.style.color = '#212529';
+                }
+                
+                // Update project info display (without ID)
+                document.getElementById('selectedProjectName').textContent = selectedProjectName;
+                document.getElementById('selectedProjectDescription').textContent = selectedProjectDescription;
+                
+                // Update badge based on location boxes
+                const badge = document.getElementById('selectedProjectBadge');
+                if (badge) {
+                    if (selectedProjectLocationBoxes > 0) {
+                        badge.textContent = `${selectedProjectLocationBoxes} location boxes`;
+                        badge.className = 'badge bg-warning';
+                    } else {
+                        badge.textContent = 'No location boxes';
+                        badge.className = 'badge bg-success';
+                    }
+                }
+                
+                // Set hidden input
+                selectedProjectIdInput.value = selectedProjectId;
+                
+                // Show project info and enable button
+                projectInfo.classList.remove('d-none');
+                startDrawingBtn.disabled = false;
+                
+                // Close dropdown
+                const dropdown = bootstrap.Dropdown.getInstance(dropdownButton);
+                if (dropdown) dropdown.hide();
+            }
+            
+            // Handle station option click
+            stationOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    stationOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    updateSelectedStation(this);
+                });
+            });
+            
+            // Handle search input
+            stationSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                let visibleCount = 0;
+                
+                stationOptions.forEach(option => {
+                    const stationName = option.dataset.name.toLowerCase();
+                    if (stationName.includes(searchTerm)) {
+                        option.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                
+                // Show/hide no results message
+                if (visibleCount === 0 && searchTerm !== '') {
+                    noResults.classList.remove('d-none');
+                } else {
+                    noResults.classList.add('d-none');
+                }
+            });
+            
+            // Clear search when dropdown is closed
+            if (dropdownButton) {
+                dropdownButton.addEventListener('hide.bs.dropdown', function() {
+                    stationSearch.value = '';
+                    stationSearch.dispatchEvent(new Event('input'));
+                });
+            }
+            
+            // Handle Start Drawing button click
+            startDrawingBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (!selectedProjectId) {
+                    alert('Please select a station first.');
+                    return;
+                }
+                
+                // Reset modal first
+                resetModal();
+                
+                // Update modal content (without ID)
+                const projectNameElement = document.getElementById('projectName');
+                if (projectNameElement) {
+                    projectNameElement.textContent = selectedProjectName;
+                }
+                
+                // Check if station has location boxes
+                if (selectedProjectLocationBoxes === 0) {
+                    // No location boxes
+                    const modalMessage = document.getElementById('modalMessage');
+                    if (modalMessage) {
+                        modalMessage.innerHTML = `Start a new drawing for <strong>${selectedProjectName}</strong>?`;
+                    }
+                    document.getElementById('noDataMessage').classList.remove('d-none');
+                    document.getElementById('noDataButtons').classList.remove('d-none');
+                } else {
+                    // Has location boxes
+                    const modalMessage = document.getElementById('modalMessage');
+                    if (modalMessage) {
+                        modalMessage.innerHTML = `Start a new drawing for <strong>${selectedProjectName}</strong>?`;
+                    }
+                    document.getElementById('existingDataMessage').classList.remove('d-none');
+                    const recordCountElement = document.getElementById('recordCount');
+                    if (recordCountElement) {
+                        recordCountElement.textContent = selectedProjectLocationBoxes;
+                    }
+                    document.getElementById('existingDataButtons').classList.remove('d-none');
+                }
+                
+                // Show confirmation modal
+                if (confirmationModal) confirmationModal.show();
+            });
+            
+            // Initialize dropdown
+            if (dropdownButton) new bootstrap.Dropdown(dropdownButton);
+        });
+        
+        // Handle "Start New Drawing" button click
+        document.getElementById('confirmStartBtn').addEventListener('click', function() {
+            if (!selectedProjectId) return;
+            
+            const btn = this;
+            const text = document.getElementById('startBtnText');
+            const spinner = document.getElementById('startSpinner');
+            
+            // Show loading state
+            btn.disabled = true;
+            text.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            
+            // Send AJAX request
+            fetch(`/start_new_drawing_from_sidebar/${selectedProjectId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    confirmationModal.hide();
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert('Error: ' + data.message);
+                    btn.disabled = false;
+                    text.classList.remove('d-none');
+                    spinner.classList.add('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                btn.disabled = false;
+                text.classList.remove('d-none');
+                spinner.classList.add('d-none');
+            });
+        });
+        
+        // Handle "Delete Data & Start New" button click
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+            if (!selectedProjectId) return;
+            
+            const btn = this;
+            const spinner = document.getElementById('deleteSpinner');
+            
+            // Show loading state
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+            
+            // Send AJAX request to delete project data first
+            fetch(`/delete_projects/${selectedProjectId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // After deletion, start new drawing
+                    return fetch(`/start_new_drawing_from_sidebar/${selectedProjectId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to delete project data');
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    confirmationModal.hide();
+                    window.location.href = data.redirect_url;
+                } else {
+                    throw new Error(data.message || 'Failed to start new drawing');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred: ' + error.message);
+                btn.disabled = false;
+                spinner.classList.add('d-none');
+            });
+        });
+        
+        // Handle "Continue with Existing Data" button click
+        document.getElementById('confirmContinueBtn').addEventListener('click', function() {
+            if (!selectedProjectId) return;
+            
+            const btn = this;
+            const spinner = document.getElementById('continueSpinner');
+            
+            // Show loading state
+            btn.disabled = true;
+            spinner.classList.remove('d-none');
+            
+            // Use AJAX to set project in session and redirect
+            fetch(`/set_project_and_continue/${selectedProjectId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    confirmationModal.hide();
+                    window.location.href = data.redirect_url;
+                } else {
+                    alert('Error: ' + data.message);
+                    btn.disabled = false;
+                    spinner.classList.add('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                btn.disabled = false;
+                spinner.classList.add('d-none');
+            });
+        });
+        
+        // Focus search input when dropdown opens
+        const dropdownButton = document.getElementById('dropdownMenuButton');
+        if (dropdownButton) {
+            dropdownButton.addEventListener('shown.bs.dropdown', function() {
+                const stationSearch = document.getElementById('stationSearch');
+                if (stationSearch) stationSearch.focus();
+            });
+        }
+    </script>
+</body>
+</html>

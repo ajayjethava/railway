@@ -1,0 +1,51 @@
+<div class="workflow-progress">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h4 class="mb-0">Cable Setup Workflow</h4>
+  </div>
+
+  <div class="progress my-3">
+    <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress_pct }}%;"></div>
+  </div>
+  
+  <!-- Step pills - Updated for 9 steps -->
+  <div class="d-flex justify-content-between flex-wrap gap-2">
+    {% for i in range(1, total_steps + 1) %}
+      {% set is_active = (i == step) %}
+      {% set is_completed = (i < step) %}
+      {% set can_navigate = True %}
+      <div class="text-center {% if is_active %}step-active{% elif is_completed %}step-completed{% endif %}">
+        {% if can_navigate %}
+          <a href="{{ url_for('main.workflow_step', step=i) }}" class="text-decoration-none">
+            <div class="step-number">{{ i }}</div>
+            <small class="d-block mt-1">
+              {% if i == 1 %}Station Info
+              {% elif i == 2 %}Locations
+              {% elif i == 3 %}Cables
+              {% elif i == 4 %}Terminals
+              {% elif i == 5 %}Headers
+              {% elif i == 6 %}Groups
+              {% elif i == 7 %}Choke Table
+              {% elif i == 8 %}Resistor Table
+              {% elif i == 9 %}Relay Box
+              {% endif %}
+            </small>
+          </a>
+        {% else %}
+          <div class="step-number opacity-50" title="Complete earlier steps first">{{ i }}</div>
+          <small class="d-block mt-1 opacity-50">
+            {% if i == 1 %}Station Info
+            {% elif i == 2 %}Locations
+            {% elif i == 3 %}Cables
+            {% elif i == 4 %}Terminals
+            {% elif i == 5 %}Headers
+            {% elif i == 6 %}Groups
+            {% elif i == 7 %}Choke Table
+            {% elif i == 8 %}Resistor Table
+            {% elif i == 9 %}Relay Box
+            {% endif %}
+          </small>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>

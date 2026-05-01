@@ -1,0 +1,62 @@
+<!-- Terminal Configuration Modal with Header Button -->
+<div class="modal fade" id="terminalConfigModal" tabindex="-1" aria-labelledby="terminalConfigModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="terminalConfigModalLabel">
+                    <i class="bi bi-plug"></i> Configure Terminals for Cable: <span id="terminalModalCableId"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- ADDED: Cable information container -->
+                <div id="terminalCableInfo"></div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Enter details for each terminal. There are <span id="terminalCountSpan"></span> terminals based on the cable configuration.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cable Id</th>
+                                <th>Terminal Id</th>
+                                <th>Terminal No</th>
+                                <th>Symbol</th>
+                                <th>Input Left</th>
+                                <th>Input Right</th>
+                                <th>Spare</th>
+                                <th>Input Connected</th>
+                                <th>Output Connected</th>
+                                <th>Input Connected Extra</th>
+                                <th>Output Connected Extra</th>
+                                <th>Output Left</th>
+                                <th>Output Right</th>
+                            </tr>
+                        </thead>
+                        <tbody id="terminalTableBody">
+                            <!-- Rows will be generated dynamically based on terminal count -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <!-- ADDED: Previous Button -->
+                <button type="button" class="btn btn-secondary" id="terminalPreviousBtn">
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <!-- ADDED: Save Draft Button -->
+                <button type="button" class="btn btn-info" id="saveTerminalDraftBtn">
+                    <i class="bi bi-floppy"></i> Save Draft
+                </button>
+                <button type="button" class="btn btn-warning btn-sm me-2" id="configureHeadersBtn">
+                    <i class="bi bi-collection"></i> Configure Headers
+                </button>
+                <!-- REMOVED: Save All Terminals Button -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- REMOVE the entire script tag with saveAllTerminalsBtn functionality -->

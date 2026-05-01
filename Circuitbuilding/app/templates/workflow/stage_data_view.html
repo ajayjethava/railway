@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-diagram-3 text-primary"></i>
+                        {{ project.name }} - Stage {{ current_stage }}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Project ID: {{ project.id }} | 
+                        Current Stage: <span class="badge bg-primary">{{ project.stage if project.stage else 0 }}/9</span> |
+                        Viewing: Stage {{ current_stage }}
+                        {% if current_location_id %}
+                        | <span class="badge bg-info"><i class="bi bi-geo-alt"></i> Location ID: {{ current_location_id }}
+                            {% if current_location_name %}
+                            ({{ current_location_name }})
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div>
+                   {% if current_location_id %}
+                    <button
+                        class="btn btn-primary me-2"
+                        onclick="App.handleLocationPreview({{ project.id }}, '{{ current_location_id }}')">
+                        <i class="bi bi-file-earmark-excel"></i>
+                        {% if current_location_id %}
+                            Preview This Location
+                        {% else %}
+                            Preview Full Project
+                        {% endif %}
+                    </button>
+                    {% else %}
+                    <button class="btn btn-primary me-2" onclick="App.handleLocationPreview({{ project.id }})">
+                        <i class="bi bi-file-earmark-excel"></i> Preview Station 
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-rocket-takeoff"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(1)">
+                            <i class="bi bi-building"></i> Step 1: Station Info
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(2)">
+                            <i class="bi bi-geo-alt"></i> Step 2: Junction Boxes
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(3)">
+                            <i class="bi bi-diagram-3"></i> Step 3: Cables
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(4)">
+                            <i class="bi bi-plug"></i> Step 4: Terminals
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(5)">
+                            <i class="bi bi-collection"></i> Step 5: Headers
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(6)">
+                            <i class="bi bi-diagram-3"></i> Step 6: Groups
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(7)">
+                            <i class="bi bi-funnel"></i> Step 7: Chokes
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="App.openStepModal(8)">
+                            <i class="bi bi-lightning-charge"></i> Step 8: Resistors
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification container -->
+    <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+    <!-- Stage Navigation -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-compass"></i> Stage Navigation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for i in range(1, 10) %}
+                        <button class="btn btn-sm stage-nav-btn {% if i == current_stage %}btn-primary{% elif i <= (project.stage if project.stage else 0) %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                                onclick="App.loadStageData({{ i }})">
+                            Stage {{ i }}
+                            {% if i == 1 %}<br><small>Station Info</small>{% endif %}
+                            {% if i == 2 %}<br><small>Locations</small>{% endif %}
+                            {% if i == 3 %}<br><small>Cables</small>{% endif %}
+                            {% if i == 4 %}<br><small>Terminals</small>{% endif %}
+                            {% if i == 5 %}<br><small>Headers</small>{% endif %}
+                            {% if i == 6 %}<br><small>Groups</small>{% endif %}
+                            {% if i == 7 %}<br><small>Choke Table</small>{% endif %}
+                            {% if i == 8 %}<br><small>Resistor Table</small>{% endif %}
+                            {% if i == 9 %}<br><small>Relay Box</small>{% endif %}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stage Data Display -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0" id="stageTitle">
+                        <i class="bi bi-building"></i> Loading Stage {{ current_stage }} Data...
+                    </h5>
+                    <div>
+                        <span class="badge bg-info" id="recordCount">0 records</span>
+                        {% if current_stage >= 3 %}
+                        <span class="badge bg-warning ms-2" id="cableFilterBadge" style="display: none;">
+                            <i class="bi bi-filter"></i> Filtered
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="stageLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading stage {{ current_stage }} data...</p>
+                    </div>
+                    
+                    <div id="stageDataContainer" style="display: none;">
+                        <!-- Data will be loaded here dynamically -->
+                    </div>
+                    
+                    <div id="stageEmpty" class="text-center py-5" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No data found for this stage.
+                        </div>
+                        <button class="btn btn-primary" onclick="App.addStageData({{ current_stage }})">
+                            <i class="bi bi-plus-circle"></i> Add Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== INCLUDE ALL MODALS ========== -->
+{% include 'workflow/includes/comprehensive_modals.html' %}
+
+<!-- ========== JAVASCRIPT INCLUDES ========== -->
+<!-- Core first -->
+<script src="{{ url_for('static', filename='js/stages/stage-core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stages/notifications.js') }}"></script>
+
+<!-- Navigation & rendering -->
+<script src="{{ url_for('static', filename='js/stages/stage-navigation.js') }}"></script>
+
+<!-- Stage 1 & 2 -->
+<script src="{{ url_for('static', filename='js/stages/stage-1.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stages/stage-2.js') }}"></script>
+
+<!-- Cable logic (used by stage 3 and 9) -->
+<script src="{{ url_for('static', filename='js/stages/stage-3-cable.js') }}"></script>
+
+<!-- Subsequent stages -->
+<script src="{{ url_for('static', filename='js/stages/stage-4-terminal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stages/stage-5-header.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stages/stage-6-group.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stages/stage-7-choke.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stages/stage-8-resistor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stages/stage-9-relay.js') }}"></script>
+
+<!-- PDF handler -->
+<script src="{{ url_for('static', filename='js/stages/pdf-handler.js') }}"></script>
+
+<!-- Flask variable injection + manual init -->
+<script>
+    (function() {
+        window.App = window.App || {};
+        App.projectId = {{ project.id }};
+        App.currentStage = {{ current_stage }};
+        App.currentLocationId = {{ current_location_id|tojson if current_location_id else 'null' }};
+        App.currentLocationName = "{{ current_location_name if current_location_name else '' }}";
+        App.projectName = "{{ project.name }}";
+
+        if (typeof App.init === 'function') {
+            App.init();
+        } else {
+            console.error('App.init() not found – check stage-core.js');
+        }
+    })();
+</script>
+
+<!-- Styles (same as before) -->
+<style>
+    .stage-nav-btn { min-width: 80px; text-align: center; transition: all 0.3s ease; }
+    .stage-nav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .table th { background-color: #f8f9fa; font-weight: 600; position: sticky; top: 0; }
+    .card { box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #e9ecef; transition: all 0.3s ease; }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .card-header { font-weight: 600; background-color: rgba(0,0,0,0.03); }
+    .btn-group-sm .btn { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+    .badge { font-weight: 500; letter-spacing: 0.5px; }
+    .alert { border-radius: 8px; border: none; }
+    .spinner-border { width: 1.5rem; height: 1.5rem; }
+    .modal-fullscreen .modal-body { max-height: calc(100vh - 200px); overflow-y: auto; }
+    .table-responsive { max-height: 500px; overflow-y: auto; }
+    .sticky-top { position: sticky; top: 0; background-color: white; z-index: 1; }
+    .form-control-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+    .form-select-sm { padding: 0.25rem 2.25rem 0.25rem 0.5rem; font-size: 0.875rem; }
+    .modal { z-index: 1055 !important; }
+    .modal-backdrop { z-index: 1050 !important; }
+    .modal-backdrop + .modal-backdrop { display: none !important; }
+    .modal-content { z-index: 1060 !important; }
+    body.modal-open { overflow: hidden !important; padding-right: 0 !important; }
+    .input-row { background-color: rgba(13, 110, 253, 0.05); }
+    .output-row { background-color: rgba(25, 135, 84, 0.05); }
+    .input-row:hover { background-color: rgba(13, 110, 253, 0.1) !important; }
+    .output-row:hover { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .input-row.selected, .output-row.selected { background-color: rgba(255, 193, 7, 0.2) !important; }
+    .section-header, .sort-indicator { display: none; }
+</style>
+{% endblock %}

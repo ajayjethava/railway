@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to PDF - Railway Signalling</title>
+    <!-- Updated favicon to use railway logo image -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        body { 
+            min-height: 100vh; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Unified Teal Theme Colors */
+        :root {
+            --primary-teal: #00695c;
+            --secondary-teal: #00796b;
+            --light-teal: #26a69a;
+            --dark-teal: #004d40;
+            --gradient-teal: linear-gradient(135deg, #00695c 0%, #00796b 100%);
+            --gradient-light: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+        }
+        
+        .card { 
+            margin-bottom: 1.5rem; 
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(145deg, #ffffff, #f8fcff);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-teal);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .card:hover::before {
+            opacity: 1;
+        }
+        
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            font-weight: 600;
+            background: var(--gradient-teal);
+            color: white;
+        }
+        
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 15px; 
+        }
+        
+        .designation-field { 
+            transition: all 0.3s ease; 
+        }
+        
+        /* Enhanced Sidebar Styling - Unified Teal Theme */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: var(--gradient-teal);
+            color: white;
+            z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-content {
+            padding: 25px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .sidebar-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sidebar-user-section {
+            padding: 20px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .user-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary-teal), var(--dark-teal));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .user-icon i {
+            font-size: 1.2rem;
+        }
+        
+        .user-details {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+        
+        .user-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+        
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            padding: 12px 18px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-btn i {
+            margin-right: 12px;
+            width: 22px;
+            text-align: center;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--light-teal);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar-btn:hover::before {
+            transform: scaleY(1);
+        }
+        
+        .sidebar-btn:hover i {
+            color: var(--light-teal);
+            transform: scale(1.1);
+        }
+        
+        .sidebar-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .sidebar-btn.active::before {
+            transform: scaleY(1);
+        }
+        
+        .sidebar-btn.active i {
+            color: var(--light-teal);
+        }
+        
+        .sidebar-btn.logout {
+            color: #ff6b6b;
+            margin-top: auto;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            padding-top: 25px;
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .sidebar-btn.logout:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            transform: translateX(5px);
+        }
+        
+        .sidebar-btn.logout:hover i {
+            color: #ff6b6b;
+        }
+        
+        /* Main content area */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+            background: var(--gradient-light);
+            transition: all 0.3s ease;
+        }
+        
+        /* Page header enhancement */
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Enhanced button styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+        }
+        
+        .btn-primary, .btn-success {
+            background: var(--gradient-teal);
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3);
+        }
+        
+        .btn-primary:hover, .btn-success:hover {
+            background: linear-gradient(135deg, var(--secondary-teal), var(--primary-teal));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 105, 92, 0.4);
+        }
+        
+        .btn-outline-success {
+            color: var(--primary-teal);
+            border: 2px solid var(--primary-teal);
+        }
+        
+        .btn-outline-success:hover {
+            background: var(--gradient-teal);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        /* Enhanced table styling */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table thead th {
+            background: var(--gradient-teal);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: 600;
+        }
+        
+        .badge {
+            border-radius: 20px;
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+        
+        /* Form styling enhancements */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Form focus colors to match teal theme */
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 0.25rem rgba(0, 105, 92, 0.25);
+        }
+        
+        /* Modal styling enhancements */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            background: var(--gradient-teal);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            border: none;
+            padding: 20px 25px;
+        }
+        
+        /* Custom teal background */
+        .bg-teal {
+            background: var(--gradient-teal) !important;
+            color: white !important;
+        }
+        
+        /* Alert styling */
+        .alert-light {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: var(--primary-teal);
+            border-left: 4px solid var(--light-teal);
+            border-radius: 8px;
+        }
+        
+        /* File upload styling */
+        .file-upload-area {
+            border: 2px dashed var(--light-teal);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(0, 105, 92, 0.03);
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload-area:hover {
+            background: rgba(0, 105, 92, 0.08);
+            border-color: var(--primary-teal);
+        }
+        
+        .file-upload-area i {
+            font-size: 3rem;
+            color: var(--primary-teal);
+            margin-bottom: 15px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                background: var(--gradient-teal);
+            }
+            
+            .sidebar-brand span,
+            .user-name,
+            .user-badge,
+            .sidebar-btn span {
+                display: none;
+            }
+            
+            .sidebar-brand {
+                justify-content: center;
+                padding: 15px 0;
+                margin-bottom: 25px;
+            }
+            
+            .sidebar-logo {
+                margin-right: 0;
+                height: 35px;
+            }
+            
+            .sidebar-user-section {
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.1);
+                margin-bottom: 20px;
+            }
+            
+            .user-info {
+                justify-content: center;
+                margin-bottom: 0;
+            }
+            
+            .user-icon {
+                margin-right = 0;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .sidebar-btn {
+                justify-content: center;
+                padding: 12px;
+                border-radius: 8px;
+            }
+            
+            .sidebar-btn i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+                padding: 20px 15px;
+            }
+            
+            .page-header {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .file-upload-area {
+                padding: 30px 15px;
+            }
+        }
+        
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <!-- Brand/Logo -->
+            <a class="sidebar-brand" href="{{ url_for('main.workflow_step', step=2) }}">
+                <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+                <span>Railway Signalling</span>
+            </a>
+            
+            <!-- User Info Section -->
+<!-- User Info Section -->
+            <div class="sidebar-user-section">
+                {% if current_user.is_authenticated %}
+                <div class="user-info">
+                    <div class="user-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                        <span class="badge rounded-pill user-badge
+                            {% if current_user.role_name == '4' %}bg-danger
+                            {% elif current_user.role_name == '2' or current_user.role_name == '3' %}bg-warning text-dark
+                            {% else %}bg-primary{% endif %}">
+                            Role: {{ current_user.role_name }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Navigation Buttons -->
+            <div class="sidebar-buttons">
+                <!-- Back to Homepage Button -->
+                <a class="sidebar-btn active" href="{{ url_for('main.workflow_step', step=2) }}">
+                    <i class="bi bi-house-door"></i>
+                    <span>Back to Homepage</span>
+                </a>
+                
+                <!-- Logout Button -->
+                {% if current_user.is_authenticated %}
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+                {% else %}
+                <!-- Login Button for non-authenticated users -->
+                <a class="sidebar-btn" href="{{ url_for('main.login') }}">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Login</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2
+                            {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4">
+                        </i>
+                        <div>
+                            <strong>
+                                {% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong>
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        <div class="container-fluid py-4 fade-in">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-2">
+                            <i class="bi bi-file-earmark-pdf me-2"></i> Generate PDF from Excel
+                            {% if current_project %}
+                            <small class="text-muted">for {{ current_project.name }}</small>
+                            {% endif %}
+                        </h2>
+                        <p class="text-muted mb-0">Create PDF documents from your Excel data with automatic versioning</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-outline-success" href="{{ url_for('main.workflow_step', step=2) }}">
+                            <i class="bi bi-house"></i> Back to Homepage
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {% if current_project %}
+            <div class="alert alert-light border alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                <i class="bi bi-folder-fill me-2 text-primary fs-4"></i>
+                <div>
+                    <strong>Current Project:</strong> {{ current_project.name }}
+                    <span class="badge bg-teal ms-2">ID: {{ current_project.id }}</span>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <div class="row justify-content-center fade-in">
+                <div class="col-md-8">
+                    <div class="card fade-in">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-file-earmark-pdf me-2"></i> Generate PDF from Excel</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" enctype="multipart/form-data">
+                                <!-- Hidden field to persist force_new flag -->
+                                {% if force_new %}
+                                <input type="hidden" name="force_new" value="1">
+                                {% endif %}
+
+                                <div class="mb-4">
+                                    <div class="file-upload-area">
+                                        <i class="bi bi-cloud-arrow-up"></i>
+                                        <h5 class="mb-3">Upload Excel File</h5>
+                                        <p class="text-muted mb-3">Drag & drop your Excel file here or click to browse</p>
+                                        <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls" required style="max-width: 400px; margin: 0 auto;">
+                                        <div class="form-text mt-2">Supported formats: .xlsx, .xls (Max: 10MB)</div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="remarks" class="form-label fw-semibold">
+                                        <i class="bi bi-chat-left-text"></i> Remarks (Optional)
+                                    </label>
+                                    <textarea class="form-control" id="remarks" name="remarks" rows="4" placeholder="Add any notes, comments, or version information about this PDF..."></textarea>
+                                    <div class="form-text">These remarks will appear in the version history table on the home page.</div>
+                                </div>
+
+                                <hr>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                                        <i class="bi bi-arrow-left"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="bi bi-file-earmark-pdf"></i> Generate PDF
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card fade-in mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i> Instructions</h6>
+                        </div>
+                        <div class="card-body">
+                            <ol class="mb-0">
+                                <li class="mb-2"><strong>Select your Excel file</strong> containing the railway data</li>
+                                <li class="mb-2"><strong>Optionally add remarks</strong> or version notes for tracking</li>
+                                <li class="mb-2"><strong>Click "Generate PDF"</strong> to create the PDF document</li>
+                                <li class="mb-2"><strong>The PDF will be saved</strong> and versioned automatically</li>
+                                <li><strong>View all PDF versions</strong> in the project card on the home page</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript for Fade-in Animation -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add smooth animations
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('fade-in');
+        });
+        
+        // File upload area interaction
+        const fileInput = document.getElementById('file');
+        const fileUploadArea = document.querySelector('.file-upload-area');
+        
+        if (fileInput && fileUploadArea) {
+            // Change border color when file is selected
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileUploadArea.style.borderColor = 'var(--primary-teal)';
+                    fileUploadArea.style.backgroundColor = 'rgba(0, 105, 92, 0.1)';
+                    
+                    // Update text
+                    const fileText = fileUploadArea.querySelector('p');
+                    if (fileText) {
+                        fileText.innerHTML = `<strong>Selected file:</strong> ${this.files[0].name}`;
+                    }
+                } else {
+                    fileUploadArea.style.borderColor = 'var(--light-teal)';
+                    fileUploadArea.style.backgroundColor = 'rgba(0, 105, 92, 0.03)';
+                    
+                    const fileText = fileUploadArea.querySelector('p');
+                    if (fileText) {
+                        fileText.textContent = 'Drag & drop your Excel file here or click to browse';
+                    }
+                }
+            });
+            
+            // Drag and drop effects
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--primary-teal)';
+                this.style.backgroundColor = 'rgba(0, 105, 92, 0.1)';
+            });
+            
+            fileUploadArea.addEventListener('dragleave', function() {
+                if (fileInput.files.length === 0) {
+                    this.style.borderColor = 'var(--light-teal)';
+                    this.style.backgroundColor = 'rgba(0, 105, 92, 0.03)';
+                }
+            });
+            
+            // Click to browse
+            fileUploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+        }
+        
+        // Form validation
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const fileInput = document.getElementById('file');
+                if (!fileInput || fileInput.files.length === 0) {
+                    e.preventDefault();
+                    alert('Please select an Excel file to upload.');
+                    fileInput.focus();
+                    return false;
+                }
+                
+                const file = fileInput.files[0];
+                const allowedExtensions = ['.xlsx', '.xls'];
+                const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+                
+                if (!allowedExtensions.includes(fileExtension)) {
+                    e.preventDefault();
+                    alert('Please upload a valid Excel file (.xlsx or .xls format).');
+                    return false;
+                }
+                
+                // Show loading state
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating PDF...';
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>

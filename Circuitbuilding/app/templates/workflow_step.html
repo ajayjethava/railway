@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <!-- Progress Header -->
+    {% include "workflow/includes/progress_header.html" %}
+
+    <!-- Step cards -->
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          Step {{ step }} of {{ total_steps }}: {{ display_name }}
+          {% if hint %}<small class="text-white">- {{ hint }}</small>{% endif %}
+        </h5>
+      </div>
+
+      <div class="card-body">
+        {% if step == 1 %}
+          {% include "workflow/step_1_station_info.html" %}
+        {% elif step == 2 %}
+          {% include "workflow/step_2_locations/main.html" %}
+        {% elif step == 3 %}
+          {% include "workflow/step_3_cables.html" %}
+        {% elif step == 4 %}
+          {% include "workflow/step_4_terminals.html" %}
+        {% elif step == 5 %}
+          {% include "workflow/step_5_headers.html" %}
+        {% elif step == 6 %}
+          {% include "workflow/step_6_groups.html" %}
+        {% elif step == 7 %}
+          {% include "workflow/step_7_choke_table.html" %}
+        {% elif step == 8 %}
+          {% include "workflow/step_8_resistor_table.html" %}
+        {% elif step == 9 %}
+          {% include "workflow/step_9_cable_box.html" %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Existing Records Table -->
+    {% if rows and step not in [3, 4, 5, 6, 7, 8, 9] %}
+      {% include "workflow/includes/existing_records_table.html" %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- Common Modals -->
+{% include "workflow/includes/success_error_modals.html" %}
+
+<!-- Step-specific modals and scripts -->
+{% if step == 2 %}
+  {% if show_more_junction_grid %}
+    {% include "workflow/step_2_locations/modals/cable_config.html" %}
+    {% include "workflow/step_2_locations/modals/cable_table.html" %}
+    {% include "workflow/step_2_locations/modals/terminal_config.html" %}
+    {% include "workflow/step_2_locations/modals/header_config.html" %}
+    {% include "workflow/step_2_locations/modals/group_config.html" %}
+    {% include "workflow/step_2_locations/modals/choke_config.html" %}
+    {% include "workflow/step_2_locations/modals/resistor_config.html" %}
+    
+    <script>
+      {% include "workflow/step_2_locations/scripts/add_more_flow.js" %}
+    </script>
+  {% elif show_popups %}
+    {% include "workflow/step_2_locations/modals/cable_config.html" %}
+    {% include "workflow/step_2_locations/modals/cable_table.html" %}
+    {% include "workflow/step_2_locations/modals/terminal_config.html" %}
+    {% include "workflow/step_2_locations/modals/header_config.html" %}
+    {% include "workflow/step_2_locations/modals/group_config.html" %}
+    {% include "workflow/step_2_locations/modals/choke_config.html" %}
+    {% include "workflow/step_2_locations/modals/resistor_config.html" %}
+    
+    <script>
+      {% include "workflow/step_2_locations/scripts/main_flow.js" %}
+
+      
+    </script>
+    
+  {% endif %}
+{% endif %}
+
+{% endblock %}
+
+<script>
+    (function() {
+        window.App = window.App || {};
+        App.projectId = {{ project.id }};
+        App.currentStage = {{ current_stage }};
+        App.currentLocationId = {{ current_location_id|tojson if current_location_id else 'null' }};
+        App.currentLocationName = "{{ current_location_name if current_location_name else '' }}";
+        App.projectName = "{{ project.name }}";
+
+        if (typeof App.init === 'function') {
+            App.init();
+        } else {
+            console.error('App.init() not found – check stage-core.js');
+        }
+    })();
+    </script>

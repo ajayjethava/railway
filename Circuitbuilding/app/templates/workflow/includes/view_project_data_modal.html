@@ -1,0 +1,2125 @@
+<!-- Step 1: Station Modal -->
+<div class="modal fade" id="step1Modal" tabindex="-1" aria-labelledby="step1ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step1ModalLabel">
+          <i class="bi bi-building"></i> Step 1: Station Drawing
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step1LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        <div id="step1Container" style="display: none;">
+          <div class="row" id="step1Data"></div>
+        </div>
+        <div id="step1Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No station data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openNextModal(2)">
+          Next: Junction Boxes <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 2: Junctions Modal -->
+<div class="modal fade" id="step2Modal" tabindex="-1" aria-labelledby="step2ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step2ModalLabel">
+          <i class="bi bi-geo-alt"></i> Step 2: Junction Boxes
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step2LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="step2Container" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm" id="step2Table">
+              <thead class="table-light">
+                <tr>
+                  <th>Junction ID</th>
+                  <th>Name</th>
+                  <th>Size</th>
+                  <th>Row</th>
+                  <th>Latitude</th>
+                  <th>Longitude</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success btn-sm" onclick="editStepData(2)">
+              <i class="bi bi-plus-circle"></i> Add Junction
+            </button>
+          </div>
+        </div>
+        <div id="step2Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No junction data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="openPrevModal(1)">
+          <i class="bi bi-arrow-left"></i> Previous: Station
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openNextModal(3)">
+          Next: Cables <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 3: Cables Modal -->
+<div class="modal fade" id="step3Modal" tabindex="-1" aria-labelledby="step3ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step3ModalLabel">
+          <i class="bi bi-diagram-3"></i> Step 3: Cables
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step3LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="step3Container" style="display: none;">
+          <!-- Filtered Junction Info -->
+          <div id="filteredJunctionInfo" class="alert alert-info mb-3" style="display: none;">
+            <strong>Viewing cables for junction:</strong> <span id="junctionFilterName"></span>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover table-sm" id="step3Table">
+              <thead class="table-light">
+                <tr>
+                  <th>Cable ID</th>
+                  <th>Name</th>
+                  <th>Junction</th>
+                  <th>Row</th>
+                  <th>Terminal</th>
+                  <th>Start No</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success btn-sm" onclick="editStepData(3)">
+              <i class="bi bi-plus-circle"></i> Add Cable
+            </button>
+          </div>
+        </div>
+        <div id="step3Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No cable data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="openPrevModal(2)">
+          <i class="bi bi-arrow-left"></i> Previous: Junctions
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openNextModal(4)">
+          Next: Terminals <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 4: Terminals Modal -->
+<div class="modal fade" id="step4Modal" tabindex="-1" aria-labelledby="step4ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step4ModalLabel">
+          <i class="bi bi-plug"></i> Step 4: Terminals
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step4LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="step4Container" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm" id="step4Table">
+              <thead class="table-light">
+                <tr>
+                  <th>Cable ID</th>
+                  <th>Terminal ID</th>
+                  <th>Terminal No</th>
+                  <th>Symbol</th>
+                  <th>Spare</th>
+                  <th>Input Conn</th>
+                  <th>Output Conn</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success btn-sm" onclick="editStepData(4)">
+              <i class="bi bi-plus-circle"></i> Add Terminal
+            </button>
+          </div>
+        </div>
+        <div id="step4Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No terminal data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="openPrevModal(3)">
+          <i class="bi bi-arrow-left"></i> Previous: Cables
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openNextModal(5)">
+          Next: Headers <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 5: Headers Modal -->
+<div class="modal fade" id="step5Modal" tabindex="-1" aria-labelledby="step5ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step5ModalLabel">
+          <i class="bi bi-collection"></i> Step 5: Headers
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step5LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="step5Container" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm" id="step5Table">
+              <thead class="table-light">
+                <tr>
+                  <th>Cable ID</th>
+                  <th>Type</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>I/O</th>
+                  <th>Text</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success btn-sm" onclick="editStepData(5)">
+              <i class="bi bi-plus-circle"></i> Add Header
+            </button>
+          </div>
+        </div>
+        <div id="step5Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No header data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="openPrevModal(4)">
+          <i class="bi bi-arrow-left"></i> Previous: Terminals
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openNextModal(6)">
+          Next: Groups <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 6: Groups Modal -->
+<div class="modal fade" id="step6Modal" tabindex="-1" aria-labelledby="step6ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step6ModalLabel">
+          <i class="bi bi-diagram-3"></i> Step 6: Groups
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step6LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="step6Container" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm" id="step6Table">
+              <thead class="table-light">
+                <tr>
+                  <th>Cable ID</th>
+                  <th>Group ID</th>
+                  <th>Terminals</th>
+                  <th>I/O</th>
+                  <th>Text</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success btn-sm" onclick="editStepData(6)">
+              <i class="bi bi-plus-circle"></i> Add Group
+            </button>
+          </div>
+        </div>
+        <div id="step6Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No group data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="openPrevModal(5)">
+          <i class="bi bi-arrow-left"></i> Previous: Headers
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openNextModal(7)">
+          Next: Chokes <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 7: Chokes Modal -->
+<div class="modal fade" id="step7Modal" tabindex="-1" aria-labelledby="step7ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step7ModalLabel">
+          <i class="bi bi-collection"></i> Step 7: Chokes
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step7LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="step7Container" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm" id="step7Table">
+              <thead class="table-light">
+                <tr>
+                  <th>Cable ID</th>
+                  <th>Choke ID</th>
+                  <th>Input Term</th>
+                  <th>Output Term</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success btn-sm" onclick="editStepData(7)">
+              <i class="bi bi-plus-circle"></i> Add Choke
+            </button>
+          </div>
+        </div>
+        <div id="step7Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No choke data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="openPrevModal(6)">
+          <i class="bi bi-arrow-left"></i> Previous: Groups
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openNextModal(8)">
+          Next: Resistors <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 8: Resistors Modal -->
+<div class="modal fade" id="step8Modal" tabindex="-1" aria-labelledby="step8ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="step8ModalLabel">
+          <i class="bi bi-collection"></i> Step 8: Resistors
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="step8LoadingSpinner" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+        <div id="step8Container" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm" id="step8Table">
+              <thead class="table-light">
+                <tr>
+                  <th>Cable ID</th>
+                  <th>Resistor ID</th>
+                  <th>Input Term</th>
+                  <th>Output Term</th>
+                  <th>Name</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt-3">
+            <button class="btn btn-success btn-sm" onclick="editStepData(8)">
+              <i class="bi bi-plus-circle"></i> Add Resistor
+            </button>
+          </div>
+        </div>
+        <div id="step8Empty" class="alert alert-info" style="display: none;">
+          <i class="bi bi-info-circle"></i> No resistor data found
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="openPrevModal(7)">
+          <i class="bi bi-arrow-left"></i> Previous: Chokes
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="openStepModal(1)">
+          Back to Start <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cable Details Modal (Shows data for specific cable ID) -->
+<div class="modal fade" id="cableDetailsModal" tabindex="-1" aria-labelledby="cableDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="cableDetailsModalLabel">
+          <i class="bi bi-cable"></i> Cable Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Cable Info Summary -->
+        <div class="alert alert-info mb-3" id="cableInfoSummary">
+          <div class="row">
+            <div class="col-md-3">
+              <strong>Cable ID:</strong> <span id="summaryCableId" class="badge bg-dark">-</span>
+            </div>
+            <div class="col-md-3">
+              <strong>Name:</strong> <span id="summaryCableName">-</span>
+            </div>
+            <div class="col-md-3">
+              <strong>Junction:</strong> <span id="summaryJunction">-</span>
+            </div>
+            <div class="col-md-3">
+              <strong>Row:</strong> <span id="summaryRow">-</span>
+            </div>
+          </div>
+        </div>
+      
+        <!-- Step Navigation Tabs -->
+        <nav class="mb-4">
+          <div class="nav nav-tabs" id="cableDetailTabs" role="tablist">
+            <button class="nav-link active" id="cable-terminals-tab" data-bs-toggle="tab" data-bs-target="#cable-terminals" type="button" role="tab">
+              <i class="bi bi-plug"></i> Terminals
+            </button>
+            <button class="nav-link" id="cable-headers-tab" data-bs-toggle="tab" data-bs-target="#cable-headers" type="button" role="tab">
+              <i class="bi bi-collection"></i> Headers
+            </button>
+            <button class="nav-link" id="cable-groups-tab" data-bs-toggle="tab" data-bs-target="#cable-groups" type="button" role="tab">
+              <i class="bi bi-diagram-3"></i> Groups
+            </button>
+            <button class="nav-link" id="cable-chokes-tab" data-bs-toggle="tab" data-bs-target="#cable-chokes" type="button" role="tab">
+              <i class="bi bi-magnet"></i> Chokes
+            </button>
+            <button class="nav-link" id="cable-resistors-tab" data-bs-toggle="tab" data-bs-target="#cable-resistors" type="button" role="tab">
+              <i class="bi bi-lightning-charge"></i> Resistors
+            </button>
+          </div>
+        </nav>
+      
+        <!-- Tab Content -->
+        <div class="tab-content" id="cableDetailContent">
+        
+          <!-- Terminals Tab -->
+          <div class="tab-pane fade show active" id="cable-terminals" role="tabpanel">
+            <div id="cableTerminalsLoading" class="text-center py-4">
+              <div class="spinner-border text-info"></div>
+              <p class="mt-2">Loading terminals...</p>
+            </div>
+            <div id="cableTerminalsContent" style="display: none;">
+              <div class="d-flex justify-content-between mb-3">
+                <button class="btn btn-sm btn-success" onclick="addNewRow('terminals')">
+                  <i class="bi bi-plus-circle"></i> Add Terminal
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Terminal ID</th>
+                      <th>Terminal No</th>
+                      <th>Symbol</th>
+                      <th>Spare</th>
+                      <th>Input Conn</th>
+                      <th>Output Conn</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cableTerminalsTable"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="cableTerminalsEmpty" class="alert alert-info" style="display: none;">
+              <i class="bi bi-info-circle"></i> No terminals found for this cable
+            </div>
+          </div>
+        
+          <!-- Headers Tab -->
+          <div class="tab-pane fade" id="cable-headers" role="tabpanel">
+            <div id="cableHeadersLoading" class="text-center py-4">
+              <div class="spinner-border text-info"></div>
+              <p class="mt-2">Loading headers...</p>
+            </div>
+            <div id="cableHeadersContent" style="display: none;">
+              <div class="d-flex justify-content-between mb-3">
+                <button class="btn btn-sm btn-success" onclick="addNewRow('headers')">
+                  <i class="bi bi-plus-circle"></i> Add Header
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Type</th>
+                      <th>Terminal Start</th>
+                      <th>Terminal End</th>
+                      <th>I/O</th>
+                      <th>Text</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cableHeadersTable"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="cableHeadersEmpty" class="alert alert-info" style="display: none;">
+              <i class="bi bi-info-circle"></i> No headers found for this cable
+            </div>
+          </div>
+        
+          <!-- Groups Tab -->
+          <div class="tab-pane fade" id="cable-groups" role="tabpanel">
+            <div id="cableGroupsLoading" class="text-center py-4">
+              <div class="spinner-border text-info"></div>
+              <p class="mt-2">Loading groups...</p>
+            </div>
+            <div id="cableGroupsContent" style="display: none;">
+              <div class="d-flex justify-content-between mb-3">
+                <button class="btn btn-sm btn-success" onclick="addNewRow('groups')">
+                  <i class="bi bi-plus-circle"></i> Add Group
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Group ID</th>
+                      <th>Terminal Numbers</th>
+                      <th>I/O</th>
+                      <th>Text</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cableGroupsTable"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="cableGroupsEmpty" class="alert alert-info" style="display: none;">
+              <i class="bi bi-info-circle"></i> No groups found for this cable
+            </div>
+          </div>
+        
+          <!-- Chokes Tab -->
+          <div class="tab-pane fade" id="cable-chokes" role="tabpanel">
+            <div id="cableChokesLoading" class="text-center py-4">
+              <div class="spinner-border text-info"></div>
+              <p class="mt-2">Loading chokes...</p>
+            </div>
+            <div id="cableChokesContent" style="display: none;">
+              <div class="d-flex justify-content-between mb-3">
+                <button class="btn btn-sm btn-success" onclick="addNewRow('chokes')">
+                  <i class="bi bi-plus-circle"></i> Add Choke
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Choke ID</th>
+                      <th>Input Terminal</th>
+                      <th>Output Terminal</th>
+                      <th>Terminal Name</th>
+                      <th>Type</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cableChokesTable"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="cableChokesEmpty" class="alert alert-info" style="display: none;">
+              <i class="bi bi-info-circle"></i> No chokes found for this cable
+            </div>
+          </div>
+        
+          <!-- Resistors Tab -->
+          <div class="tab-pane fade" id="cable-resistors" role="tabpanel">
+            <div id="cableResistorsLoading" class="text-center py-4">
+              <div class="spinner-border text-info"></div>
+              <p class="mt-2">Loading resistors...</p>
+            </div>
+            <div id="cableResistorsContent" style="display: none;">
+              <div class="d-flex justify-content-between mb-3">
+                <button class="btn btn-sm btn-success" onclick="addNewRow('resistors')">
+                  <i class="bi bi-plus-circle"></i> Add Resistor
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Resistor ID</th>
+                      <th>Input Terminal</th>
+                      <th>Output Terminal</th>
+                      <th>Resistor Name</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cableResistorsTable"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="cableResistorsEmpty" class="alert alert-info" style="display: none;">
+              <i class="bi bi-info-circle"></i> No resistors found for this cable
+            </div>
+          </div>
+        
+        </div>
+      </div>
+      <div class="modal-footer">
+        <!-- Fixed: Now checks if we came from a filtered view and goes back appropriately -->
+        <button type="button" class="btn btn-secondary" onclick="goBackToCables()">
+          <i class="bi bi-arrow-left"></i> Back to Cables
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary" onclick="nextCableDetailTab()">
+          Next <i class="bi bi-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="editModalLabel">
+          <i class="bi bi-pencil"></i> Edit Data
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="editFormContainer">
+          <!-- Dynamic form will be loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-danger" onclick="deleteCurrentItem()" id="deleteButton" style="display: none;">
+          <i class="bi bi-trash"></i> Delete
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveEdit()">
+          <i class="bi bi-save"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for Step Modals -->
+<script>
+// Store current project ID globally
+var currentProjectId = {{ current_project.id }};
+var currentCableId = null;
+var currentCableName = null;
+var currentCableData = null;
+var currentEditStep = null;
+var currentEditItemId = null;
+var currentEditItemType = null;
+var currentEditMode = 'view'; // 'view', 'edit', 'add'
+var currentJunctionFilter = null; // New: Track filtered junction for step 3
+var cameFromFilteredView = false; // Track if we came from filtered cables view
+var cameFromJunctionId = null; // Track which junction we came from
+
+// Field configurations for each step - FIXED for station fields to match backend
+const fieldConfigs = {
+  1: { // Station - FIXED: Use actual backend field names
+    endpoint: 'station',
+    fields: [
+      { name: 'station_id', label: 'Station ID', type: 'text' },
+      { name: 'station_name', label: 'Station Name', type: 'text', required: true },
+      { name: 'station_code', label: 'Station Code', type: 'text' },
+      { name: 'version', label: 'Version', type: 'text' },
+      { name: 'zone', label: 'Zone', type: 'text' },
+      { name: 'division', label: 'Division', type: 'text' },
+      { name: 'date', label: 'Date', type: 'date' },
+      { name: 'drawn_by', label: 'Drawn By', type: 'text' },
+      { name: 'checked_by', label: 'Checked By', type: 'text' }
+    ]
+  },
+  2: { // Junctions
+    endpoint: 'junctions',
+    idField: 'junction_id',
+    fields: [
+      { name: 'junction_id', label: 'Junction ID', type: 'text', required: true },
+      { name: 'junction_name', label: 'Junction Name', type: 'text', required: true },
+      { name: 'junction_size', label: 'Size', type: 'text' },
+      { name: 'junction_row', label: 'Row', type: 'text' },
+      { name: 'latitude', label: 'Latitude', type: 'number', step: '0.000001' },
+      { name: 'longitude', label: 'Longitude', type: 'number', step: '0.000001' }
+    ]
+  },
+  3: { // Cables - FIXED: Should be junction_name to match database model
+    endpoint: 'cables',
+    idField: 'cable_id',
+    fields: [
+      { name: 'cable_id', label: 'Cable ID', type: 'text', required: true },
+      { name: 'cable_name', label: 'Cable Name', type: 'text', required: true },
+      { name: 'junction_name', label: 'Junction', type: 'text' }, // FIXED: Changed back to junction_name
+      { name: 'row', label: 'Row', type: 'text' },
+      { name: 'terminal', label: 'Terminal', type: 'text' },
+      { name: 'start_no', label: 'Start Number', type: 'number' }
+    ]
+  },
+  4: { // Terminals
+    endpoint: 'terminals',
+    idField: 'terminal_id',
+    fields: [
+      { name: 'cable_id', label: 'Cable ID', type: 'text', required: true },
+      { name: 'terminal_id', label: 'Terminal ID', type: 'text', required: true },
+      { name: 'terminal_no', label: 'Terminal No', type: 'text', required: true },
+      { name: 'symbol', label: 'Symbol', type: 'text' },
+      { name: 'spare', label: 'Spare', type: 'select', options: ['Yes', 'No'], default: 'No' },
+      { name: 'input_connected', label: 'Input Connected', type: 'text' },
+      { name: 'output_connected', label: 'Output Connected', type: 'text' }
+    ]
+  },
+  5: { // Headers
+    endpoint: 'headers',
+    idField: 'header_type', // Note: No explicit ID, but uses cable_id + header_type for uniqueness if needed
+    fields: [
+      { name: 'cable_id', label: 'Cable ID', type: 'text', required: true },
+      { name: 'header_type', label: 'Header Type', type: 'text', required: true },
+      { name: 'terminal_start', label: 'Terminal Start', type: 'text' },
+      { name: 'terminal_end', label: 'Terminal End', type: 'text' },
+      { name: 'input_output', label: 'Input/Output', type: 'select', options: ['Input', 'Output'], default: 'Input' },
+      { name: 'text', label: 'Text', type: 'textarea' }
+    ]
+  },
+  6: { // Groups
+    endpoint: 'groups',
+    idField: 'group_id',
+    fields: [
+      { name: 'cable_id', label: 'Cable ID', type: 'text', required: true },
+      { name: 'group_id', label: 'Group ID', type: 'text', required: true },
+      { name: 'terminal_no', label: 'Terminal Numbers', type: 'text', required: true },
+      { name: 'input_output', label: 'Input/Output', type: 'select', options: ['Input', 'Output'], default: 'Input' },
+      { name: 'text', label: 'Text', type: 'textarea' }
+    ]
+  },
+  7: { // Chokes
+    endpoint: 'chokes',
+    idField: 'choke_id',
+    fields: [
+      { name: 'cable_id', label: 'Cable ID', type: 'text', required: true },
+      { name: 'choke_id', label: 'Choke ID', type: 'text', required: true },
+      { name: 'input_terminal', label: 'Input Terminal', type: 'text' },
+      { name: 'output_terminal', label: 'Output Terminal', type: 'text' },
+      { name: 'terminal_name', label: 'Terminal Name', type: 'text' },
+      { name: 'output_type', label: 'Type', type: 'text' }
+    ]
+  },
+  8: { // Resistors
+    endpoint: 'resistors',
+    idField: 'resistor_id',
+    fields: [
+      { name: 'cable_id', label: 'Cable ID', type: 'text', required: true },
+      { name: 'resistor_id', label: 'Resistor ID', type: 'text', required: true },
+      { name: 'input_terminal', label: 'Input Terminal', type: 'text' },
+      { name: 'output_terminal', label: 'Output Terminal', type: 'text' },
+      { name: 'resistor_name', label: 'Resistor Name', type: 'text' }
+    ]
+  }
+};
+
+// Function to open a specific step modal (for ALL data)
+function openStepModal(step, projectId) {
+    currentProjectId = projectId;
+    currentCableId = null;
+    currentCableName = null;
+    currentCableData = null;
+    currentJunctionFilter = null; // Reset filter
+    cameFromFilteredView = false; // Reset filtered view flag
+  
+    // Close any open modals first
+    closeAllModals();
+  
+    // Open the requested step modal
+    var modalId = 'step' + step + 'Modal';
+    var modalElement = document.getElementById(modalId);
+    if (modalElement) {
+        var modal = new bootstrap.Modal(modalElement);
+        modal.show();
+      
+        // Load data for this step (ALL data)
+        loadStepData(step, projectId);
+    }
+}
+
+// Function to open next modal
+function openNextModal(nextStep) {
+    closeCurrentModal();
+  
+    setTimeout(function() {
+        openStepModal(nextStep, currentProjectId);
+    }, 300);
+}
+
+// Function to open previous modal
+function openPrevModal(prevStep) {
+    closeCurrentModal();
+  
+    setTimeout(function() {
+        openStepModal(prevStep, currentProjectId);
+    }, 300);
+}
+
+// New: Function to open filtered cables for a specific junction
+function openFilteredCablesModal(junctionId, junctionName) {
+    currentJunctionFilter = { id: junctionId, name: junctionName };
+    cameFromFilteredView = true;
+    cameFromJunctionId = junctionId;
+  
+    // Close any open modals first
+    closeAllModals();
+  
+    // Open step 3 modal
+    var modalId = 'step3Modal';
+    var modalElement = document.getElementById(modalId);
+    if (modalElement) {
+        var modal = new bootstrap.Modal(modalElement);
+        modal.show();
+      
+        // Load filtered data for step 3
+        loadFilteredStepData(3, currentProjectId, junctionId);
+    }
+}
+
+// New: Function to go back to cables view (handles both filtered and all cables)
+function goBackToCables() {
+    // Close the cable details modal
+    var cableDetailsModal = bootstrap.Modal.getInstance(document.getElementById('cableDetailsModal'));
+    if (cableDetailsModal) {
+        cableDetailsModal.hide();
+    }
+    
+    // Check if we came from a filtered view
+    if (cameFromFilteredView && cameFromJunctionId) {
+        // Go back to filtered view for the specific junction
+        setTimeout(function() {
+            openFilteredCablesModal(cameFromJunctionId, currentJunctionFilter?.name || 'Unknown Junction');
+        }, 300);
+    } else {
+        // Go back to all cables view
+        setTimeout(function() {
+            openStepModal(3, currentProjectId);
+        }, 300);
+    }
+}
+
+// Function to show cable details for a specific cable ID
+function showCableDetails(cableId, cableName, cableData = null) {
+    currentCableId = cableId;
+    currentCableName = cableName || `Cable ${cableId}`;
+    currentCableData = cableData;
+  
+    // Close any open modals first
+    closeAllModals();
+  
+    // Set modal title and summary info
+    document.getElementById('cableDetailsModalLabel').innerHTML =
+        `<i class="bi bi-cable"></i> Cable Details: ${currentCableName}`;
+  
+    document.getElementById('summaryCableId').textContent = cableId;
+    document.getElementById('summaryCableName').textContent = cableName || '-';
+  
+    // If we have the cable data from step 3, use it to populate summary
+    if (cableData) {
+        // FIXED: Use junction_name to match database model
+        document.getElementById('summaryJunction').textContent = cableData.junction_name || '-';
+        document.getElementById('summaryRow').textContent = cableData.row || '-';
+    } else {
+        document.getElementById('summaryJunction').textContent = '-';
+        document.getElementById('summaryRow').textContent = '-';
+    }
+  
+    // Reset all tabs to loading state
+    resetCableDetailsModal();
+  
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('cableDetailsModal'));
+    modal.show();
+  
+    // Load all data for this cable
+    loadCableDetailsData(cableId);
+}
+
+// Function to reset cable details modal
+function resetCableDetailsModal() {
+    var tabs = ['Terminals', 'Headers', 'Groups', 'Chokes', 'Resistors'];
+  
+    tabs.forEach(function(tab) {
+        var loadingEl = document.getElementById('cable' + tab + 'Loading');
+        var contentEl = document.getElementById('cable' + tab + 'Content');
+        var emptyEl = document.getElementById('cable' + tab + 'Empty');
+        var tableEl = document.getElementById('cable' + tab + 'Table');
+      
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (contentEl) contentEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (tableEl) tableEl.innerHTML = '';
+    });
+}
+
+// Function to load all data for a specific cable
+function loadCableDetailsData(cableId) {
+    // Load terminals
+    loadCableTabData('terminals', cableId);
+    // Load headers
+    loadCableTabData('headers', cableId);
+    // Load groups
+    loadCableTabData('groups', cableId);
+    // Load chokes
+    loadCableTabData('chokes', cableId);
+    // Load resistors
+    loadCableTabData('resistors', cableId);
+}
+
+// Function to load data for a specific tab in cable details modal
+function loadCableTabData(type, cableId) {
+    fetch(`/api/project/${currentProjectId}/${type}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Filter data for this specific cable ID
+            var filteredData = Array.isArray(data) ?
+                data.filter(item => item.cable_id == cableId) : [];
+            displayCableTabData(type, filteredData);
+        })
+        .catch(error => {
+            console.error(`Error loading cable ${type}:`, error);
+            handleCableTabError(type);
+        });
+}
+
+// Function to display data in cable details tab
+function displayCableTabData(type, data) {
+    var loadingEl = document.getElementById('cable' + capitalizeFirst(type) + 'Loading');
+    var contentEl = document.getElementById('cable' + capitalizeFirst(type) + 'Content');
+    var emptyEl = document.getElementById('cable' + capitalizeFirst(type) + 'Empty');
+    var tableEl = document.getElementById('cable' + capitalizeFirst(type) + 'Table');
+  
+    if (loadingEl) loadingEl.style.display = 'none';
+  
+    if (data && data.length > 0) {
+        tableEl.innerHTML = '';
+      
+        data.forEach(item => {
+            var row = document.createElement('tr');
+            row.setAttribute('data-id', item.id || '');
+            row.setAttribute('data-type', type);
+            row.setAttribute('data-item', JSON.stringify(item));
+          
+            if (type === 'terminals') {
+                row.innerHTML = `
+                    <td>${item.terminal_id || '-'}</td>
+                    <td>${item.terminal_no || '-'}</td>
+                    <td>${item.symbol || '-'}</td>
+                    <td>${item.spare || 'No'}</td>
+                    <td>${item.input_connected || '-'}</td>
+                    <td>${item.output_connected || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editCableDetailItem('${type}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCableDetailItem('${type}', '${item.id || ''}')">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                `;
+            } else if (type === 'headers') {
+                row.innerHTML = `
+                    <td>${item.header_type || '-'}</td>
+                    <td>${item.terminal_start || '-'}</td>
+                    <td>${item.terminal_end || '-'}</td>
+                    <td>${item.input_output || '-'}</td>
+                    <td>${item.text || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editCableDetailItem('${type}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCableDetailItem('${type}', '${item.id || ''}')">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                `;
+            } else if (type === 'groups') {
+                row.innerHTML = `
+                    <td>${item.group_id || '-'}</td>
+                    <td>${item.terminal_no || '-'}</td>
+                    <td>${item.input_output || '-'}</td>
+                    <td>${item.text || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editCableDetailItem('${type}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCableDetailItem('${type}', '${item.id || ''}')">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                `;
+            } else if (type === 'chokes') {
+                row.innerHTML = `
+                    <td>${item.choke_id || '-'}</td>
+                    <td>${item.input_terminal || '-'}</td>
+                    <td>${item.output_terminal || '-'}</td>
+                    <td>${item.terminal_name || '-'}</td>
+                    <td>${item.output_type || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editCableDetailItem('${type}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCableDetailItem('${type}', '${item.id || ''}')">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                `;
+            } else if (type === 'resistors') {
+                row.innerHTML = `
+                    <td>${item.resistor_id || '-'}</td>
+                    <td>${item.input_terminal || '-'}</td>
+                    <td>${item.output_terminal || '-'}</td>
+                    <td>${item.resistor_name || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editCableDetailItem('${type}', ${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCableDetailItem('${type}', '${item.id || ''}')">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                `;
+            }
+          
+            tableEl.appendChild(row);
+        });
+      
+        if (contentEl) contentEl.style.display = 'block';
+    } else {
+        if (emptyEl) emptyEl.style.display = 'block';
+    }
+}
+
+// Function to handle tab loading errors
+function handleCableTabError(type) {
+    var loadingEl = document.getElementById('cable' + capitalizeFirst(type) + 'Loading');
+    var emptyEl = document.getElementById('cable' + capitalizeFirst(type) + 'Empty');
+  
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (emptyEl) {
+        emptyEl.innerHTML = `<div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Error loading ${type} data
+        </div>`;
+        emptyEl.style.display = 'block';
+    }
+}
+
+// Function to navigate to next tab in cable details modal
+function nextCableDetailTab() {
+    var activeTab = document.querySelector('#cableDetailTabs .nav-link.active');
+    var nextTab = activeTab.parentElement.nextElementSibling;
+  
+    if (nextTab) {
+        var nextTabButton = nextTab.querySelector('.nav-link');
+        if (nextTabButton) {
+            var tabInstance = new bootstrap.Tab(nextTabButton);
+            tabInstance.show();
+        }
+    } else {
+        // If we're on the last tab, go back to first tab
+        var firstTab = document.querySelector('#cableDetailTabs .nav-link');
+        if (firstTab) {
+            var tabInstance = new bootstrap.Tab(firstTab);
+            tabInstance.show();
+        }
+    }
+}
+
+// New: Function to load filtered data for step 3
+function loadFilteredStepData(step, projectId, filterValue) {
+    if (step !== 3) return;
+  
+    var loaderEl = document.getElementById('step' + step + 'LoadingSpinner');
+    var contentEl = document.getElementById('step' + step + 'Container');
+    var emptyEl = document.getElementById('step' + step + 'Empty');
+    var tableBody = document.querySelector('#step' + step + 'Table tbody');
+    var filterInfoEl = document.getElementById('filteredJunctionInfo');
+    var filterNameEl = document.getElementById('junctionFilterName');
+  
+    // Reset display
+    if (loaderEl) loaderEl.style.display = 'block';
+    if (contentEl) contentEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (filterInfoEl) filterInfoEl.style.display = 'block';
+    if (filterNameEl) filterNameEl.textContent = currentJunctionFilter.name;
+  
+    // Fetch all cables and filter client-side (using junction_name)
+    fetch(`/api/project/${projectId}/cables`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`✅ Loaded cables data for filtering:`, data);
+          
+            if (loaderEl) loaderEl.style.display = 'none';
+          
+            // Filter by junction_name (FIXED: using junction_name to match database model)
+            var filteredData = Array.isArray(data) ?
+                data.filter(item => item.junction_name === currentJunctionFilter.name) : [];
+          
+            if (!filteredData || filteredData.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+          
+            if (tableBody) {
+                tableBody.innerHTML = '';
+              
+                filteredData.forEach(row => {
+                    console.log(`Filtered row data for cables:`, row);
+                  
+                    var tableRow = document.createElement('tr');
+                  
+                    // Store all row data including the database ID
+                    var rowData = { ...row };
+                  
+                    // Check if we have an 'id' field, if not try to get it from the row attributes
+                    if (!rowData.id && rowData._id) {
+                        rowData.id = rowData._id;
+                    }
+                  
+                    tableRow.setAttribute('data-id', rowData.id || '');
+                    tableRow.setAttribute('data-step', step);
+                    tableRow.setAttribute('data-item', JSON.stringify(rowData));
+                  
+                    tableRow.innerHTML = `
+                        <td>${row.cable_id || '-'}</td>
+                        <td>${row.cable_name || '-'}</td>
+                        <td>${row.junction_name || '-'}</td> <!-- FIXED: Changed to junction_name -->
+                        <td>${row.row || '-'}</td>
+                        <td>${row.terminal || '-'}</td>
+                        <td>${row.start_no || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="showCableDetails('${row.cable_id || ''}', '${row.cable_name || ''}', ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                <i class="bi bi-eye"></i> View Details
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </td>
+                    `;
+                  
+                    tableBody.appendChild(tableRow);
+                });
+            }
+          
+            if (contentEl) contentEl.style.display = 'block';
+        })
+        .catch(error => {
+            console.error(`Error loading filtered step ${step}:`, error);
+            if (loaderEl) loaderEl.style.display = 'none';
+            if (emptyEl) {
+                emptyEl.innerHTML = `<div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Error loading filtered data: ${error.message}
+                </div>`;
+                emptyEl.style.display = 'block';
+            }
+        });
+}
+
+// Function to load data for a specific step (ALL data)
+function loadStepData(step, projectId) {
+    var endpointMap = {
+        1: 'station',
+        2: 'junctions',
+        3: 'cables',
+        4: 'terminals',
+        5: 'headers',
+        6: 'groups',
+        7: 'chokes',
+        8: 'resistors'
+    };
+  
+    var endpoint = endpointMap[step];
+    if (!endpoint) return;
+  
+    var loaderEl = document.getElementById('step' + step + 'LoadingSpinner');
+    var contentEl = document.getElementById('step' + step + 'Container');
+    var emptyEl = document.getElementById('step' + step + 'Empty');
+    var tableBody = document.querySelector('#step' + step + 'Table tbody');
+    var dataContainer = document.getElementById('step' + step + 'Data');
+    var filterInfoEl = document.getElementById('filteredJunctionInfo');
+  
+    // Reset display
+    if (loaderEl) loaderEl.style.display = 'block';
+    if (contentEl) contentEl.style.display = 'none';
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (filterInfoEl) filterInfoEl.style.display = 'none'; // Hide filter info for non-filtered loads
+  
+    // Fetch data
+    fetch(`/api/project/${projectId}/${endpoint}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`✅ Loaded ${endpoint} data:`, data);
+          
+            if (loaderEl) loaderEl.style.display = 'none';
+          
+            if (!data || data.length === 0) {
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+          
+            // Special handling for station data (step 1)
+            if (step === 1) {
+                if (dataContainer) {
+                    dataContainer.innerHTML = '';
+                    data.forEach(item => {
+                        var col = document.createElement('div');
+                        col.className = 'col-md-6 mb-3';
+                        col.innerHTML = `
+                            <div class="card border-0">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">${item.field || ''}</small>
+                                    <p class="mb-0"><strong>${item.value || '-'}</strong></p>
+                                </div>
+                            </div>
+                        `;
+                        dataContainer.appendChild(col);
+                    });
+                }
+            }
+            // Handle table data for other steps
+            else if (tableBody) {
+                tableBody.innerHTML = '';
+              
+                data.forEach(row => {
+                    console.log(`Row data for ${endpoint}:`, row);
+                  
+                    var tableRow = document.createElement('tr');
+                  
+                    // Store all row data including the database ID
+                    var rowData = { ...row };
+                  
+                    // Check if we have an 'id' field, if not try to get it from the row attributes
+                    if (!rowData.id && rowData._id) {
+                        rowData.id = rowData._id;
+                    }
+                  
+                    tableRow.setAttribute('data-id', rowData.id || '');
+                    tableRow.setAttribute('data-step', step);
+                    tableRow.setAttribute('data-item', JSON.stringify(rowData));
+                  
+                    if (step === 2) { // Junctions - Updated: Add eye button for view cables
+                        tableRow.innerHTML = `
+                            <td>${row.junction_id || '-'}</td>
+                            <td>${row.junction_name || '-'}</td>
+                            <td>${row.junction_size || '-'}</td>
+                            <td>${row.junction_row || '-'}</td>
+                            <td>${row.latitude || '-'}</td>
+                            <td>${row.longitude || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="openFilteredCablesModal('${row.junction_id || ''}', '${row.junction_name || ''}')">
+                                    <i class="bi bi-eye"></i> View Cables
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                    } else if (step === 3) { // Cables - FIXED: Changed to junction_name
+                        tableRow.innerHTML = `
+                            <td>${row.cable_id || '-'}</td>
+                            <td>${row.cable_name || '-'}</td>
+                            <td>${row.junction_name || '-'}</td> <!-- FIXED: Changed to junction_name -->
+                            <td>${row.row || '-'}</td>
+                            <td>${row.terminal || '-'}</td>
+                            <td>${row.start_no || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="showCableDetails('${row.cable_id || ''}', '${row.cable_name || ''}', ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-eye"></i> View Details
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                    } else if (step === 4) { // Terminals
+                        tableRow.innerHTML = `
+                            <td>${row.cable_id || '-'}</td>
+                            <td>${row.terminal_id || '-'}</td>
+                            <td>${row.terminal_no || '-'}</td>
+                            <td>${row.symbol || '-'}</td>
+                            <td>${row.spare || 'No'}</td>
+                            <td>${row.input_connected || '-'}</td>
+                            <td>${row.output_connected || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                    } else if (step === 5) { // Headers
+                        tableRow.innerHTML = `
+                            <td>${row.cable_id || '-'}</td>
+                            <td>${row.header_type || '-'}</td>
+                            <td>${row.terminal_start || '-'}</td>
+                            <td>${row.terminal_end || '-'}</td>
+                            <td>${row.input_output || '-'}</td>
+                            <td>${row.text || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                    } else if (step === 6) { // Groups
+                        tableRow.innerHTML = `
+                            <td>${row.cable_id || '-'}</td>
+                            <td>${row.group_id || '-'}</td>
+                            <td>${row.terminal_no || '-'}</td>
+                            <td>${row.input_output || '-'}</td>
+                            <td>${row.text || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                    } else if (step === 7) { // Chokes
+                        tableRow.innerHTML = `
+                            <td>${row.cable_id || '-'}</td>
+                            <td>${row.choke_id || '-'}</td>
+                            <td>${row.input_terminal || '-'}</td>
+                            <td>${row.output_terminal || '-'}</td>
+                            <td>${row.terminal_name || '-'}</td>
+                            <td>${row.output_type || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                    } else if (step === 8) { // Resistors
+                        tableRow.innerHTML = `
+                            <td>${row.cable_id || '-'}</td>
+                            <td>${row.resistor_id || '-'}</td>
+                            <td>${row.input_terminal || '-'}</td>
+                            <td>${row.output_terminal || '-'}</td>
+                            <td>${row.resistor_name || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editStepItem(${step}, ${JSON.stringify(rowData).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteStepItem(${step}, '${rowData.id || ''}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
+                    }
+                  
+                    tableBody.appendChild(tableRow);
+                });
+            }
+          
+            if (contentEl) contentEl.style.display = 'block';
+        })
+        .catch(error => {
+            console.error(`Error loading step ${step}:`, error);
+            if (loaderEl) loaderEl.style.display = 'none';
+            if (emptyEl) {
+                emptyEl.innerHTML = `<div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Error loading data: ${error.message}
+                </div>`;
+                emptyEl.style.display = 'block';
+            }
+        });
+}
+
+// Function to edit a step item
+function editStepItem(step, itemData) {
+    console.log('🔧 editStepItem called with:', { step, itemData });
+  
+    // Parse itemData if it's a string
+    if (typeof itemData === 'string') {
+        try {
+            itemData = JSON.parse(itemData);
+        } catch (e) {
+            console.error('Error parsing itemData:', e);
+            showAlert('danger', 'Error loading item data');
+            return;
+        }
+    }
+  
+    currentEditStep = step;
+    currentEditItemId = itemData.id || null;
+    currentEditMode = currentEditItemId ? 'edit' : 'add';
+    currentEditItemType = fieldConfigs[step].endpoint;
+  
+    console.log(`Edit settings: Step=${step}, Mode=${currentEditMode}, ID=${currentEditItemId}, Type=${currentEditItemType}`);
+  
+    openEditModal(step, itemData);
+}
+
+// Function to edit cable detail item
+function editCableDetailItem(type, itemData) {
+    console.log('🔧 editCableDetailItem called with:', { type, itemData });
+  
+    // Parse itemData if it's a string
+    if (typeof itemData === 'string') {
+        try {
+            itemData = JSON.parse(itemData);
+        } catch (e) {
+            console.error('Error parsing itemData:', e);
+            showAlert('danger', 'Error loading item data');
+            return;
+        }
+    }
+  
+    currentEditStep = null;
+    currentEditItemId = itemData.id || null;
+    currentEditMode = currentEditItemId ? 'edit' : 'add';
+    currentEditItemType = type;
+  
+    // Convert type to step number for field config
+    var typeToStep = {
+        'terminals': 4,
+        'headers': 5,
+        'groups': 6,
+        'chokes': 7,
+        'resistors': 8
+    };
+  
+    var step = typeToStep[type];
+    if (!step) {
+        console.error('No step mapping for type:', type);
+        return;
+    }
+  
+    openEditModal(step, itemData);
+}
+
+// Function to open edit modal
+function openEditModal(step, itemData) {
+    var config = fieldConfigs[step];
+    if (!config) {
+        console.error('No configuration found for step', step);
+        return;
+    }
+  
+    // Set modal title
+    var modalTitle = document.getElementById('editModalLabel');
+    if (currentEditMode === 'add') {
+        modalTitle.innerHTML = `<i class="bi bi-plus-circle"></i> Add New ${capitalizeFirst(config.endpoint.slice(0, -1))}`;
+        document.getElementById('deleteButton').style.display = 'none';
+    } else {
+        modalTitle.innerHTML = `<i class="bi bi-pencil"></i> Edit ${capitalizeFirst(config.endpoint.slice(0, -1))}`;
+        document.getElementById('deleteButton').style.display = 'block';
+    }
+  
+    // Build form
+    var formContainer = document.getElementById('editFormContainer');
+    formContainer.innerHTML = '';
+  
+    var form = document.createElement('form');
+    form.id = 'editForm';
+  
+    // Special handling for station (step 1) - populate with actual field values
+    if (step === 1) {
+        // If itemData is from display array, map display fields to actual model fields
+        var stationObj = {};
+        if (Array.isArray(itemData)) {
+            var fieldMap = {
+                'Station ID': 'station_id',
+                'Station Name': 'station_name',
+                'Station Code': 'station_code',
+                'Version': 'version',
+                'Zone': 'zone',
+                'Division': 'division',
+                'Date': 'date',
+                'Drawn By': 'drawn_by',
+                'Checked By': 'checked_by'
+            };
+            itemData.forEach(item => {
+                var actualField = fieldMap[item.field];
+                if (actualField) {
+                    stationObj[actualField] = item.value;
+                }
+            });
+        } else {
+            stationObj = itemData;
+        }
+        itemData = stationObj;
+    }
+  
+    config.fields.forEach(field => {
+        var formGroup = document.createElement('div');
+        formGroup.className = 'mb-3';
+      
+        var label = document.createElement('label');
+        label.className = 'form-label';
+        label.htmlFor = field.name;
+        label.textContent = field.label;
+        if (field.required) {
+            label.innerHTML += ' <span class="text-danger">*</span>';
+        }
+      
+        var input;
+        var fieldValue = itemData[field.name] || (field.default || '');
+        if (field.type === 'textarea') {
+            input = document.createElement('textarea');
+            input.className = 'form-control';
+            input.id = field.name;
+            input.name = field.name;
+            input.rows = 3;
+            input.value = fieldValue;
+            if (field.required) input.required = true;
+        } else if (field.type === 'select') {
+            input = document.createElement('select');
+            input.className = 'form-control';
+            input.id = field.name;
+            input.name = field.name;
+            if (field.required) input.required = true;
+          
+            // Add default empty option
+            var defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Select...';
+            input.appendChild(defaultOption);
+          
+            // Add options
+            if (field.options && Array.isArray(field.options)) {
+                field.options.forEach(option => {
+                    var optionEl = document.createElement('option');
+                    optionEl.value = option;
+                    optionEl.textContent = option;
+                    if (fieldValue === option) {
+                        optionEl.selected = true;
+                    }
+                    input.appendChild(optionEl);
+                });
+            }
+        } else {
+            input = document.createElement('input');
+            input.type = field.type;
+            input.className = 'form-control';
+            input.id = field.name;
+            input.name = field.name;
+            input.value = fieldValue;
+            if (field.step) input.step = field.step;
+            if (field.required) input.required = true;
+        }
+      
+        formGroup.appendChild(label);
+        formGroup.appendChild(input);
+        form.appendChild(formGroup);
+    });
+  
+    formContainer.appendChild(form);
+  
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('editModal'));
+    modal.show();
+}
+
+// Function to save edit - FIXED: No array conversion for station, send flat data always
+function saveEdit() {
+    console.log('💾 saveEdit called');
+    console.log('Current state:', {
+        currentEditStep,
+        currentEditItemId,
+        currentEditMode,
+        currentEditItemType
+    });
+  
+    var form = document.getElementById('editForm');
+    if (!form) {
+        console.error('Edit form not found');
+        showAlert('danger', 'Error: Form not found');
+        return;
+    }
+  
+    // Validate required fields before submit
+    var isValid = true;
+    var requiredFields = form.querySelectorAll('[required]');
+    requiredFields.forEach(function(input) {
+        if (!input.value.trim()) {
+            input.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    });
+    if (!isValid) {
+        showAlert('warning', 'Please fill all required fields marked with *');
+        return;
+    }
+  
+    var formData = new FormData(form);
+    var data = Object.fromEntries(formData.entries());
+  
+    console.log('Form data:', data);
+  
+    // Get the endpoint
+    var endpoint;
+    if (currentEditStep) {
+        endpoint = fieldConfigs[currentEditStep].endpoint;
+    } else {
+        endpoint = currentEditItemType;
+    }
+  
+    if (!endpoint) {
+        console.error('No endpoint found');
+        showAlert('danger', 'Error: Cannot determine endpoint');
+        return;
+    }
+  
+    // Prepare request
+    var url = `/api/project/${currentProjectId}/${endpoint}`;
+    var method = 'POST'; // Default to create
+  
+    console.log(`Mode: ${currentEditMode}, Item ID: ${currentEditItemId}`);
+  
+    if (currentEditMode === 'edit' && currentEditItemId) {
+        // We're editing an existing item - use PUT
+        method = 'PUT';
+        url += `/${currentEditItemId}`;
+        console.log(`✅ Edit mode: Updating ${endpoint} with ID ${currentEditItemId}`);
+    } else {
+        console.log(`✅ Add mode: Creating new ${endpoint}`);
+    }
+    console.log(`🔗 URL: ${url}, Method: ${method}`);
+  
+    // FIXED: No special array conversion for station - always send flat object
+    // For cable-related adds, ensure cable_id is set if in cable details
+    if (currentCableId && ['terminals', 'headers', 'groups', 'chokes', 'resistors'].includes(endpoint)) {
+        data.cable_id = currentCableId;
+    }
+  
+    console.log('Sending data:', data);
+  
+    // Send request
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+      
+        if (!response.ok) {
+            // Try to parse error response
+            return response.text().then(text => {
+                console.error('Error response text:', text);
+                try {
+                    const errorData = JSON.parse(text);
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                } catch (e) {
+                    throw new Error(`HTTP error! status: ${response.status}. Response: ${text}`);
+                }
+            });
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('✅ Save successful:', result);
+        // Show success message
+        showAlert('success', result.message || 'Data saved successfully!');
+      
+        // Close edit modal
+        var editModalEl = document.getElementById('editModal');
+        if (editModalEl) {
+            var editModal = bootstrap.Modal.getInstance(editModalEl);
+            if (editModal) {
+                editModal.hide();
+            }
+        }
+      
+        // Refresh the data
+        if (currentEditStep) {
+            // Refresh step modal
+            setTimeout(() => {
+                if (currentEditStep === 3 && currentJunctionFilter) {
+                    loadFilteredStepData(currentEditStep, currentProjectId, currentJunctionFilter.id);
+                } else {
+                    loadStepData(currentEditStep, currentProjectId);
+                }
+            }, 500);
+        }
+        if (currentCableId) {
+            // Refresh cable details modal
+            setTimeout(() => {
+                loadCableDetailsData(currentCableId);
+            }, 500);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error saving data:', error);
+        showAlert('danger', 'Error saving data: ' + error.message);
+    });
+}
+
+// Function to delete current item
+function deleteCurrentItem() {
+    if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+        return;
+    }
+  
+    console.log('🗑️ Delete item:', {
+        step: currentEditStep,
+        itemId: currentEditItemId,
+        itemType: currentEditItemType
+    });
+  
+    // Get the endpoint
+    var endpoint;
+    if (currentEditStep) {
+        endpoint = fieldConfigs[currentEditStep].endpoint;
+    } else {
+        endpoint = currentEditItemType;
+    }
+  
+    if (!endpoint || !currentEditItemId) {
+        console.error('Cannot delete: missing endpoint or ID');
+        showAlert('danger', 'Error: Cannot delete item');
+        return;
+    }
+  
+    var url = `/api/project/${currentProjectId}/${endpoint}/${currentEditItemId}`;
+  
+    console.log(`Deleting from: ${url}`);
+  
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('✅ Delete successful:', result);
+        // Show success message
+        showAlert('success', result.message || 'Item deleted successfully!');
+      
+        // Close edit modal
+        var editModalEl = document.getElementById('editModal');
+        if (editModalEl) {
+            var editModal = bootstrap.Modal.getInstance(editModalEl);
+            if (editModal) {
+                editModal.hide();
+            }
+        }
+      
+        // Refresh the data
+        if (currentEditStep) {
+            // Refresh step modal
+            setTimeout(() => {
+                if (currentEditStep === 3 && currentJunctionFilter) {
+                    loadFilteredStepData(currentEditStep, currentProjectId, currentJunctionFilter.id);
+                } else {
+                    loadStepData(currentEditStep, currentProjectId);
+                }
+            }, 500);
+        }
+        if (currentCableId) {
+            // Refresh cable details modal
+            setTimeout(() => {
+                loadCableDetailsData(currentCableId);
+            }, 500);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error deleting item:', error);
+        showAlert('danger', 'Error deleting item: ' + error.message);
+    });
+}
+
+// Function to delete step item
+function deleteStepItem(step, itemId) {
+    if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+        return;
+    }
+  
+    var endpoint = fieldConfigs[step].endpoint;
+    var url = `/api/project/${currentProjectId}/${endpoint}/${itemId}`;
+  
+    console.log(`🗑️ Deleting ${endpoint} with ID ${itemId}`);
+  
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('✅ Delete successful:', result);
+        showAlert('success', result.message || 'Item deleted successfully!');
+        if (step === 3 && currentJunctionFilter) {
+            loadFilteredStepData(step, currentProjectId, currentJunctionFilter.id);
+        } else {
+            loadStepData(step, currentProjectId);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error deleting item:', error);
+        showAlert('danger', 'Error deleting item: ' + error.message);
+    });
+}
+
+// Function to delete cable detail item
+function deleteCableDetailItem(type, itemId) {
+    if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+        return;
+    }
+  
+    var url = `/api/project/${currentProjectId}/${type}/${itemId}`;
+  
+    console.log(`🗑️ Deleting ${type} with ID ${itemId}`);
+  
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('✅ Delete successful:', result);
+        showAlert('success', result.message || 'Item deleted successfully!');
+        loadCableDetailsData(currentCableId);
+    })
+    .catch(error => {
+        console.error('❌ Error deleting item:', error);
+        showAlert('danger', 'Error deleting item: ' + error.message);
+    });
+}
+
+// Function to add new row in cable details
+function addNewRow(type) {
+    var emptyData = { cable_id: currentCableId };
+  
+    // Set default values based on type
+    var config = fieldConfigs[typeToStep[type]];
+    if (config) {
+        config.fields.forEach(field => {
+            if (field.default) {
+                emptyData[field.name] = field.default;
+            }
+        });
+    }
+  
+    editCableDetailItem(type, emptyData);
+}
+
+// Helper to map type to step
+function typeToStep(type) {
+    var mapping = {
+        'terminals': 4,
+        'headers': 5,
+        'groups': 6,
+        'chokes': 7,
+        'resistors': 8
+    };
+    return mapping[type] || null;
+}
+
+// Function to edit step data (for bulk edit or station edit) - FIXED for station mapping
+function editStepData(step) {
+    console.log(`editStepData called for step ${step}`);
+  
+    if (step === 1) {
+        // For station, load the data first and map display to model fields
+        fetch(`/api/project/${currentProjectId}/station`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Station data loaded:', data);
+                // Map display array to actual model object
+                var stationObj = {};
+                if (Array.isArray(data)) {
+                    var fieldMap = {
+                        'Station ID': 'station_id',
+                        'Station Name': 'station_name',
+                        'Station Code': 'station_code',
+                        'Version': 'version',
+                        'Zone': 'zone',
+                        'Division': 'division',
+                        'Date': 'date',
+                        'Drawn By': 'drawn_by',
+                        'Checked By': 'checked_by'
+                    };
+                    data.forEach(item => {
+                        var actualField = fieldMap[item.field];
+                        if (actualField) {
+                            stationObj[actualField] = item.value;
+                        }
+                    });
+                }
+                editStepItem(step, stationObj || {});
+            })
+            .catch(error => {
+                console.error('Error loading station data:', error);
+                showAlert('danger', 'Error loading station data');
+                // Fallback to empty for add
+                editStepItem(step, {});
+            });
+    } else {
+        // For other steps, open with empty data for adding
+        console.log('Opening empty form for adding new item');
+        editStepItem(step, {});
+    }
+}
+
+// Function to show alert
+function showAlert(type, message) {
+    // Remove any existing alerts
+    var existingAlert = document.querySelector('.global-alert');
+    if (existingAlert) {
+        existingAlert.remove();
+    }
+  
+    // Create new alert
+    var alertDiv = document.createElement('div');
+    alertDiv.className = `global-alert alert alert-${type} alert-dismissible fade show`;
+    alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+  
+    document.body.appendChild(alertDiv);
+  
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Helper function to capitalize first letter
+function capitalizeFirst(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+// Function to close current modal
+function closeCurrentModal() {
+    var currentModal = document.querySelector('.modal.show');
+    if (currentModal) {
+        var bsModal = bootstrap.Modal.getInstance(currentModal);
+        if (bsModal) {
+            bsModal.hide();
+        }
+    }
+}
+
+// Function to close all modals
+function closeAllModals() {
+    var existingModals = document.querySelectorAll('.modal.show');
+    existingModals.forEach(function(modal) {
+        var bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) {
+            bsModal.hide();
+        }
+    });
+}
+
+// Initialize modals when they are shown
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing modals');
+  
+    // Add event listeners for modal show events
+    for (let i = 1; i <= 8; i++) {
+        let modalId = 'step' + i + 'Modal';
+        let modalElement = document.getElementById(modalId);
+        if (modalElement) {
+            modalElement.addEventListener('show.bs.modal', function() {
+                console.log(`Step ${i} modal shown`);
+                if (i === 3 && currentJunctionFilter) {
+                    loadFilteredStepData(i, currentProjectId, currentJunctionFilter.id);
+                } else {
+                    loadStepData(i, currentProjectId);
+                }
+            });
+        }
+    }
+  
+    // Add event listener for cable details modal
+    let cableModal = document.getElementById('cableDetailsModal');
+    if (cableModal) {
+        cableModal.addEventListener('show.bs.modal', function() {
+            console.log('Cable details modal shown for cable:', currentCableId);
+            if (currentCableId) {
+                resetCableDetailsModal();
+                loadCableDetailsData(currentCableId);
+            }
+        });
+    }
+  
+    // Add event listener for edit modal
+    let editModal = document.getElementById('editModal');
+    if (editModal) {
+        editModal.addEventListener('hidden.bs.modal', function() {
+            console.log('Edit modal hidden, resetting edit state');
+            // Reset edit state
+            currentEditStep = null;
+            currentEditItemId = null;
+            currentEditItemType = null;
+            currentEditMode = 'view';
+        });
+    }
+});
+
+// Add keyboard navigation for tabs
+document.addEventListener('keydown', function(e) {
+    var cableModal = document.getElementById('cableDetailsModal');
+    if (cableModal && cableModal.classList.contains('show')) {
+        if (e.key === 'ArrowRight') {
+            nextCableDetailTab();
+        }
+    }
+});
+</script>

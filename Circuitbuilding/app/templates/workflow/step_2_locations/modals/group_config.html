@@ -1,0 +1,59 @@
+<div class="modal fade" id="groupConfigModal" tabindex="-1" aria-labelledby="groupConfigModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="groupConfigModalLabel">
+          <i class="bi bi-diagram-3"></i> Configure Groups
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> Configure group entries for the current cable. You can enter multiple terminal numbers separated by commas (e.g., 1,2,4,54).
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label"><strong>Cable Id</strong></label>
+          <input type="text" class="form-control" id="groupCableId" readonly>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Group Id</th>
+                <th>Terminal Numbers</th>
+                <th>Input Output</th>
+                <th>Text</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="groupTableBody">
+              <!-- Group rows will be generated here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="mt-3">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="addGroupRowBtn">
+            <i class="bi bi-plus-circle"></i> Add Group Row
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" id="groupPreviousBtn">
+          <i class="bi bi-arrow-left"></i> Previous
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <!-- Save Draft Button -->
+        <button type="button" class="btn btn-info" id="saveGroupTableDraftBtn">
+          <i class="bi bi-floppy"></i> Save Draft
+        </button>
+        <button type="button" class="btn btn-warning" id="configureChokeBtn">
+          <i class="bi bi-collection"></i> Config Choke
+        </button>
+        <!-- REMOVED: Save All Groups Button -->
+      </div>
+    </div>
+  </div>
+</div>

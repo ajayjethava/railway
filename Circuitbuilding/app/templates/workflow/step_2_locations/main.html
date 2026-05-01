@@ -1,0 +1,462 @@
+<!-- Step 2: Locations -->
+{% set station_id_source = None %}
+{% set project_name = current_project.name if current_project else '' %}
+{% set station_id_value = None %}
+
+{% if rows and rows|length > 0 and rows[0].get('station_id') %}
+  {% set station_id_source = rows[0]['station_id'] %}
+  {% set station_id_value = rows[0]['station_id'] %}
+{% elif current_project %}
+  {% set station_id_source = current_project.id if current_project.id else current_project.name %}
+  {% set station_id_value = current_project.id if current_project.id else current_project.name %}
+{% endif %}
+
+{% if show_more_junction_grid %}
+  {% include "workflow/step_2_locations/add_more_grid.html" %}
+{% elif show_popups %}
+  <!-- Main Location Grid and Cable Popup Flow -->
+  <div class="text-center py-4" id="allCompletionMessage" style="display: none;">
+    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+    <h4 class="mt-3 text-success">Locations & Cables Complete!</h4>
+    <p class="text-muted">All locations and cables have been successfully added.</p>
+  </div>
+  <!-- Add More Option After Completion -->
+  <div id="addMoreAfterCompletion" style="display: none;">
+    <div class="card mb-3 border-success">
+      <div class="card-header bg-success text-white">
+        <h6 class="mb-0"><i class="bi bi-plus-circle"></i> Add More Locations (Optional)</h6>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">Missed some locations? You can add more here.</p>
+        <form method="POST">
+          <div class="row align-items-end">
+            <div class="col-md-6">
+              <label class="form-label">How many additional locations do you want to add?</label>
+              <input type="number" class="form-control" name="junction_count" min="1" max="50" value="{{ default_junction_count|default(1) }}" required>
+              <div class="form-text">
+                They will continue from location <span id="nextJunctionNumber">{{ start_junction_number }}</span>.
+              </div>
+            </div>
+            <div class="col-md-6">
+              <button type="submit" name="action" value="add_more_junctions" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add More Locations
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- Location Grid Table -->
+  <form id="junctionGridForm" method="POST">
+    <div class="mb-3">
+      <h6>Add Locations</h6>
+      <p class="text-muted">Enter details for {{ junction_count }} location{{ junction_count > 1 and 's' or '' }} starting from {{ start_junction_number }}.</p>
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i>
+        <strong>Location Row:</strong> Enter a number to specify how many Page Rows to show (e.g., 1, 2, 3, 4, 5...)
+        <br>
+        <small class="text-primary mt-1 d-block">
+          <strong>Naming Convention:</strong><br>
+          - Full locations will have "(F)" appended (e.g., AB-20 → AB-20 (F))<br>
+          - Half locations will have "(H)" appended (e.g., AB-20 → AB-20 (H))
+        </small>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-bordered" id="junctionGridTable">
+        <thead class="table-primary">
+          <tr>
+            <th>Station Name</th>
+            <th>Location ID</th>
+            <th>Location Name *</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+            <th>Location Size *</th>
+            <th>Location Row *</th>
+            <th>Config Cables</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in range(junction_count) %}
+            <tr class="location-row" data-index="{{ i }}">
+              <td>
+                <!-- Hidden field for the actual station_id (for database) -->
+                <input type="hidden"
+                       name="junctions[{{ i }}][station_id]"
+                       value="{{ station_id_value if station_id_value else '' }}">
+                
+                <!-- Display field showing human-readable name -->
+                <input type="text"
+                       class="form-control form-control-sm"
+                       value="{{ project_name }}"
+                       readonly>
+                <small class="form-text text-muted">
+                  {% if project_name %}
+                    Project: {{ project_name }}
+                  {% else %}
+                    Station ID: {{ station_id_value }}
+                  {% endif %}
+                </small>
+              </td>
+              <td>
+                <input type="text"
+                       class="form-control form-control-sm"
+                       name="junctions[{{ i }}][junction_id]"
+                       value="{{ start_junction_number + i }}">
+              </td>
+              <td>
+                <input type="text"
+                       class="form-control form-control-sm junction-name-input"
+                       name="junctions[{{ i }}][junction_name]"
+                       placeholder="Enter location name (e.g., AB-20F)"
+                       data-original-name=""
+                       data-junction-index="{{ i }}"
+                       required>
+                <small class="form-text text-muted location-name-preview" style="font-size: 0.75rem; display: none;">
+                  Will be saved as: <span class="preview-text"></span>
+                </small>
+              </td>
+              <td>
+                <input type="number"
+                       class="form-control form-control-sm"
+                       name="junctions[{{ i }}][latitude]"
+                       placeholder="00.000000"
+                       step="any">
+              </td>
+              <td>
+                <input type="number"
+                       class="form-control form-control-sm"
+                       name="junctions[{{ i }}][longitude]"
+                       placeholder="00.000000"
+                       step="any">
+              </td>
+              <td>
+                <select class="form-select form-select-sm junction-size-select"
+                        name="junctions[{{ i }}][junction_size]"
+                        data-junction-index="{{ i }}"
+                        required>
+                  <option value="">Select Size</option>
+                  <option value="Full">Full</option>
+                  <option value="Half">Half</option>
+                </select>
+              </td>
+              <td>
+                <input type="number"
+                       class="form-control form-control-sm junction-row-input"
+                       name="junctions[{{ i }}][junction_row]"
+                       placeholder="Enter row number (e.g., 1, 2, 3...)"
+                       min="1"
+                       data-junction-index="{{ i }}"
+                       required>
+              </td>
+              <td>
+                <button type="button"
+                        class="btn btn-sm btn-outline-info config-cables-btn"
+                        data-junction-index="{{ i }}"
+                        disabled>
+                  <i class="bi bi-gear"></i> Config
+                </button>
+                <span class="cable-status" data-junction-index="{{ i }}" style="display: none;">
+                  <i class="bi bi-check-circle-fill text-success" title="Cables Configured"></i>
+                  <a href="#" class="btn btn-sm btn-outline-warning edit-cables-btn" data-junction-index="{{ i }}">Edit</a>
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+   
+    <!-- Form Actions -->
+    <div class="d-flex justify-content-between mt-4">
+      <!-- Separate form for Previous button to avoid validation -->
+      <form method="POST" style="display: inline;">
+        <button type="submit" name="action" value="show_add_more" class="btn btn-secondary">
+          <i class="bi bi-arrow-left"></i> Previous
+        </button>
+      </form>
+      <button type="submit" name="action" value="add_junctions" class="btn btn-primary" id="saveJunctionsBtn">
+        <i class="bi bi-save"></i> Save Locations
+      </button>
+    </div>
+  </form>
+  <!-- JavaScript for Location Name Formatting and Validation -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Function to format location name based on size
+      function formatLocationName(junctionIndex) {
+          const nameInput = document.querySelector(`.junction-name-input[data-junction-index="${junctionIndex}"]`);
+          const sizeSelect = document.querySelector(`.junction-size-select[data-junction-index="${junctionIndex}"]`);
+          const previewElement = document.querySelector(`.location-row[data-index="${junctionIndex}"] .location-name-preview`);
+          const previewText = document.querySelector(`.location-row[data-index="${junctionIndex}"] .location-name-preview .preview-text`);
+         
+          if (!nameInput || !sizeSelect) return '';
+         
+          let baseName = nameInput.value.trim();
+          const size = sizeSelect.value;
+         
+          // Store original name without suffix for editing
+          if (!nameInput.dataset.originalName && baseName) {
+              nameInput.dataset.originalName = baseName.replace(/\s*\([FH]\)$/, '');
+          }
+         
+          // Remove existing suffix if present
+          baseName = baseName.replace(/\s*\([FH]\)$/, '');
+         
+          let formattedName = baseName;
+         
+          if (baseName) {
+              if (size === 'Full') {
+                  formattedName = baseName + ' (F)';
+              } else if (size === 'Half') {
+                  formattedName = baseName + ' (H)';
+              }
+          }
+         
+          // Update preview
+          if (previewElement && previewText) {
+              if (baseName && size) {
+                  previewText.textContent = formattedName;
+                  previewElement.style.display = 'block';
+              } else {
+                  previewElement.style.display = 'none';
+              }
+          }
+         
+          return formattedName;
+      }
+     
+      // Function to validate and enable/disable config buttons
+      function validateLocationRow(junctionIndex) {
+          const nameInput = document.querySelector(`.junction-name-input[data-junction-index="${junctionIndex}"]`);
+          const sizeSelect = document.querySelector(`.junction-size-select[data-junction-index="${junctionIndex}"]`);
+          const rowInput = document.querySelector(`.junction-row-input[data-junction-index="${junctionIndex}"]`);
+          const configBtn = document.querySelector(`.config-cables-btn[data-junction-index="${junctionIndex}"]`);
+         
+          const isValid = nameInput && nameInput.value.trim() &&
+                         sizeSelect && sizeSelect.value &&
+                         rowInput && rowInput.value;
+         
+          if (configBtn) {
+              configBtn.disabled = !isValid;
+          }
+         
+          return isValid;
+      }
+     
+      // Function to validate all rows
+      function validateAllRows() {
+          let allValid = true;
+          const totalRows = {{ junction_count }};
+         
+          for (let i = 0; i < totalRows; i++) {
+              if (!validateLocationRow(i)) {
+                  allValid = false;
+                  break;
+              }
+          }
+         
+          return allValid;
+      }
+     
+      // Add event listeners to all location size dropdowns
+      const sizeSelects = document.querySelectorAll('.junction-size-select');
+      sizeSelects.forEach((select) => {
+          select.addEventListener('change', function() {
+              const junctionIndex = this.getAttribute('data-junction-index');
+              const formattedName = formatLocationName(junctionIndex);
+             
+              // Update the input value with formatted name
+              const nameInput = document.querySelector(`.junction-name-input[data-junction-index="${junctionIndex}"]`);
+              if (nameInput && formattedName) {
+                  nameInput.value = formattedName;
+              }
+             
+              validateLocationRow(junctionIndex);
+              validateAllRows();
+          });
+      });
+     
+      // Add event listeners to all location name inputs
+      const nameInputs = document.querySelectorAll('.junction-name-input');
+      nameInputs.forEach((input) => {
+          input.addEventListener('input', function() {
+              const junctionIndex = this.getAttribute('data-junction-index');
+              // Clear the original name when user starts typing
+              if (this.dataset.originalName && this.value !== this.dataset.originalName) {
+                  this.dataset.originalName = '';
+              }
+              formatLocationName(junctionIndex);
+          });
+         
+          input.addEventListener('blur', function() {
+              const junctionIndex = this.getAttribute('data-junction-index');
+              const sizeSelect = document.querySelector(`.junction-size-select[data-junction-index="${junctionIndex}"]`);
+             
+              if (sizeSelect && sizeSelect.value) {
+                  const formattedName = formatLocationName(junctionIndex);
+                  this.value = formattedName;
+              }
+             
+              validateLocationRow(junctionIndex);
+              validateAllRows();
+          });
+      });
+     
+      // Add event listeners to all location row inputs
+      const rowInputs = document.querySelectorAll('.junction-row-input');
+      rowInputs.forEach((input) => {
+          input.addEventListener('input', function() {
+              const junctionIndex = this.getAttribute('data-junction-index');
+              validateLocationRow(junctionIndex);
+              validateAllRows();
+          });
+         
+          input.addEventListener('blur', function() {
+              const junctionIndex = this.getAttribute('data-junction-index');
+              validateLocationRow(junctionIndex);
+              validateAllRows();
+          });
+      });
+     
+      // Form submission handler to ensure names are formatted before saving
+      const junctionGridForm = document.getElementById('junctionGridForm');
+      if (junctionGridForm) {
+          junctionGridForm.addEventListener('submit', function(e) {
+              // Only validate if the save button was clicked
+              const submitter = e.submitter;
+              if (submitter && submitter.name === 'action' && submitter.value === 'add_junctions') {
+                  // Format all location names before submission
+                  const totalRows = {{ junction_count }};
+                  let allValid = true;
+                 
+                  for (let i = 0; i < totalRows; i++) {
+                      const formattedName = formatLocationName(i);
+                      const isValid = validateLocationRow(i);
+                     
+                      // Update the input value with the formatted name
+                      const nameInput = document.querySelector(`.junction-name-input[data-junction-index="${i}"]`);
+                      if (nameInput && formattedName) {
+                          nameInput.value = formattedName;
+                      }
+                     
+                      if (!isValid) {
+                          allValid = false;
+                      }
+                  }
+                 
+                  if (!allValid) {
+                      e.preventDefault();
+                      alert('Please fill all required fields (Location Name, Location Size, and Location Row) for all locations.');
+                      return false;
+                  }
+              }
+             
+              return true;
+          });
+      }
+     
+      // Config cables button handlers
+      const configButtons = document.querySelectorAll('.config-cables-btn');
+      configButtons.forEach(button => {
+          button.addEventListener('click', function() {
+              const junctionIndex = this.getAttribute('data-junction-index');
+              if (!this.disabled) {
+                  // This would typically open a modal for cable configuration
+                  console.log('Opening cable configuration for location index:', junctionIndex);
+                  // You would implement the modal opening logic here
+                  // For now, we'll simulate a successful configuration
+                  const cableStatus = document.querySelector(`.cable-status[data-junction-index="${junctionIndex}"]`);
+                  if (cableStatus) {
+                      this.style.display = 'none';
+                      cableStatus.style.display = 'inline';
+                  }
+              }
+          });
+      });
+     
+      // Edit cables button handlers
+      const editCablesButtons = document.querySelectorAll('.edit-cables-btn');
+      editCablesButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+              e.preventDefault();
+              const junctionIndex = this.getAttribute('data-junction-index');
+              console.log('Editing cables for location index:', junctionIndex);
+              // Implement edit cable configuration logic here
+          });
+      });
+     
+      // Initialize validation for all rows
+      document.querySelectorAll('.location-row').forEach(row => {
+          const junctionIndex = row.getAttribute('data-index');
+          validateLocationRow(junctionIndex);
+      });
+      validateAllRows();
+  });
+  </script>
+{% elif not has_existing_junctions and junction_count == 0 %}
+  <!-- For New Drawing: Show location count first -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0"><i class="bi bi-plus-circle"></i> Add Locations</h6>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="mb-4">
+              <label class="form-label fw-semibold">How many locations do you want to add?</label>
+              <input type="number" class="form-control form-control-lg" name="junction_count" min="1" max="50" value="1" required>
+              <div class="form-text">
+                Enter the number of locations to add (minimum 1 required to continue)
+              </div>
+            </div>
+           
+            <div class="d-flex justify-content-between mt-4">
+              <button type="submit" name="action" value="prev" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Previous
+              </button>
+              <button type="submit" name="action" value="add_more_junctions" class="btn btn-primary btn-lg px-4">
+                Continue <i class="bi bi-arrow-right"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <!-- If existing locations found: Show add more option -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0"><i class="bi bi-plus-circle"></i> Add More Locations</h6>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">How many additional locations do you want to add?</label>
+            <input type="number" class="form-control" name="junction_count" min="1" max="50" value="{{ default_junction_count|default(1) }}" required>
+            <div class="form-text">
+              Enter number of new Location Box or CTR to add
+            </div>
+          </div>
+          <div class="col-md-6 text-end">
+            <button type="submit" name="action" value="add_more_junctions" class="btn btn-primary btn-lg px-4">
+              Continue <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+ 
+  <div class="d-flex justify-content-between mt-4">
+    <form method="POST" style="display: inline;">
+      <button type="submit" name="action" value="prev" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Previous
+      </button>
+    </form>
+  </div>
+{% endif %}

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Railway Signalling</title>
+    <!-- Updated favicon to use railway logo image -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+        }
+
+        /* Enhanced Sidebar Styling */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: linear-gradient(180deg, #00695c 0%, #00796b 100%);
+            color: white;
+            z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-content {
+            padding: 25px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar-logo {
+            height: 38px;
+            width: auto;
+            margin-right: 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-user-section {
+            padding: 18px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 22px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .user-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #00695c, #004d40);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-icon i {
+            font-size: 1.15rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.98rem;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 25px;
+        }
+
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            padding: 11px 16px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-btn i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #26a69a;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-btn:hover::before {
+            transform: scaleY(1);
+        }
+
+        .sidebar-btn:hover i {
+            color: #26a69a;
+            transform: scale(1.1);
+        }
+
+        .sidebar-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-btn.active::before {
+            transform: scaleY(1);
+        }
+
+        .sidebar-btn.active i {
+            color: #26a69a;
+        }
+
+        .sidebar-btn.logout {
+            color: #ff6b6b;
+            margin-top: auto;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .sidebar-btn.logout:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            transform: translateX(5px);
+        }
+
+        .sidebar-btn.logout:hover i {
+            color: #ff6b6b;
+        }
+
+        /* Main content area */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        /* Page header */
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #00695c, #00796b);
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            padding: 18px 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .bg-teal {
+            background: linear-gradient(135deg, #00695c, #00796b) !important;
+            color: white !important;
+        }
+
+        /* Flash messages */
+        .alert {
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar-brand span,
+            .user-name,
+            .sidebar-btn span {
+                display: none;
+            }
+            
+            .sidebar-brand {
+                justify-content: center;
+                padding: 15px 0;
+                margin-bottom: 30px;
+            }
+            
+            .sidebar-logo {
+                margin-right: 0;
+            }
+            
+            .sidebar-user-section {
+                padding: 15px;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+            
+            .user-icon {
+                margin-right: 0;
+            }
+            
+            .sidebar-btn {
+                justify-content: center;
+                padding: 12px;
+            }
+            
+            .sidebar-btn i {
+                margin-right: 0;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+                padding: 20px;
+            }
+            
+            .page-header {
+                padding: 20px;
+            }
+        }
+
+        /* Custom scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <!-- Brand/Logo -->
+            <a class="sidebar-brand" href="{{ url_for('main.approval_tracking') }}">
+                <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+                <span>Railway Signalling</span>
+            </a>
+       
+            <!-- User Info Section -->
+            <div class="sidebar-user-section">
+                {% if current_user.is_authenticated %}
+                <div class="user-info">
+                    <div class="user-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+       
+            <!-- Navigation Buttons -->
+            <div class="sidebar-buttons">
+                <!-- Dashboard/Home Button -->
+                {% if permissions.can_create_drawing or permissions.can_see_all %}
+                <a class="sidebar-btn" href="{{ url_for('main.approval_tracking') }}">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+           
+                <!-- Admin-specific buttons -->
+                {% if current_user.role_name == '4' %}
+                <a class="sidebar-btn" href="{{ url_for('main.new_project') }}">
+                    <i class="bi bi-plus-square"></i>
+                    <span>New Station</span>
+                </a>
+    
+                <a class="sidebar-btn" href="{{ url_for('main.admin_users') }}">
+                    <i class="bi bi-people"></i>
+                    <span>Manage Users</span>
+                </a>
+
+                <a class="sidebar-btn active" href="{{ url_for('main.role_master_list') }}">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Manage Roles</span>
+                </a>
+                
+                <a class="sidebar-btn" href="{{ url_for('main.designation_master_list') }}">
+                    <i class="bi bi-person-workspace"></i>
+                    <span>Manage Designations</span>
+                </a>
+                
+                <a class="sidebar-btn" href="{{ url_for('main.view_list') }}">
+                    <i class="bi bi-card-list"></i>
+                    <span>View List</span>
+                </a>
+                {% endif %}
+
+                <!-- Drawing-related buttons -->
+                {% if current_user.role_name in ['1', '4'] %}
+                <a class="sidebar-btn" href="{{ url_for('main.new_drawing_selection') }}">
+                    <i class="bi bi-file-earmark-plus"></i>
+                    <span>New Drawing</span>
+                </a>
+                
+                <!-- CTR Drawing Page Button -->
+                <a class="sidebar-btn" href="{{ url_for('main.ctr_drawing') }}">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span>CTR Drawing</span>
+                </a>
+                {% endif %}
+           
+                <!-- Logout Button -->
+                {% if current_user.is_authenticated %}
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4"></i>
+                        <div>
+                            <strong>{% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong> {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Page Header -->
+        <div class="page-header fade-in">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">{{ title }}</h1>
+                    <p class="text-muted mb-0">{% if role %}Edit existing role{% else %}Create new role{% endif %}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.role_master_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row justify-content-center fade-in">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-teal text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i> {{ title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('main.role_master_create') if not role else url_for('main.role_master_edit', id=role.id) }}">
+                            <div class="mb-3">
+                                <label for="role_name" class="form-label fw-medium">Role Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="role_name" name="role_name" 
+                                       value="{{ role.role_name if role else '' }}" 
+                                       required maxlength="50" placeholder="Enter role name">
+                                <div class="form-text">Unique role name (max 50 characters)</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if not role or role.is_active %}checked{% endif %}>
+                                    <label class="form-check-label fw-medium" for="is_active">
+                                        Active Status
+                                    </label>
+                                </div>
+                                <div class="form-text">Inactive roles won't be available for assignment</div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('main.role_master_list') }}" class="btn btn-outline-secondary me-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle"></i> {{ 'Update' if role else 'Create' }} Role
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-hide flash messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

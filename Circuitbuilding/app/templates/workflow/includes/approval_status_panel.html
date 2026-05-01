@@ -1,0 +1,68 @@
+<!-- Approval Status Panel -->
+<div class="card mb-3 border-{% if pdf.level3_status == 'approved' %}success{% elif pdf.level3_status == 'rejected' %}danger{% elif pdf.level2_status == 'rejected' %}danger{% else %}warning{% endif %}">
+    <div class="card-header bg-{% if pdf.level3_status == 'approved' %}success{% elif pdf.level3_status == 'rejected' %}danger{% elif pdf.level2_status == 'rejected' %}danger{% else %}warning{% endif %} text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-shield-check"></i> PDF Approval Status</h5>
+        <span class="badge bg-light text-dark">
+            Overall: <strong>{{ pdf.get_approval_status()|upper }}</strong>
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <!-- Level 1 Status -->
+            <div class="col-md-4">
+                <h6>Level 1</h6>
+                <div class="mb-2">
+                    <span class="badge bg-{% if pdf.level1_status == 'approved' %}success{% elif pdf.level1_status == 'rejected' %}danger{% else %}secondary{% endif %} p-2 fs-6">
+                        {{ pdf.level1_status|upper }}
+                    </span>
+                </div>
+                <small class="text-muted">(Created by User)</small>
+            </div>
+            
+            <!-- Level 2 Status -->
+            <div class="col-md-4">
+                <h6>Level 2</h6>
+                <div class="mb-2">
+                    <span class="badge bg-{% if pdf.level2_status == 'approved' %}success{% elif pdf.level2_status == 'rejected' %}danger{% else %}secondary{% endif %} p-2 fs-6">
+                        {{ pdf.level2_status|upper }}
+                    </span>
+                </div>
+                {% if pdf.level2_approver %}
+                    <small class="text-muted">
+                        By: {{ pdf.level2_approver.username }}<br>
+                        {{ pdf.level2_approval_date.strftime('%d %b %Y %I:%M %p') }}
+                    </small>
+                {% else %}
+                    <small class="text-muted">Pending</small>
+                {% endif %}
+            </div>
+            
+            <!-- Level 3 Status -->
+            <div class="col-md-4">
+                <h6>Level 3</h6>
+                <div class="mb-2">
+                    <span class="badge bg-{% if pdf.level3_status == 'approved' %}success{% elif pdf.level3_status == 'rejected' %}danger{% elif pdf.level2_status == 'rejected' %}secondary{% else %}secondary{% endif %} p-2 fs-6">
+                        {% if pdf.level2_status == 'rejected' %}PENDING{% else %}{{ pdf.level3_status|upper }}{% endif %}
+                    </span>
+                </div>
+                {% if pdf.level3_approver %}
+                    <small class="text-muted">
+                        By: {{ pdf.level3_approver.username }}<br>
+                        {{ pdf.level3_approval_date.strftime('%d %b %Y %I:%M %p') }}
+                    </small>
+                {% else %}
+                    <small class="text-muted">
+                        {% if pdf.level2_status == 'rejected' %}Awaiting Level 2 approval{% else %}Pending{% endif %}
+                    </small>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if pdf.rejection_reason %}
+        <div class="alert alert-danger mt-3">
+            <strong><i class="bi bi-x-circle"></i> Rejection Reason:</strong>
+            {{ pdf.rejection_reason }}
+        </div>
+        {% endif %}
+    </div>
+</div>

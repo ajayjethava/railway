@@ -1,0 +1,293 @@
+<!-- Cable Table Modal for Add More Flow -->
+<div class="modal fade" id="addCableModal" tabindex="-1" aria-labelledby="addCableModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="addCableModalLabel">
+          <i class="bi bi-diagram-3"></i> Configure Cables for Location: <span id="cableModalJunctionName"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> Configure all cables for this location in the table below.
+          <div class="mt-2" id="cableModalRowInfo">
+            <!-- Row information will be populated here -->
+          </div>
+        </div>
+        <div id="cableTablesContainer">
+          <!-- Cable tables will be generated here for each row -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="previousToConfigBtn">
+          <i class="bi bi-arrow-left"></i> Previous
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <!-- Add this new button -->
+        <button type="button" class="btn btn-success" id="saveAllCablesBtn">
+          <i class="bi bi-check-circle"></i> Save All Cables
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// Save Cable Table Draft button handler
+$('#saveCableTableDraftBtn').click(function() {
+    const junctionBoxId = currentJunctionBoxId;
+    const junctionBoxName = $('#cableModalJunctionName').text();
+    const cableData = collectCableDataFromTables();
+    
+    if (cableData.length === 0) {
+        showToast('error', 'No cable data to save');
+        return;
+    }
+    
+    // Show loading state
+    const btn = $(this);
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i> Saving...');
+    
+    $.ajax({
+        url: '/save_cable_table_draft',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            junction_box_id: junctionBoxId,
+            junction_box_name: junctionBoxName,
+            cable_data: cableData
+        }),
+        success: function(response) {
+            btn.prop('disabled', false).html(originalText);
+            
+            if (response.success) {
+                showToast('success', response.message);
+                // Update summary display
+                updateCableSummaryDisplay();
+            } else {
+                showToast('error', response.message);
+            }
+        },
+        error: function() {
+            btn.prop('disabled', false).html(originalText);
+            showToast('error', 'Error saving draft');
+        }
+    });
+});
+
+// Save All Cables button handler (Save + Finalize)
+$('#saveAllCablesBtn').click(function() {
+    const junctionBoxId = currentJunctionBoxId;
+    const junctionBoxName = $('#cableModalJunctionName').text();
+    const cableData = collectCableDataFromTables();
+    
+    if (cableData.length === 0) {
+        showToast('error', 'No cable data to save');
+        return;
+    }
+    
+    // Show loading state
+    const btn = $(this);
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="bi bi-hourglass"></i> Processing...');
+    
+    // First save as draft
+    $.ajax({
+        url: '/save_cable_table_draft',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            junction_box_id: junctionBoxId,
+            junction_box_name: junctionBoxName,
+            cable_data: cableData
+        }),
+        success: function(response) {
+            if (response.success) {
+                // Now finalize the draft (remove DRAFT- prefix)
+                $.ajax({
+                    url: '/finalize_cable_table',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        junction_box_id: junctionBoxId
+                    }),
+                    success: function(finalizeResponse) {
+                        btn.prop('disabled', false).html(originalText);
+                        
+                        if (finalizeResponse.success) {
+                            showToast('success', 'Cables saved successfully!');
+                            $('#addCableModal').modal('hide');
+                            
+                            // Update summary display
+                            updateCableSummaryDisplay();
+                            
+                            // Optional: Redirect or reload
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            showToast('error', finalizeResponse.message);
+                        }
+                    },
+                    error: function() {
+                        btn.prop('disabled', false).html(originalText);
+                        showToast('error', 'Error finalizing cables');
+                    }
+                });
+            } else {
+                btn.prop('disabled', false).html(originalText);
+                showToast('error', response.message);
+            }
+        },
+        error: function() {
+            btn.prop('disabled', false).html(originalText);
+            showToast('error', 'Error saving cables');
+        }
+    });
+});
+
+// Function to collect cable data from tables
+function collectCableDataFromTables() {
+    const cableData = [];
+    const uniqueRows = new Set();
+    
+    $('#cableTablesContainer .cable-table').each(function() {
+        const row = $(this).data('row');
+        uniqueRows.add(row);
+        
+        $(this).find('tbody tr').each(function() {
+            const position = $(this).find('.cable-position').val() || $(this).find('.cable-position').text();
+            const terminal = $(this).find('.cable-terminal').val() || '';
+            const startNo = $(this).find('.cable-start-no').val() || '';
+            const junctionBox = $(this).find('.cable-junction-box').val() || currentJunctionBoxId;  // Get from input or use junction ID
+            
+            // Use Location ID + Row + Position for cable ID
+            const cableId = `${currentJunctionBoxId}-${row}-${position}`;
+            const cableName = $(this).find('.cable-name').val() || `Cable ${row}${position}`;
+            
+            cableData.push({
+                cable_id: cableId,
+                cable_name: cableName,
+                row: row,
+                position: position,
+                junction_box: junctionBox,  // Use Location ID
+                terminal: terminal,
+                start_no: startNo
+            });
+        });
+    });
+    
+    console.log(`Collected ${cableData.length} cables from ${uniqueRows.size} rows`);
+    return cableData;
+}
+
+// Function to update cable summary display
+function updateCableSummaryDisplay() {
+    // Get updated summary
+    $.ajax({
+        url: '/get_cable_summary',
+        type: 'GET',
+        success: function(response) {
+            if (response.success) {
+                if ($('#totalCablesCount').length) {
+                    $('#totalCablesCount').text(response.total_cables);
+                }
+                if ($('#totalRowsCount').length) {
+                    $('#totalRowsCount').text(response.total_rows);
+                }
+                if ($('#totalJunctionsCount').length) {
+                    $('#totalJunctionsCount').text(response.total_junctions);
+                }
+            }
+        }
+    });
+}
+
+// When opening the cable table modal, load draft data
+function openCableTableModal(junctionBoxId, junctionBoxName, rowsConfig) {
+    currentJunctionBoxId = junctionBoxId;
+    $('#cableModalJunctionName').text(junctionBoxName);
+    
+    // First, clear existing tables
+    $('#cableTablesContainer').empty();
+    
+    // Create tables based on rowsConfig
+    rowsConfig.forEach(rowConfig => {
+        createCableTableForRow(rowConfig.row, rowConfig.cable_count);
+    });
+    
+    // Then load draft data if exists
+    $.ajax({
+        url: '/get_cable_table_draft',
+        type: 'GET',
+        data: {
+            junction_box_id: junctionBoxId
+        },
+        success: function(response) {
+            if (response.success && response.has_draft) {
+                // Populate tables with draft data
+                populateCableTables(response.cable_data);
+                showToast('success', 'Draft loaded successfully');
+            }
+        }
+    });
+    
+    $('#addCableModal').modal('show');
+}
+
+// Function to populate cable tables with draft data
+function populateCableTables(cableData) {
+    cableData.forEach(cable => {
+        const row = cable.row;
+        const table = $(`#cableTable-${row}`);
+        
+        if (table.length) {
+            // Find the row with matching position or add new row
+            let found = false;
+            table.find('tbody tr').each(function() {
+                const position = $(this).find('.cable-position').val();
+                if (position === cable.position) {
+                    // Update existing row
+                    $(this).find('.cable-terminal').val(cable.terminal);
+                    $(this).find('.cable-start-no').val(cable.start_no);
+                    $(this).find('.cable-id').val(cable.cable_id);
+                    $(this).find('.cable-name').val(cable.cable_name);
+                    found = true;
+                    return false;
+                }
+            });
+            
+            if (!found) {
+                // Add new row
+                addCableRow(row, cable.position, cable.terminal, cable.start_no, cable.cable_id, cable.cable_name);
+            }
+        }
+    });
+}
+
+// Helper function to add a cable row
+function addCableRow(row, position, terminal = '', startNo = '', cableId = '', cableName = '') {
+    const table = $(`#cableTable-${row}`);
+    const newRow = `
+        <tr>
+            <td><input type="text" class="form-control cable-position" value="${position}" readonly></td>
+            <td><input type="text" class="form-control cable-terminal" value="${terminal}"></td>
+            <td><input type="text" class="form-control cable-start-no" value="${startNo}"></td>
+            <td>
+                <input type="hidden" class="cable-id" value="${cableId || `${currentJunctionBoxId}-${row}-${position}`}">
+                <input type="hidden" class="cable-name" value="${cableName || `Cable ${row}${position}`}">
+                <button class="btn btn-sm btn-danger remove-cable-btn">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+    table.find('tbody').append(newRow);
+}
+
+// Initialize summary display on page load
+$(document).ready(function() {
+    updateCableSummaryDisplay();
+});
+</script>

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Signalling - View List</title>
+    <!-- Updated favicon to use railway logo image -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+        }
+
+        /* Enhanced Sidebar Styling */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: linear-gradient(180deg, #00695c 0%, #00796b 100%);
+            color: white;
+            z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-content {
+            padding: 25px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .sidebar-logo {
+            height: 38px;
+            width: auto;
+            margin-right: 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-user-section {
+            padding: 18px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 22px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .user-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #00695c, #004d40);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-icon i {
+            font-size: 1.15rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.98rem;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 25px;
+        }
+
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            padding: 11px 16px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-btn i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #26a69a;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-btn:hover::before {
+            transform: scaleY(1);
+        }
+
+        .sidebar-btn:hover i {
+            color: #26a69a;
+            transform: scale(1.1);
+        }
+
+        .sidebar-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-btn.active::before {
+            transform: scaleY(1);
+        }
+
+        .sidebar-btn.active i {
+            color: #26a69a;
+        }
+
+        .sidebar-btn.logout {
+            color: #ff6b6b;
+            margin-top: auto;
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .sidebar-btn.logout:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            transform: translateX(5px);
+        }
+
+        .sidebar-btn.logout:hover i {
+            color: #ff6b6b;
+        }
+
+        /* Main content area */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+
+        .bg-teal {
+            background: linear-gradient(135deg, #00695c, #00796b) !important;
+            color: white !important;
+        }
+
+        .stats-card {
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            height: 100%;
+        }
+
+        .stats-card .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stats-card .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .project-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid;
+            margin-bottom: 15px;
+        }
+
+        .project-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        .count-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 10px;
+            background: #f8f9fa;
+            color: #495057;
+        }
+
+        .action-btn {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
+            margin-right: 5px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar-brand span,
+            .user-name,
+            .sidebar-btn span {
+                display: none;
+            }
+            
+            .sidebar-brand {
+                justify-content: center;
+                padding: 15px 0;
+                margin-bottom: 30px;
+            }
+            
+            .sidebar-logo {
+                margin-right: 0;
+            }
+            
+            .sidebar-user-section {
+                padding: 15px;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+            
+            .user-icon {
+                margin-right: 0;
+            }
+            
+            .sidebar-btn {
+                justify-content: center;
+                padding: 12px;
+            }
+            
+            .sidebar-btn i {
+                margin-right: 0;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+                padding: 20px;
+            }
+        }
+
+        /* Flash messages */
+        .alert {
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Custom scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Sidebar (same as approval_tracking.html) -->
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <!-- Brand/Logo -->
+            <a class="sidebar-brand" href="{{ url_for('main.approval_tracking') }}">
+                <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+                <span>Railway Signalling</span>
+            </a>
+       
+            <!-- User Info Section -->
+            <div class="sidebar-user-section">
+                {% if current_user.is_authenticated %}
+                <div class="user-info">
+                    <div class="user-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+       
+            <!-- Navigation Buttons -->
+            <div class="sidebar-buttons">
+                <!-- Dashboard/Home Button -->
+                {% if permissions.can_create_drawing or permissions.can_see_all %}
+                <a class="sidebar-btn" href="{{ url_for('main.approval_tracking') }}">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% endif %}
+           
+                <!-- Admin-specific buttons -->
+                {% if current_user.role_name == '4' %}
+                <a class="sidebar-btn" href="{{ url_for('main.new_project') }}">
+                    <i class="bi bi-plus-square"></i>
+                    <span>New Station</span>
+                </a>
+    
+                <a class="sidebar-btn" href="{{ url_for('main.admin_users') }}">
+                    <i class="bi bi-people"></i>
+                    <span>Manage Users</span>
+                </a>
+
+                <a class="sidebar-btn" href="{{ url_for('main.role_master_list') }}">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Manage Roles</span>
+                </a>
+                
+                <a class="sidebar-btn" href="{{ url_for('main.designation_master_list') }}">
+                    <i class="bi bi-person-workspace"></i>
+                    <span>Manage Designations</span>
+                </a>
+                
+                <a class="sidebar-btn active" href="{{ url_for('main.view_list') }}">
+                    <i class="bi bi-card-list"></i>
+                    <span>View List</span>
+                </a>
+                {% endif %}
+
+                <!-- Drawing-related buttons -->
+                {% if current_user.role_name in ['1', '4'] %}
+                <a class="sidebar-btn" href="{{ url_for('main.new_drawing_selection') }}">
+                    <i class="bi bi-file-earmark-plus"></i>
+                    <span>New Drawing</span>
+                </a>
+                
+                <!-- CTR Drawing Page Button -->
+                <a class="sidebar-btn" href="{{ url_for('main.ctr_drawing') }}">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span>CTR Drawing</span>
+                </a>
+                {% endif %}
+           
+                <!-- Logout Button -->
+                {% if current_user.is_authenticated %}
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4"></i>
+                        <div>
+                            <strong>{% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong> {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1"><i class="bi bi-card-list text-primary"></i> View List</h2>
+                <p class="text-muted mb-0">Overview of all projects and their status</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-light text-dark fs-6 me-3">
+                    <i class="bi bi-building"></i> {{ stats.total_projects }} Projects
+                </span>
+                <a href="{{ url_for('main.approval_tracking') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #00695c;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-building fs-1 text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.total_projects }}</div>
+                            <div class="stat-label">Total Projects</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #198754;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-check-circle fs-1 text-success"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.status_counts.approved }}</div>
+                            <div class="stat-label">Approved Drawings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #0dcaf0;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock fs-1 text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.status_counts.pending }}</div>
+                            <div class="stat-label">Pending Approvals</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #6c757d;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-file-earmark-excel fs-1 text-secondary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.status_counts.no_drawing }}</div>
+                            <div class="stat-label">Without Drawings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filters Card -->
+        <div class="card mb-4">
+            <div class="card-header bg-teal">
+                <h5 class="mb-0"><i class="bi bi-filter-circle me-2"></i> Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('main.view_list') }}" class="row g-3">
+                    <input type="hidden" name="page" value="1">
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium">Project/Station</label>
+                        <select name="project_id" class="form-select">
+                            <option value="all">All Projects</option>
+                            {% for project in all_projects %}
+                            <option value="{{ project.id }}" {% if current_filters.project_id == project.id|string %}selected{% endif %}>
+                                {{ project.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-medium">Status</label>
+                        <select name="approval_status" class="form-select">
+                            <option value="all" {% if current_filters.approval_status == 'all' %}selected{% endif %}>All Status</option>
+                            <option value="approved" {% if current_filters.approval_status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="pending" {% if current_filters.approval_status == 'pending' %}selected{% endif %}>Pending Approval</option>
+                            <option value="rejected" {% if current_filters.approval_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                            <option value="drawing_in_progress" {% if current_filters.approval_status == 'drawing_in_progress' %}selected{% endif %}>Drawing in Progress</option>
+                            <option value="no_drawing" {% if current_filters.approval_status == 'no_drawing' %}selected{% endif %}>No Drawing</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="d-flex gap-2 w-100">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('main.view_list') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Projects List -->
+        <div class="card">
+            <div class="card-header bg-teal d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check me-2"></i> Projects List</h5>
+                <div>
+                    <span class="badge bg-light text-dark">{{ pagination.total_records }} projects</span>
+                    <span class="badge bg-success ms-2">{{ stats.status_counts.approved }} approved</span>
+                    <span class="badge bg-warning ms-2">{{ stats.status_counts.pending }} pending</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if projects %}
+                <div class="row">
+                    {% for item in projects %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card project-card 
+                            {% if item.approval_status == 'Approved' %}border-success
+                            {% elif item.approval_status == 'Rejected' %}border-danger
+                            {% elif item.approval_status == 'No Drawing' %}border-secondary
+                            {% else %}border-warning{% endif %}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="card-title mb-1">{{ item.project.name }}</h6>
+                                        <small class="text-muted">ID: {{ item.project.id }}</small>
+                                    </div>
+                                    <span class="status-badge 
+                                        {% if item.approval_status == 'Approved' %}bg-success
+                                        {% elif item.approval_status == 'Rejected' %}bg-danger
+                                        {% elif item.approval_status == 'No Drawing' %}bg-secondary
+                                        {% else %}bg-warning text-dark{% endif %}">
+                                        {{ item.approval_status }}
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block mb-2">
+                                        <i class="bi bi-calendar3"></i> 
+                                        Last updated: {{ item.last_updated.strftime('%d-%m-%Y %H:%M') }}
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-speedometer2"></i> 
+                                        Stage: {{ item.stage }}
+                                    </small>
+                                </div>
+                                
+                                <div class="d-flex gap-2 mb-3">
+                                    <span class="count-badge">
+                                        <i class="bi bi-box"></i> {{ item.junction_count }} Junctions
+                                    </span>
+                                    <span class="count-badge">
+                                        <i class="bi bi-lightning"></i> {{ item.cable_count }} Cables
+                                    </span>
+                                    <span class="count-badge">
+                                        <i class="bi bi-plug"></i> {{ item.terminal_count }} Terminals
+                                    </span>
+                                </div>
+                                
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% if item.latest_pdf %}
+                                    <a href="/pdf/inline/{{ item.latest_pdf.pdf_filename }}" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-outline-info action-btn">
+                                        <i class="bi bi-eye"></i> View PDF
+                                    </a>
+                                    <a href="{{ url_for('main.downloadpdf', filename=item.latest_pdf.pdf_filename) }}" 
+                                       class="btn btn-sm btn-outline-success action-btn">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if current_user.role_name == '4' %}
+                                    <a href="{{ url_for('main.edit_project', project_id=item.project.id) }}" 
+                                       target="_blank"
+                                       class="btn btn-sm btn-outline-secondary action-btn">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    {% endif %}
+                                    
+                                    {% if not item.has_drawing and current_user.role_name in ['1', '4'] %}
+                                    <a href="{{ url_for('main.new_drawing_selection', project_id=item.project.id) }}" 
+                                       class="btn btn-sm btn-outline-primary action-btn">
+                                        <i class="bi bi-plus-circle"></i> Create Drawing
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <a href="{{ url_for('main.approval_tracking') }}?project_id={{ item.project.id }}" 
+                                       class="btn btn-sm btn-outline-dark action-btn">
+                                        <i class="bi bi-arrow-right"></i> Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if pagination.total_pages > 1 %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+                            <a class="page-link" 
+                               href="{{ url_for('main.view_list', page=pagination.page-1, project_id=current_filters.project_id, approval_status=current_filters.approval_status) }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        {% for num in pagination.pagination_numbers %}
+                            {% if num == '...' %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item {% if num == pagination.page %}active{% endif %}">
+                                    <a class="page-link" 
+                                       href="{{ url_for('main.view_list', page=num, project_id=current_filters.project_id, approval_status=current_filters.approval_status) }}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="page-item {% if pagination.page == pagination.total_pages %}disabled{% endif %}">
+                            <a class="page-link" 
+                               href="{{ url_for('main.view_list', page=pagination.page+1, project_id=current_filters.project_id, approval_status=current_filters.approval_status) }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <div class="text-center text-muted mt-2">
+                        Showing {{ pagination.start_idx }} to {{ pagination.end_idx }} of {{ pagination.total_records }} projects
+                    </div>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-4 text-muted"></i>
+                    <p class="mt-3 text-muted">No projects found matching the selected filters.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simple script for any interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add hover effects to project cards
+            const projectCards = document.querySelectorAll('.project-card');
+            projectCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

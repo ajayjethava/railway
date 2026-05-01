@@ -1,0 +1,142 @@
+<!doctype html> 
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Edit {{ sheet.replace('_',' ').title() }} | Railway Signalling</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚆</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head> 
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('main.index') }}">🚆 Railway Signalling</a>
+    <div class="ms-auto">
+      <a class="btn btn-outline-success" href="{{ url_for('main.index') }}">
+        <i class="bi bi-house"></i> Home
+      </a>
+      <a class="btn btn-outline-info ms-2" href="{{ url_for('main.preview') }}">
+        <i class="bi bi-eye"></i> Preview All
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-info">
+        {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="mb-3 d-flex justify-content-between align-items-center">
+    <h3 class="mb-0">
+      <i class="bi bi-pencil-square"></i>
+      Edit {{ sheet.replace('_',' ').title() }}
+    </h3>
+    {% if current_project %}
+    <span class="badge bg-secondary">Project ID: {{ current_project.id }}</span>
+    {% endif %}
+  </div>
+
+  <div class="row">
+    <!-- Add/Edit form -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header {{ 'bg-warning text-dark' if edit_id else 'bg-primary text-white' }}">
+          <h5 class="mb-0">
+            {% if edit_id %}
+            <i class="bi bi-pencil"></i> Edit Row #{{ edit_id }}
+            {% else %}
+            <i class="bi bi-plus-circle"></i> Add New Row
+            {% endif %}
+          </h5>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% for col in columns %}
+            <div class="mb-3">
+              <label for="{{ col }}" class="form-label">{{ col.replace('_',' ').title() }}</label>
+              <input
+                type="text"
+                id="{{ col }}"
+                name="{{ col }}"
+                class="form-control"
+                value="{% if edit_row %}{{ edit_row[col] }}{% endif %}"
+                placeholder="Enter {{ col.replace('_',' ').lower() }}"
+              >
+            </div>
+            {% endfor %}
+            <div class="d-grid">
+              <button type="submit" class="btn {{ 'btn-warning' if edit_id else 'btn-success' }}">
+                {% if edit_id %}
+                <i class="bi bi-save"></i> Update Row
+                {% else %}
+                <i class="bi bi-plus"></i> Add Row
+                {% endif %}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rows table -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-list-ul"></i> Current Rows ({{ rows|length }})</h5>
+        </div>
+        <div class="card-body" style="max-height: 450px; overflow-y: auto;">
+          {% if rows %}
+          <div class="table-responsive">
+            <table class="table table-sm table-striped align-middle">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">ID</th>
+                  {% for col in columns %}
+                  <th>{{ col.replace('_',' ').title() }}</th>
+                  {% endfor %}
+                  <th style="width: 140px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in rows %}
+                <tr>
+                  <td>{{ r.id }}</td>
+                  {% for col in columns %}
+                  <td>{{ r[col] }}</td>
+                  {% endfor %}
+                  <td>
+                    <a href="{{ url_for('main.edit_row', name=sheet, row_id=r.id) }}" class="btn btn-sm btn-outline-secondary">
+                      <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <form method="post" action="{{ url_for('main.delete_row', name=sheet, row_id=r.id) }}" style="display:inline;">
+                      <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete row #{{ r.id }}?');">
+                        <i class="bi bi-trash"></i> Delete
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center text-muted py-5">
+            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+            No rows yet — add the first one using the form.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

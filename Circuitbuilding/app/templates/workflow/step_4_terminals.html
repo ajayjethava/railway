@@ -1,0 +1,324 @@
+<!-- Step 4: Terminals -->
+<div class="alert alert-info">
+    <h5><i class="bi bi-info-circle"></i> Terminals Configuration</h5>
+    <p class="mb-0">Configure terminal entries with cable details. Use <strong>Terminal No</strong> to specify the terminal number.</p>
+</div>
+
+<!-- Button to trigger terminal modal -->
+<div class="text-center mb-4">
+    <button type="button" class="btn btn-primary btn-lg" id="openTerminalModalBtn">
+        <i class="bi bi-plus-circle"></i> Configure Terminals
+    </button>
+</div>
+
+<!-- Single Existing Terminals Table -->
+{% if rows %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0">Existing Terminal Records (<span id="terminalRecordCount">{{ rows|length }}</span>)</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Cable Id</th>
+                        <th>Cable Name</th>
+                        <th>Terminal Id</th>
+                        <th>Terminal No</th>
+                        <th>Symbol</th>
+                        <th>Input Left</th>
+                        <th>Input Right</th>
+                        <th>Spare</th>
+                        <th>Input Connected</th>
+                        <th>Output Connected</th>
+                        <th>Input Connected Extra</th>
+                        <th>Output Connected Extra</th>
+                        <th>Output Left</th>
+                        <th>Output Right</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+              <tbody id="terminalTableBody">
+                  {% for row in rows | sort_terminals %}
+                  <tr>
+                      <td>{{ row.id }}</td>
+                      <td>{{ row.cable_id or '-' }}</td>
+                      <td>{{ cable_name_map.get(row.cable_id, '-') }}</td>
+                      <td>{{ row.terminal_id or '-' }}</td>
+                      <td>{{ row.terminal_no or '-' }}</td>
+                      <td>{{ row.symbol or '-' }}</td>
+                      <td>{{ row.input_left or '-' }}</td>
+                      <td>{{ row.input_right or '-' }}</td>
+                      <td>{{ row.spare or '-' }}</td>
+                      <td>{{ row.input_connected or '-' }}</td>
+                      <td>{{ row.output_connected or '-' }}</td>
+                      <td>{{ row.input_connected_extra or '-' }}</td>
+                      <td>{{ row.output_connected_extra or '-' }}</td>
+                      <td>{{ row.output_left or '-' }}</td>
+                      <td>{{ row.output_right or '-' }}</td>
+                      <td class="text-nowrap">
+                          <a href="{{ url_for('main.workflow_edit_row', sheet_name=sheet_name, row_id=row.id, step=step) }}" 
+                            class="btn btn-sm btn-warning" title="Edit">
+                              <i class="bi bi-pencil"></i>
+                          </a>
+                          <form method="POST" 
+                                action="{{ url_for('main.workflow_delete_row', sheet_name=sheet_name, row_id=row.id, step=step) }}" 
+                                style="display:inline;">
+                              <button type="submit" 
+                                      class="btn btn-sm btn-danger" 
+                                      onclick="return confirm('Are you sure you want to delete this terminal?')"
+                                      title="Delete">
+                                  <i class="bi bi-trash"></i>
+                              </button>
+                          </form>
+                      </td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h5>No Terminals Configured</h5>
+    <p>No terminal records have been added yet. Please use the button above to add terminal configurations.</p>
+</div>
+{% endif %}
+
+<!-- Terminal Configuration Modal -->
+<div class="modal fade" id="terminalModal" tabindex="-1" aria-labelledby="terminalModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="terminalModalLabel">
+                    <i class="bi bi-plug"></i> Configure Terminals
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> Enter details for all terminal fields below. Use <strong>Terminal No</strong> to specify the terminal number.
+                </div>
+                
+                <div class="form-grid">
+                    <!-- Two separate fields for Cable ID and Cable Name -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Cable ID *</strong></label>
+                            <input type="text" class="form-control" id="terminalCableId" placeholder="Enter cable ID" required>
+                            <div class="form-text">Unique identifier for the cable</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Cable Name</strong></label>
+                            <input type="text" class="form-control" id="terminalCableName" placeholder="Enter cable name">
+                            <div class="form-text">Name or description of the cable</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Terminal Id</strong></label>
+                        <input type="text" class="form-control" id="terminalId" placeholder="Enter terminal id" required>
+                        <div class="form-text">Unique identifier for the terminal within the cable</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Terminal No</strong></label>
+                        <input type="text" class="form-control" id="terminalName" placeholder="Enter terminal number" required>
+                        <div class="form-text">Terminal number (e.g., 37, 38, 39, etc.) - this will be saved as terminal_name</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Symbol</strong></label>
+                        <select class="form-select" id="terminalSymbol" required>
+                            <option value="">Select Symbol</option>
+                            <option value="ara/wago">Ara/Wago</option>
+                            <option value="single_fuse">Single Fuse</option>
+                            <option value="dual_fuse">Dual Fuse</option>
+                        </select>
+                        <div class="form-text">Terminal symbol type</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Input Left</strong></label>
+                        <input type="text" class="form-control" id="terminalInputLeft" placeholder="Enter input left (e.g., 120ATPR)">
+                        <div class="form-text">Input left configuration</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Input Right</strong></label>
+                        <input type="text" class="form-control" id="terminalInputRight" placeholder="Enter input right">
+                        <div class="form-text">Input right configuration (leave empty for -)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Spare</strong></label>
+                        <select class="form-select" id="terminalSpare" required>
+                            <option value="N">N</option>
+                            <option value="Y">Y</option>
+                        </select>
+                        <div class="form-text">Spare terminal (Y/N)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Input Connected</strong></label>
+                        <select class="form-select" id="terminalInputConnected" required>
+                            <option value="Y">Y</option>
+                            <option value="N">N</option>
+                        </select>
+                        <div class="form-text">Input connected status (Y/N)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Output Connected</strong></label>
+                        <select class="form-select" id="terminalOutputConnected" required>
+                            <option value="Y">Y</option>
+                            <option value="N">N</option>
+                        </select>
+                        <div class="form-text">Output connected status (Y/N)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Input Connected Extra</strong></label>
+                        <input type="text" class="form-control" id="terminalInputConnectedExtra" placeholder="Enter input connected extra">
+                        <div class="form-text">Input connected extra information</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Output Connected Extra</strong></label>
+                        <input type="text" class="form-control" id="terminalOutputConnectedExtra" placeholder="Enter output connected extra">
+                        <div class="form-text">Output connected extra information</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Output Left</strong></label>
+                        <input type="text" class="form-control" id="terminalOutputLeft" placeholder="Enter output left">
+                        <div class="form-text">Output left configuration (leave empty for -)</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Output Right</strong></label>
+                        <input type="text" class="form-control" id="terminalOutputRight" placeholder="Enter output right">
+                        <div class="form-text">Output right configuration (leave empty for -)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="saveTerminalBtn">
+                    <i class="bi bi-check-circle"></i> Save Terminal Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var terminalModal = new bootstrap.Modal(document.getElementById('terminalModal'));
+    var successModal = new bootstrap.Modal(document.getElementById('successFlashModal'));
+    var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+
+    // Open terminal modal when button is clicked
+    document.getElementById('openTerminalModalBtn').addEventListener('click', function() {
+        // Reset form fields when opening modal - ADD THE NEW FIELDS AS EMPTY
+        document.getElementById('terminalCableId').value = '';
+        document.getElementById('terminalCableName').value = '';
+        document.getElementById('terminalId').value = '';
+        document.getElementById('terminalName').value = '';
+        document.getElementById('terminalSymbol').value = '';
+        document.getElementById('terminalInputLeft').value = '';
+        document.getElementById('terminalInputRight').value = '';
+        document.getElementById('terminalSpare').value = 'N';
+        document.getElementById('terminalInputConnected').value = 'Y';
+        document.getElementById('terminalOutputConnected').value = 'Y';
+        // RESET THE TWO NEW FIELDS TO EMPTY
+        document.getElementById('terminalInputConnectedExtra').value = '';
+        document.getElementById('terminalOutputConnectedExtra').value = '';
+        document.getElementById('terminalOutputLeft').value = '';
+        document.getElementById('terminalOutputRight').value = '';
+        
+        terminalModal.show();
+    });
+
+    // Handle terminal form submission
+    document.getElementById('saveTerminalBtn').addEventListener('click', function() {
+        var saveBtn = this;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
+
+        var terminalData = {
+            cable_id: document.getElementById('terminalCableId').value,
+            cable_name: document.getElementById('terminalCableName').value,
+            terminal_id: document.getElementById('terminalId').value,
+            terminal_no: document.getElementById('terminalName').value,
+            symbol: document.getElementById('terminalSymbol').value,
+            input_left: document.getElementById('terminalInputLeft').value || '',
+            input_right: document.getElementById('terminalInputRight').value || '',
+            spare: document.getElementById('terminalSpare').value,
+            input_connected: document.getElementById('terminalInputConnected').value,
+            output_connected: document.getElementById('terminalOutputConnected').value,
+            // ADD THE TWO NEW FIELDS - REGULAR TEXT VALUES
+            input_connected_extra: document.getElementById('terminalInputConnectedExtra').value || '',
+            output_connected_extra: document.getElementById('terminalOutputConnectedExtra').value || '',
+            output_left: document.getElementById('terminalOutputLeft').value || '',
+            output_right: document.getElementById('terminalOutputRight').value || ''
+        };
+
+        // Validation
+        if (!terminalData.cable_id || !terminalData.terminal_id || !terminalData.terminal_no || !terminalData.symbol) {
+            document.getElementById('errorMessage').textContent = 'Please fill in all required fields: Cable ID, Terminal ID, Terminal No, and Symbol.';
+            errorModal.show();
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Terminal Configuration';
+            return;
+        }
+
+        fetch('/add_terminal_ajax', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(terminalData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Failed to save terminal: ${response.status} - ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(result => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Terminal Configuration';
+            
+            if (result.success) {
+                terminalModal.hide();
+                successModal.show();
+                setTimeout(() => { 
+                    successModal.hide();
+                    window.location.reload(); // Reload to show the new terminal in the table
+                }, 1500);
+            } else {
+                document.getElementById('errorMessage').textContent = result.message || 'Failed to save terminal configuration.';
+                errorModal.show();
+            }
+        })
+        .catch(error => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Terminal Configuration';
+            document.getElementById('errorMessage').textContent = error.message || 'An error occurred while saving the terminal.';
+            errorModal.show();
+        });
+    });
+});
+</script>
+
+<div class="d-flex justify-content-between mt-4">
+    <form method="POST" style="display: inline;">
+        <button type="submit" name="action" value="prev" class="btn btn-secondary">Previous</button>
+    </form>
+    <form method="POST" style="display: inline;">
+        <button type="submit" name="action" value="next" class="btn btn-success">Next: Headers</button>
+    </form>
+</div>

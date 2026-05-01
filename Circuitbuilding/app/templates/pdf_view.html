@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer | Railway Signalling</title>
+    <!-- Updated favicon to use railway logo image -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+       
+        /* Unified Teal Theme Colors */
+        :root {
+            --primary-teal: #00695c;
+            --secondary-teal: #00796b;
+            --light-teal: #26a69a;
+            --dark-teal: #004d40;
+            --gradient-teal: linear-gradient(135deg, #00695c 0%, #00796b 100%);
+            --gradient-light: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+        }
+       
+        .card {
+            margin-bottom: 1.5rem;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(145deg, #ffffff, #f8fcff);
+        }
+       
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-teal);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+       
+        .card:hover::before {
+            opacity: 1;
+        }
+       
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border: none;
+            font-weight: 600;
+            background: var(--gradient-teal);
+            color: white;
+        }
+       
+        /* Enhanced Sidebar Styling - Unified Teal Theme */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: var(--gradient-teal);
+            color: white;
+            z-index: 1000;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+       
+        .sidebar-content {
+            padding: 25px 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+       
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+        }
+       
+        .sidebar-logo {
+            height: 40px;
+            width: auto;
+            margin-right: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+       
+        .sidebar-user-section {
+            padding: 20px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+       
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+       
+        .user-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary-teal), var(--dark-teal));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+       
+        .user-icon i {
+            font-size: 1.2rem;
+        }
+       
+        .user-details {
+            flex: 1;
+        }
+       
+        .user-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+       
+        .sidebar-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+       
+        .sidebar-btn {
+            display: flex;
+            align-items: center;
+            padding: 12px 18px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+       
+        .sidebar-btn i {
+            margin-right: 12px;
+            width: 22px;
+            text-align: center;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+       
+        .sidebar-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: var(--light-teal);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+       
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+       
+        .sidebar-btn:hover::before {
+            transform: scaleY(1);
+        }
+       
+        .sidebar-btn:hover i {
+            color: var(--light-teal);
+            transform: scale(1.1);
+        }
+       
+        .sidebar-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+       
+        .sidebar-btn.active::before {
+            transform: scaleY(1);
+        }
+       
+        .sidebar-btn.active i {
+            color: var(--light-teal);
+        }
+       
+        /* Main content area */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            min-height: 100vh;
+            background: var(--gradient-light);
+            transition: all 0.3s ease;
+        }
+       
+        /* Page header enhancement */
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+       
+        /* Enhanced button styles */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+        }
+       
+        .btn-primary, .btn-success {
+            background: var(--gradient-teal);
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3);
+        }
+       
+        .btn-primary:hover, .btn-success:hover {
+            background: linear-gradient(135deg, var(--secondary-teal), var(--primary-teal));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 105, 92, 0.4);
+        }
+       
+        .btn-outline-success {
+            color: var(--primary-teal);
+            border: 2px solid var(--primary-teal);
+        }
+       
+        .btn-outline-success:hover {
+            background: var(--gradient-teal);
+            color: white;
+            transform: translateY(-2px);
+        }
+       
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+        }
+       
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+       
+        /* Enhanced table styling */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+       
+        .table thead th {
+            background: var(--gradient-teal);
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: 600;
+        }
+       
+        .badge {
+            border-radius: 20px;
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+       
+        /* Form styling enhancements */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+       
+        /* Form focus colors to match teal theme */
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 0.25rem rgba(0, 105, 92, 0.25);
+        }
+       
+        /* Modal styling enhancements */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+       
+        .modal-header {
+            background: var(--gradient-teal);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            border: none;
+            padding: 20px 25px;
+        }
+       
+        /* Custom teal background */
+        .bg-teal {
+            background: var(--gradient-teal) !important;
+            color: white !important;
+        }
+       
+        /* Alert styling */
+        .alert-light {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: var(--primary-teal);
+            border-left: 4px solid var(--light-teal);
+            border-radius: 8px;
+        }
+       
+        .approval-badge { 
+            font-size: 0.9rem; 
+            padding: 0.5rem 1rem; 
+        }
+       
+        .pdf-frame {
+            width: 100%; 
+            height: 70vh; 
+            border: 1px solid #dee2e6; 
+            border-radius: .25rem;
+            border-radius: 12px;
+        }
+       
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                background: var(--gradient-teal);
+            }
+           
+            .sidebar-brand span,
+            .user-name,
+            .user-badge,
+            .sidebar-btn span {
+                display: none;
+            }
+           
+            .sidebar-brand {
+                justify-content: center;
+                padding: 15px 0;
+                margin-bottom: 25px;
+            }
+           
+            .sidebar-logo {
+                margin-right: 0;
+                height: 35px;
+            }
+           
+            .sidebar-user-section {
+                padding: 15px;
+                background: rgba(255, 255, 255, 0.1);
+                margin-bottom: 20px;
+            }
+           
+            .user-info {
+                justify-content: center;
+                margin-bottom: 0;
+            }
+           
+            .user-icon {
+                margin-right: 0;
+                width: 40px;
+                height: 40px;
+            }
+           
+            .sidebar-btn {
+                justify-content: center;
+                padding: 12px;
+                border-radius: 8px;
+            }
+           
+            .sidebar-btn i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+           
+            .main-content {
+                margin-left: 70px;
+                padding: 20px 15px;
+            }
+           
+            .page-header {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+        }
+       
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+       
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+       
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+       
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+       
+        /* Loading animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+       
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-content">
+            <!-- Brand/Logo -->
+            <a class="sidebar-brand" href="{{ url_for('main.approval_tracking') }}">
+                <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" alt="Railway Logo" class="sidebar-logo">
+                <span>Railway Signalling</span>
+            </a>
+           
+            <!-- User Info Section -->
+            <div class="sidebar-user-section">
+                {% if current_user.is_authenticated %}
+                <div class="user-info">
+                    <div class="user-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name">{{ current_user.username }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+           
+            <!-- Navigation Buttons -->
+            <div class="sidebar-buttons">
+                <!-- Back to Previous Page Button -->
+                <a class="sidebar-btn active" href="#" onclick="goBack(); return false;">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Back to Previous Page</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
+                        <i class="bi me-2
+                            {% if category == 'success' %}bi-check-circle-fill text-success
+                            {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
+                            {% else %}bi-info-circle-fill text-info{% endif %} fs-4">
+                        </i>
+                        <div>
+                            <strong>
+                                {% if category == 'success' %}Success!
+                                {% elif category == 'danger' %}Error!
+                                {% else %}Note:{% endif %}
+                            </strong>
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <!-- Page Content -->
+        <div class="container-fluid py-4 fade-in">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-0">
+                            <i class="bi bi-file-earmark-pdf me-2"></i> PDF Document
+                        </h2>
+                    </div>
+                    <div>
+                        <span class="badge bg-info me-2 approval-badge">
+                            <i class="bi bi-person-badge"></i> {{ user_designation|upper }}
+                        </span>
+                        <a class="btn btn-outline-primary me-2" href="{{ download_url }}"><i class="bi bi-download"></i> Download</a>
+                        <button class="btn btn-secondary" onclick="goBack()"><i class="bi bi-arrow-left"></i> Back</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Level 1 User Notification for Rejected PDFs -->
+            {% if can_edit %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <h5><i class="bi bi-exclamation-triangle"></i> PDF Requires Revision</h5>
+                <p class="mb-0">
+                    This PDF has been rejected at {% if pdf.level2_status == 'rejected' %}Level 2{% else %}Level 3{% endif %}.
+                    Please review the rejection reason below, edit the project data, and regenerate the PDF.
+                </p>
+                <div class="mt-2">
+                    <a href="{{ url_for('main.workflow_step', step=1, project_id=pdf.project_id) }}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-pencil-square"></i> Edit Project Data
+                    </a>
+                    <a href="{{ url_for('main.excel_to_pdf') }}" class="btn btn-primary btn-sm ms-2">
+                        <i class="bi bi-file-earmark-plus"></i> Regenerate PDF
+                    </a>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+            <!-- PDF Viewer -->
+            <div class="card fade-in">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-eye"></i> PDF Preview</h5>
+                </div>
+                <div class="card-body">
+                    <object data="{{ inline_url }}" type="application/pdf" class="pdf-frame">
+                        <iframe src="{{ inline_url }}" class="pdf-frame"></iframe>
+                    </object>
+                </div>
+            </div>
+           
+            <div class="alert alert-light border mt-3 fade-in">
+                <i class="bi bi-info-circle"></i> If the PDF preview does not load, use the Download button above to save it locally.
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript for Fade-in Animation and Back Functionality -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add smooth animations
+        const cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('fade-in');
+        });
+    });
+
+    // Function to go back to previous page
+    function goBack() {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            // If no history (user came directly to this page), redirect to homepage
+            window.location.href = "{{ url_for('main.approval_tracking') }}";
+        }
+    }
+    </script>
+</body>
+</html>

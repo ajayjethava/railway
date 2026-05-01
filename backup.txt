@@ -1,0 +1,262 @@
+
+DECLARE
+    project_record RECORD;
+    fixed_count INTEGER := 0;
+    total_count INTEGER := 0;
+BEGIN
+    RAISE NOTICE 'Checking and fixing project statuses...';
+    
+    FOR project_record IN 
+        SELECT id, name, stage, status FROM railway_projects ORDER BY id
+    LOOP
+        total_count := total_count + 1;
+        
+        -- Expected status based on stage
+        DECLARE
+            expected_status VARCHAR(50);
+        BEGIN
+            expected_status := CASE 
+                WHEN project_record.stage IS NULL OR project_record.stage = 0 THEN 'drawing_not_started'
+                WHEN project_record.stage = 1 THEN 'drawing_in_progress'
+                WHEN project_record.stage BETWEEN 2 AND 9 THEN 'drawing_in_progress'
+                WHEN project_record.stage = 10 THEN 'drawing_complete'
+                WHEN project_record.stage = 11 THEN 'level1_approved'
+                WHEN project_record.stage = 12 THEN 'level2_approved'
+                WHEN project_record.stage = 13 THEN 'drawing_approved'
+                ELSE project_record.status  -- Keep existing if stage doesn't match
+            END;
+            
+            -- Fix if status doesn't match expected
+            IF project_record.status != expected_status THEN
+                UPDATE railway_projects
+                SET 
+                    status = expected_status,
+                    updated_date = CURRENT_TIMESTAMP
+                WHERE id = project_record.id;
+                
+                fixed_count := fixed_count + 1;
+                RAISE NOTICE 'Fixed project % (%): status % -> %', 
+                    project_record.id, project_record.name, project_record.status, expected_status;
+            END IF;
+        END;
+    END LOOP;
+    
+    RETURN 'Checked ' || total_count || ' projects, fixed ' || fixed_count || ' status mismatches';
+END;
+
+
+
+DECLARE
+    pdf_record RECORD;
+BEGIN
+    -- Get the latest PDF for the project
+    SELECT id, level1_status, level2_status, level3_status 
+    INTO pdf_record
+    FROM generated_pdf 
+    WHERE project_id = project_id_param 
+    ORDER BY created_at DESC 
+    LIMIT 1;
+    
+    IF NOT FOUND THEN
+        RETURN 'No PDF found for project ' || project_id_param;
+    END IF;
+    
+    -- Update approval status
+    UPDATE generated_pdf
+    SET 
+        level1_status = CASE WHEN level1_param THEN 'approved' ELSE 'pending' END,
+        level2_status = CASE WHEN level2_param THEN 'approved' ELSE 'pending' END,
+        level3_status = CASE WHEN level3_param THEN 'approved' ELSE 'pending' END,
+        level1_approval_date = CASE WHEN level1_param THEN CURRENT_TIMESTAMP ELSE NULL END,
+        level2_approval_date = CASE WHEN level2_param THEN CURRENT_TIMESTAMP ELSE NULL END,
+        level3_approval_date = CASE WHEN level3_param THEN CURRENT_TIMESTAMP ELSE NULL END
+    WHERE id = pdf_record.id;
+    
+    -- The trigger will automatically update the project stage
+    
+    RETURN 'Updated PDF ' || pdf_record.id || ' approval status for project ' || project_id_param ||
+           ' - Level1: ' || (CASE WHEN level1_param THEN 'approved' ELSE 'pending' END) ||
+           ', Level2: ' || (CASE WHEN level2_param THEN 'approved' ELSE 'pending' END) ||
+           ', Level3: ' || (CASE WHEN level3_param THEN 'approved' ELSE 'pending' END);
+END;
+
+
+DECLARE
+    project_record RECORD;
+    updated_count INTEGER := 0;
+BEGIN
+    RAISE NOTICE 'Starting automatic stage update for all projects...';
+    
+    FOR project_record IN 
+        SELECT id FROM railway_projects ORDER BY id
+    LOOP
+        -- Call the trigger function for each project
+        PERFORM update_project_stage_auto_for_id(project_record.id);
+        updated_count := updated_count + 1;
+    END LOOP;
+    
+    RETURN 'Updated ' || updated_count || ' projects';
+END;
+
+
+DECLARE
+    new_stage INTEGER;
+    project_exists BOOLEAN;
+BEGIN
+    -- Check if project exists
+    SELECT EXISTS (SELECT 1 FROM railway_projects WHERE id = project_id_param) INTO project_exists;
+    
+    IF NOT project_exists THEN
+        RETURN -1; -- Project not found
+    END IF;
+    
+    -- Determine the stage based on data
+    SELECT 
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM generated_pdf WHERE project_id = project_id_param) THEN 10
+            WHEN EXISTS (SELECT 1 FROM cable_box WHERE project_id = project_id_param) THEN 9
+            WHEN EXISTS (SELECT 1 FROM resistor_table WHERE project_id = project_id_param) THEN 8
+            WHEN EXISTS (SELECT 1 FROM choke_table WHERE project_id = project_id_param) THEN 7
+            WHEN EXISTS (SELECT 1 FROM group_table WHERE project_id = project_id_param) THEN 6
+            WHEN EXISTS (SELECT 1 FROM terminal_header WHERE project_id = project_id_param) THEN 5
+            WHEN EXISTS (SELECT 1 FROM terminal WHERE project_id = project_id_param) THEN 4
+            WHEN EXISTS (SELECT 1 FROM cable WHERE project_id = project_id_param) THEN 3
+            WHEN EXISTS (SELECT 1 FROM junction_box WHERE project_id = project_id_param) THEN 2
+            WHEN EXISTS (SELECT 1 FROM station_drawing WHERE project_id = project_id_param) THEN 1
+            ELSE 0
+        END INTO new_stage;
+    
+    -- Update the project
+    UPDATE railway_projects 
+    SET stage = new_stage,
+        updated_date = CURRENT_TIMESTAMP
+    WHERE id = project_id_param;
+    
+    RETURN new_stage;
+END;
+
+
+DECLARE
+    highest_stage INTEGER := 0;
+    old_stage INTEGER;
+    new_status VARCHAR(50);
+    pdf_approval_status RECORD;
+BEGIN
+    -- Get current stage
+    SELECT stage INTO old_stage FROM railway_projects WHERE id = project_id_param;
+    
+    -- Check if there's a generated PDF and its approval status
+    SELECT 
+        level1_status,
+        level2_status,
+        level3_status
+    INTO pdf_approval_status
+    FROM generated_pdf 
+    WHERE project_id = project_id_param 
+    ORDER BY created_at DESC 
+    LIMIT 1;
+    
+    -- If PDF exists, check approval status first
+    IF FOUND THEN
+        -- Check approval levels in sequence (highest to lowest)
+        IF pdf_approval_status.level3_status = 'approved' THEN
+            highest_stage := 13;  -- Level 3 Approved
+        ELSIF pdf_approval_status.level2_status = 'approved' THEN
+            highest_stage := 12;  -- Level 2 Approved
+        ELSIF pdf_approval_status.level1_status = 'approved' THEN
+            highest_stage := 11;  -- Level 1 Approved
+        ELSE
+            highest_stage := 10;  -- PDF Generated but not approved
+        END IF;
+    END IF;
+    
+    -- If no PDF or PDF is at stage 10, check for other data
+    IF highest_stage <= 10 THEN
+        -- Find the HIGHEST stage with data (stages 1-9)
+        IF EXISTS (SELECT 1 FROM cable_box WHERE project_id = project_id_param) THEN
+            highest_stage := 9;
+        ELSIF EXISTS (SELECT 1 FROM resistor_table WHERE project_id = project_id_param) THEN
+            highest_stage := 8;
+        ELSIF EXISTS (SELECT 1 FROM choke_table WHERE project_id = project_id_param) THEN
+            highest_stage := 7;
+        ELSIF EXISTS (SELECT 1 FROM group_table WHERE project_id = project_id_param) THEN
+            highest_stage := 6;
+        ELSIF EXISTS (SELECT 1 FROM terminal_header WHERE project_id = project_id_param) THEN
+            highest_stage := 5;
+        ELSIF EXISTS (SELECT 1 FROM terminal WHERE project_id = project_id_param) THEN
+            highest_stage := 4;
+        ELSIF EXISTS (SELECT 1 FROM cable WHERE project_id = project_id_param) THEN
+            highest_stage := 3;
+        ELSIF EXISTS (SELECT 1 FROM junction_box WHERE project_id = project_id_param) THEN
+            highest_stage := 2;
+        ELSIF EXISTS (SELECT 1 FROM station_drawing WHERE project_id = project_id_param) THEN
+            highest_stage := 1;
+        END IF;
+    END IF;
+    
+    -- Determine status based on stage
+    new_status := CASE 
+        WHEN highest_stage = 0 THEN 'drawing_not_started'
+        WHEN highest_stage = 1 THEN 'drawing_in_progress'
+        WHEN highest_stage BETWEEN 2 AND 9 THEN 'drawing_in_progress'
+        WHEN highest_stage = 10 THEN 'drawing_complete'
+        WHEN highest_stage = 11 THEN 'level1_approved'
+        WHEN highest_stage = 12 THEN 'level2_approved'
+        WHEN highest_stage = 13 THEN 'drawing_approved'
+        ELSE 'drawing_in_progress'
+    END;
+    
+    -- Update the project
+    UPDATE railway_projects
+    SET 
+        stage = highest_stage,
+        status = new_status,
+        updated_date = CURRENT_TIMESTAMP
+    WHERE id = project_id_param;
+    
+    RETURN 'Project ' || project_id_param || ': stage ' || 
+           COALESCE(old_stage::text, 'NULL') || ' -> ' || 
+           highest_stage::text || ', status: ' || new_status;
+END;
+
+
+DECLARE
+    project_stage INTEGER;
+    new_status VARCHAR(50);
+    old_status VARCHAR(50);
+BEGIN
+    -- Get current stage and status
+    SELECT stage, status INTO project_stage, old_status
+    FROM railway_projects 
+    WHERE id = project_id_param;
+    
+    IF NOT FOUND THEN
+        RETURN 'Project not found';
+    END IF;
+    
+    -- Determine new status based on stage
+    new_status := CASE 
+        WHEN project_stage IS NULL OR project_stage = 0 THEN 'drawing_not_started'
+        WHEN project_stage = 1 THEN 'drawing_in_progress'
+        WHEN project_stage BETWEEN 2 AND 9 THEN 'drawing_in_progress'
+        WHEN project_stage = 10 THEN 'ready_for_pdf'
+        WHEN project_stage = 11 THEN 'waiting_for_level1'
+        WHEN project_stage = 12 THEN 'level1_approved'
+        WHEN project_stage = 13 THEN 'level2_approved'
+        WHEN project_stage = 14 THEN 'drawing_approved'
+        ELSE old_status  -- Keep existing if stage doesn't match known values
+    END;
+    
+    -- Update if status has changed
+    IF new_status != old_status THEN
+        UPDATE railway_projects
+        SET 
+            status = new_status,
+            updated_date = CURRENT_TIMESTAMP
+        WHERE id = project_id_param;
+        
+        RETURN 'Updated project ' || project_id_param || ' status: ' || old_status || ' -> ' || new_status;
+    ELSE
+        RETURN 'Project ' || project_id_param || ' status unchanged: ' || old_status;
+    END IF;
+END;

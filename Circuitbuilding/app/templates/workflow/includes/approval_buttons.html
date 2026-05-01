@@ -1,0 +1,49 @@
+<!-- Approval/Rejection Buttons -->
+{% if can_approve_level2 or can_approve_level3 or can_reject_level2 or can_reject_level3 %}
+<div class="card mb-3">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-check2-circle"></i> Approval Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% if can_approve_level2 or can_reject_level2 %}
+            <div class="col-md-6">
+                <h6>Level 2 Actions</h6>
+                <div class="d-grid gap-2">
+                    {% if can_approve_level2 %}
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal2">
+                        <i class="bi bi-check-circle"></i> Approve PDF (Level 2)
+                    </button>
+                    {% endif %}
+                    
+                    {% if can_reject_level2 %}
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal2">
+                        <i class="bi bi-x-circle"></i> Reject PDF (Level 2)
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if can_approve_level3 or can_reject_level3 %}
+            <div class="col-md-6">
+                <h6>Level 3 Actions</h6>
+                <div class="d-grid gap-2">
+                    {% if can_approve_level3 %}
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal3">
+                        <i class="bi bi-check-circle"></i> Approve PDF (Level 3)
+                    </button>
+                    {% endif %}
+                    
+                    {% if can_reject_level3 %}
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal3">
+                        <i class="bi bi-x-circle"></i> Reject PDF (Level 3)
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,63 @@
+<div class="modal fade" id="chokeConfigModal" tabindex="-1" aria-labelledby="chokeConfigModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="chokeConfigModalLabel">
+          <i class="bi bi-collection"></i> Configure Choke Data
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> Configure choke entries for the current cable.
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label"><strong>Cable Id</strong></label>
+          <input type="text" class="form-control" id="chokeCableId" readonly>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%;">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 10%">Cable Id</th>
+                <th style="width: 10%">Choke Id</th>
+                <th style="width: 12%">Input Terminal</th>
+                <th style="width: 12%">Output Terminal</th>
+                <th style="width: 12%">Terminal Name</th>
+                <th style="width: 15%">Output Type</th>
+                <th style="width: 12%">Output Text</th>
+                <th style="width: 12%">Output Connected</th>
+                <th style="width: 5%">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="chokeTableBody">
+              <!-- Choke rows will be generated here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="mt-3">
+          <button type="button" class="btn btn-sm btn-outline-primary" id="addChokeRowBtn">
+            <i class="bi bi-plus-circle"></i> Add Choke Row
+          </button>
+        </div>  
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" id="chokePreviousBtn">
+          <i class="bi bi-arrow-left"></i> Previous
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <!-- Save Draft Button -->
+        <button type="button" class="btn btn-info" id="saveChokeTableDraftBtn">
+          <i class="bi bi-floppy"></i> Save Draft
+        </button>
+        <button type="button" class="btn btn-warning" id="configureResistorBtn">
+          <i class="bi bi-collection"></i> Config Resistor
+        </button>
+        <!-- REMOVED: Save All Chokes Button -->
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,1418 @@
+<!-- PRIORITY 1: Show Add More Grid First (with cable modals ready) -->
+<div class="card mb-4 border-primary">
+  <div class="card-header bg-primary text-white">
+    <h6 class="mb-0"><i class="bi bi-plus-circle"></i> Add More Locations or CTR</h6>
+  </div>
+  <div class="card-body">
+    <!-- Main form for saving junctions -->
+    <form id="addMoreJunctionGridForm" method="POST" action="{{ url_for('main.save_more_junctions') }}">
+      <div class="mb-3">
+        <h6>Add Locations</h6>
+        <p class="text-muted">Enter details for {{ junction_count }} additional location{{ junction_count > 1 and 's' or '' }} starting from {{ start_junction_number }}.</p>
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i> 
+          <strong>Location Row:</strong> Enter a number to specify how many Page Rows to show (e.g., 1, 2, 3, 4, 5...)
+          <br>
+          <small class="text-primary mt-1 d-block">
+            <strong>Naming Convention:</strong><br>
+            - Full locations will have "(F)" appended (e.g., AB-20 → AB-20 (F))<br>
+            - Half locations will have "(H)" appended (e.g., AB-20 → AB-20 (H))
+          </small>
+        </div>
+        <div class="alert alert-success">
+          <i class="bi bi-database"></i> 
+          <strong>Note:</strong> Junction data is automatically saved to project when you save draft or final locations.
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead class="table-primary">
+            <tr>
+              {% for column in columns %}
+                {% if column == 'junction_name' %}
+                  <th>Location Name</th>
+                {% elif column == 'junction_id' %}
+                  <th>Location ID</th>
+                {% elif column == 'junction_size' %}
+                  <th>Location Size</th>
+                {% elif column == 'junction_row' %}
+                  <th>Location Row</th>
+                {% else %}
+                  <th>{{ column|replace('_', ' ')|title }}</th>
+                {% endif %}
+              {% endfor %}
+              <th>Config Cables</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in range(junction_count) %}
+              <tr>
+                {% for column in columns %}
+                  <td>
+                    {% if column == 'station_id' %}
+                      <input type="text" class="form-control" name="junctions[{{ i }}][{{ column }}]" value="{{ station_id_source if station_id_source else '' }}" readonly>
+                    {% elif column == 'junction_id' %}
+                      <input type="text" class="form-control junction-id-input" name="junctions[{{ i }}][{{ column }}]" value="{{ start_junction_number + i }}" data-junction-index="{{ i }}">
+                    {% elif column == 'junction_name' %}
+                      <input type="text" class="form-control junction-name-input" name="junctions[{{ i }}][{{ column }}]" placeholder="Enter location name" data-junction-index="{{ i }}">
+                    {% elif column == 'junction_size' %}
+                      <select class="form-select junction-size-select" name="junctions[{{ i }}][{{ column }}]" data-junction-index="{{ i }}">
+                        <option value="">Select Size</option>
+                        <option value="Full" selected>Full</option>
+                        <option value="Half">Half</option>
+                      </select>
+                    {% elif column == 'junction_row' %}
+                      <input type="number" class="form-control junction-row-input" name="junctions[{{ i }}][{{ column }}]" placeholder="Enter count (e.g., 1, 2, 3...)" min="1" data-junction-index="{{ i }}">
+                    {% else %}
+                      <input type="text" class="form-control" name="junctions[{{ i }}][{{ column }}]" placeholder="Enter {{ column|replace('_', ' ')|lower }}">
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td>
+                  <button type="button" class="btn btn-sm btn-info config-cables-btn" data-junction-index="{{ i }}" disabled>
+                    <i class="bi bi-gear"></i> Config
+                  </button>
+                  <span class="cable-status" data-junction-index="{{ i }}" style="display: none;">
+                    <a href="#" class="btn btn-sm btn-warning edit-cables-btn" data-junction-index="{{ i }}">Edit</a>
+                    <i class="bi bi-check-circle-fill text-success" title="Cables Configured"></i>
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+    
+    <!-- Form Actions: Main form ends above; Previous is simple link -->
+    <div class="d-flex justify-content-between mt-3">
+      <!-- Previous button - SIMPLE LINK WITHOUT FORM -->
+      <a href="{{ url_for('main.workflow_root', cable_id=request.args.get('cable_id', '')) }}" 
+         class="btn btn-secondary" id="previousBtn">
+        <i class="bi bi-arrow-left"></i> Previous
+      </a>
+      
+      <div>
+        <!-- Save Draft button (AJAX save - separate from main form) -->
+        <button type="button" class="btn btn-warning" id="saveDraftBtn">
+          <i class="bi bi-save-fill"></i> Save Draft
+        </button>
+        
+        <!-- Preview button -->
+        <button type="button" class="btn btn-info" id="previewBtn">
+          <i class="bi bi-eye-fill"></i> Preview
+        </button>
+        
+        <!-- Save button inside the main form (validation applies) -->
+        <button type="submit" form="addMoreJunctionGridForm" class="btn btn-primary" id="saveMoreJunctionsBtn" disabled title="Configure cables for all locations first">
+          <i class="bi bi-save"></i> Save Additional Locations
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+<!-- PDF View Modal -->
+<div class="modal fade" id="pdfViewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-file-pdf me-2"></i> Latest PDF for Project
+          <span id="modalProjectId" class="badge bg-light text-dark ms-2"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Preview XLSX has been downloaded. Here's the latest PDF for this project:
+          </div>
+          
+          <!-- Refresh Button in Header -->
+          <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-sm btn-outline-primary" onclick="refreshLatestPdf()" id="refreshPdfBtn">
+              <i class="bi bi-arrow-clockwise" id="refreshIcon"></i> Refresh PDF
+            </button>
+          </div>
+          
+          <!-- PDF Info Card -->
+          <div class="card mb-3" id="pdfInfoCard" style="display: none;">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <h6 id="pdfFileName" class="mb-1">Loading...</h6>
+                  <small class="text-muted" id="pdfProjectInfo">Project: Loading...</small><br>
+                  <small class="text-muted" id="pdfVersionInfo">Version: Loading...</small><br>
+                  <small class="text-muted" id="pdfCreatedInfo">Created: Loading...</small>
+                  <small class="text-muted" id="pdfLastUpdated" style="display: none;">Last refreshed: Just now</small>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-sm btn-success" id="viewPdfBtn" onclick="openPdfViewer()" disabled>
+                      <i class="bi bi-eye"></i> View PDF
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="downloadPdfBtn" onclick="downloadPdf()" disabled>
+                      <i class="bi bi-download"></i> Download
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="copyPdfLink()" id="copyLinkBtn">
+                      <i class="bi bi-link-45deg"></i> Copy Link
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- No PDF Message -->
+          <div class="card" id="noPdfCard" style="display: none;">
+            <div class="card-body text-center py-4">
+              <i class="bi bi-file-earmark-x text-muted display-6 mb-3"></i>
+              <h5 class="text-muted" id="noPdfTitle">No PDF Available Yet</h5>
+              <p class="text-muted" id="noPdfMessage">This project doesn't have any saved PDFs yet.</p>
+              <p class="text-muted small">Complete the drawing process and save to generate the first PDF.</p>
+              <div class="mt-3">
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshLatestPdf()">
+                  <i class="bi bi-arrow-clockwise"></i> Check Again
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Error Message -->
+          <div class="card" id="errorPdfCard" style="display: none;">
+            <div class="card-body text-center py-4">
+              <i class="bi bi-exclamation-triangle text-danger display-6 mb-3"></i>
+              <h5 class="text-danger" id="errorTitle">Error Loading PDF</h5>
+              <p class="text-muted" id="errorMessage">Unable to load PDF information. Please try again.</p>
+              <div class="mt-3">
+                <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshLatestPdf()">
+                  <i class="bi bi-arrow-clockwise"></i> Try Again
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="showPdfModal()">
+                  <i class="bi bi-arrow-left"></i> Go Back
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Loading Spinner -->
+          <div class="text-center py-4" id="pdfLoadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading PDF info...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading PDF information...</p>
+          </div>
+        </div>
+        
+        <!-- PDF Approval Status -->
+        <div class="card mb-3" id="pdfStatusCard" style="display: none;">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-check-circle me-2"></i> Approval Status</h6>
+            <small class="text-muted" id="statusLastUpdated">Updated: Just now</small>
+          </div>
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-md-4">
+                <div class="mb-2">
+                  <span class="badge bg-secondary" id="level1Status">PENDING</span>
+                </div>
+                <small class="text-muted">Level 1</small>
+                <div class="small" id="level1Approver"></div>
+                <div class="small text-muted" id="level1Date"></div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-2">
+                  <span class="badge bg-secondary" id="level2Status">PENDING</span>
+                </div>
+                <small class="text-muted">Level 2</small>
+                <div class="small" id="level2Approver"></div>
+                <div class="small text-muted" id="level2Date"></div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-2">
+                  <span class="badge bg-secondary" id="level3Status">PENDING</span>
+                </div>
+                <small class="text-muted">Level 3</small>
+                <div class="small" id="level3Approver"></div>
+                <div class="small text-muted" id="level3Date"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PDF Preview IFrame (hidden initially) -->
+        <div class="card" id="pdfPreviewCard" style="display: none;">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-file-pdf me-2"></i> PDF Preview</h6>
+            <div>
+              <button class="btn btn-sm btn-outline-secondary me-2" onclick="refreshPdfPreview()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh Preview
+              </button>
+              <button type="button" class="btn-close" onclick="closePdfPreview()"></button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <iframe id="pdfPreviewFrame" src="" style="width: 100%; height: 500px; border: none;"></iframe>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="continueToNextStep()">
+          <i class="bi bi-arrow-right"></i> Continue Workflow
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// 📋 CABLE CONFIGURATION TRACKING
+// ============================================================================
+
+// Track which locations have configured cables
+var locationCablesConfigured = {};
+var totalLocations = {{ junction_count }};
+var currentProjectId = null;
+var currentPdfData = null;
+var lastRefreshTime = null;
+
+// Function to check if all cables are configured
+function checkAllCablesConfigured() {
+    const saveBtn = document.getElementById('saveMoreJunctionsBtn');
+    if (!saveBtn) return;
+    
+    // Count how many locations have been configured
+    let configuredCount = 0;
+    for (let i = 0; i < totalLocations; i++) {
+        if (locationCablesConfigured[i]) {
+            configuredCount++;
+        }
+    }
+    
+    // Enable button only if all locations have configured cables
+    if (configuredCount === totalLocations && totalLocations > 0) {
+        saveBtn.disabled = false;
+        saveBtn.classList.remove('btn-secondary');
+        saveBtn.classList.add('btn-primary');
+        saveBtn.title = '✓ Ready to save all locations';
+        
+        // Also show a success indicator
+        saveBtn.innerHTML = '<i class="bi bi-check-circle"></i> Save Additional Locations (Ready)';
+    } else {
+        saveBtn.disabled = true;
+        saveBtn.classList.remove('btn-primary');
+        saveBtn.classList.add('btn-secondary');
+        saveBtn.title = `Configure cables for all locations (${configuredCount}/${totalLocations} completed)`;
+        saveBtn.innerHTML = '<i class="bi bi-save"></i> Save Additional Locations';
+    }
+}
+
+// Function to mark a location as having cables configured
+function markLocationCablesConfigured(junctionIndex) {
+    locationCablesConfigured[junctionIndex] = true;
+    updateLocationConfigStatus(junctionIndex);
+    checkAllCablesConfigured();
+}
+
+// Function to update the UI for a specific location
+function updateLocationConfigStatus(junctionIndex) {
+    const configButton = document.querySelector(`.config-cables-btn[data-junction-index="${junctionIndex}"]`);
+    const cableStatus = document.querySelector(`.cable-status[data-junction-index="${junctionIndex}"]`);
+    
+    if (configButton && cableStatus) {
+        configButton.style.display = 'none';
+        cableStatus.style.display = 'inline';
+        
+        // Update the edit button text to show it's configured
+        const editBtn = cableStatus.querySelector('.edit-cables-btn');
+        if (editBtn) {
+            editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+        }
+    }
+}
+
+// Initialize all locations as not configured
+function initializeLocationTracking() {
+    for (let i = 0; i < totalLocations; i++) {
+        locationCablesConfigured[i] = false;
+    }
+    checkAllCablesConfigured();
+}
+
+// ============================================================================
+// 📋 LOCATION DATA MANAGEMENT
+// ============================================================================
+
+// Function to validate and enable/disable config buttons
+function validateLocationRow(junctionIndex) {
+    const nameInput = document.querySelector(`.junction-name-input[data-junction-index="${junctionIndex}"]`);
+    const sizeSelect = document.querySelector(`.junction-size-select[data-junction-index="${junctionIndex}"]`);
+    const rowInput = document.querySelector(`.junction-row-input[data-junction-index="${junctionIndex}"]`);
+    const configBtn = document.querySelector(`.config-cables-btn[data-junction-index="${junctionIndex}"]`);
+    
+    const isValid = nameInput && nameInput.value.trim() && 
+                   sizeSelect && sizeSelect.value && 
+                   rowInput && rowInput.value;
+    
+    if (configBtn) {
+        configBtn.disabled = !isValid;
+    }
+    
+    return isValid;
+}
+
+// Function to collect junction data (ONLY PLACE WHERE (F)/(H) IS ADDED)
+function collectJunctionData(junctionIndex) {
+    const stationId = document.querySelector(`input[name="junctions[${junctionIndex}][station_id]"]`)?.value || '';
+    const junctionId = document.querySelector(`input[name="junctions[${junctionIndex}][junction_id]"]`)?.value || '';
+    let junctionName = document.querySelector(`input[name="junctions[${junctionIndex}][junction_name]"]`)?.value || '';
+    const sizeSelect = document.querySelector(`select[name="junctions[${junctionIndex}][junction_size]"]`);
+    const junctionSize = sizeSelect?.value || 'Full';
+    const junctionRow = document.querySelector(`input[name="junctions[${junctionIndex}][junction_row]"]`)?.value || '1';
+    const latitude = document.querySelector(`input[name="junctions[${junctionIndex}][latitude]"]`)?.value || '';
+    const longitude = document.querySelector(`input[name="junctions[${junctionIndex}][longitude]"]`)?.value || '';
+    
+    // If name is empty, create a default name using junction ID
+    if (!junctionName.trim() && junctionId) {
+        junctionName = `Location-${junctionId}`;
+    }
+    
+    // Format the name based on size (ONLY PLACE THIS HAPPENS)
+    if (junctionName && junctionSize) {
+        // Remove any existing (F) or (H) suffix first to avoid duplication
+        junctionName = junctionName.replace(/\s*\([FH]\)$/, '');
+        
+        if (junctionSize === 'Full') {
+            junctionName = junctionName + ' (F)';
+        } else if (junctionSize === 'Half') {
+            junctionName = junctionName + ' (H)';
+        }
+    }
+    
+    return {
+        station_id: stationId,
+        junction_id: junctionId,
+        junction_name: junctionName,
+        junction_size: junctionSize,
+        junction_row: junctionRow,
+        latitude: latitude,
+        longitude: longitude
+    };
+}
+
+// ============================================================================
+// 📋 NOTIFICATION SYSTEM
+// ============================================================================
+
+// Function to show compact notification
+function showCompactNotification(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    
+    // Remove existing notifications
+    const existingNotifications = container.querySelectorAll('.alert');
+    existingNotifications.forEach(notif => {
+        notif.classList.remove('show');
+        setTimeout(() => notif.remove(), 150);
+    });
+    
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.style.cssText = 'max-width: 300px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);';
+    notification.innerHTML = `
+        <div style="font-size: 0.9rem;">${message}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem;"></button>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 150);
+        }
+    }, duration);
+}
+
+// ============================================================================
+// 📋 PDF POPUP MODAL FUNCTIONS - UPDATED VERSION
+// ============================================================================
+
+// Function to extract station ID from the form
+function extractStationId() {
+    const stationInput = document.querySelector('input[name="junctions[0][station_id]"]');
+    if (stationInput) {
+        currentProjectId = stationInput.value;
+        console.log(`📌 Extracted station ID: ${currentProjectId}`);
+        return currentProjectId;
+    }
+    
+    // Alternative: Get from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const cableId = urlParams.get('cable_id');
+    if (cableId) {
+        // Try to get project ID from cable ID
+        currentProjectId = cableId;
+        console.log(`📌 Using cable ID as station ID: ${currentProjectId}`);
+    }
+    
+    return currentProjectId;
+}
+
+// Function to update refresh time display
+function updateRefreshTime() {
+    const now = new Date();
+    lastRefreshTime = now;
+    
+    const timeStr = now.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    
+    // Update all refresh time indicators
+    document.getElementById('pdfLastUpdated').textContent = `Last refreshed: ${timeStr}`;
+    document.getElementById('statusLastUpdated').textContent = `Updated: ${timeStr}`;
+    
+    // Show the last updated time
+    document.getElementById('pdfLastUpdated').style.display = 'block';
+}
+
+// UPDATED: Function to get PDF data with proper file selection
+async function getProjectPdfData(projectId = null) {
+    try {
+        if (!projectId) {
+            projectId = extractStationId();
+            if (!projectId) {
+                console.log("❌ No project ID found");
+                return null;
+            }
+        }
+        
+        currentProjectId = projectId;
+        
+        // Use the debug endpoint that you have
+        const response = await fetch(`/debug/pdf_records/${projectId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('📄 PDF debug result:', result);
+        
+        if (result.success) {
+            // NEW: Get the latest PDF file from uploads directory
+            let latestPdfFile = null;
+            
+            if (result.uploads && result.uploads.files_in_uploads) {
+                // Filter PDF files for this project
+                const projectPdfs = result.uploads.files_in_uploads.filter(filename => {
+                    return filename.toLowerCase().endsWith('.pdf') && 
+                          (filename.includes(`_${projectId}_`) || filename.includes(`project_${projectId}_`));
+                });
+                
+                console.log('📄 Project PDFs found:', projectPdfs);
+                
+                if (projectPdfs.length > 0) {
+                    // Sort by filename (which contains timestamp) to get latest
+                    projectPdfs.sort().reverse();
+                    
+                    // Try to find a PREVIEW PDF first
+                    const previewPdfs = projectPdfs.filter(f => f.includes('PREVIEW'));
+                    if (previewPdfs.length > 0) {
+                        latestPdfFile = previewPdfs[0];
+                        console.log('📄 Using PREVIEW PDF:', latestPdfFile);
+                    } else {
+                        // Use the latest PDF
+                        latestPdfFile = projectPdfs[0];
+                        console.log('📄 Using latest PDF:', latestPdfFile);
+                    }
+                }
+            }
+            
+            // If we found a file in uploads, use it
+            if (latestPdfFile) {
+                // Create a mock PDF record if not in database
+                const mockPdfRecord = {
+                    pdf_filename: latestPdfFile,
+                    project_id: projectId,
+                    version: '1',
+                    created_at: new Date().toISOString(),
+                    level1_status: 'pending',
+                    level2_status: 'pending',
+                    level3_status: 'pending'
+                };
+                
+                return {
+                    ...result,
+                    latestPdf: mockPdfRecord,
+                    fileExists: true
+                };
+            }
+            
+            // Fallback to database records
+            if (result.pdf_records && result.pdf_records.length > 0) {
+                // Get the latest PDF (sorted by created_at desc in backend)
+                const latestPdf = result.pdf_records[0];
+                return {
+                    ...result,
+                    latestPdf: latestPdf,
+                    fileExists: result.uploads && result.uploads.files_in_uploads && 
+                               result.uploads.files_in_uploads.includes(latestPdf.pdf_filename)
+                };
+            }
+            
+            return result;
+        } else {
+            throw new Error(result.error || 'Unknown error');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error fetching PDF debug info:', error);
+        return null;
+    }
+}
+
+// UPDATED: Function to fetch latest PDF info (simplified)
+async function fetchLatestPdf(projectId = null, showLoading = true) {
+    try {
+        console.log("🔍 fetchLatestPdf: Starting with projectId =", projectId);
+        
+        // If no projectId provided, extract from form
+        if (!projectId) {
+            projectId = extractStationId();
+            console.log("🔍 fetchLatestPdf: After extractStationId, projectId =", projectId);
+            
+            if (!projectId) {
+                console.log("❌ fetchLatestPdf: No project ID found");
+                showCompactNotification('❌ Unable to determine project ID', 'error', 3000);
+                return null;
+            }
+        }
+        
+        currentProjectId = projectId;
+        
+        // Update modal title with project ID
+        document.getElementById('modalProjectId').textContent = `Project ID: ${projectId}`;
+        
+        console.log(`📄 Fetching PDF info for project: ${projectId}`);
+        
+        // Show loading state if requested
+        if (showLoading) {
+            document.getElementById('pdfLoadingSpinner').style.display = 'block';
+            document.getElementById('pdfInfoCard').style.display = 'none';
+            document.getElementById('noPdfCard').style.display = 'none';
+            document.getElementById('errorPdfCard').style.display = 'none';
+            document.getElementById('pdfStatusCard').style.display = 'none';
+            document.getElementById('pdfPreviewCard').style.display = 'none';
+        }
+        
+        // Show loading animation on refresh button
+        const refreshIcon = document.getElementById('refreshIcon');
+        const originalIcon = refreshIcon.className;
+        refreshIcon.className = 'bi bi-arrow-clockwise spin';
+        
+        // Add slight delay to show loading animation
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Get PDF data using debug endpoint
+        const result = await getProjectPdfData(projectId);
+        
+        // Stop refresh animation
+        refreshIcon.className = originalIcon;
+        
+        // Hide loading spinner
+        document.getElementById('pdfLoadingSpinner').style.display = 'none';
+        
+        if (result && result.success) {
+            // Check if we have a latest PDF
+            if (result.latestPdf) {
+                const latestPdf = result.latestPdf;
+                
+                // Store PDF data
+                currentPdfData = latestPdf;
+                
+                // Show PDF info
+                document.getElementById('pdfFileName').textContent = latestPdf.pdf_filename || 'PDF Document';
+                document.getElementById('pdfProjectInfo').textContent = `Project: ${result.project.name || projectId}`;
+                document.getElementById('pdfVersionInfo').textContent = `Version: v${latestPdf.version || '1'}`;
+                
+                // Format created date
+                if (latestPdf.created_at) {
+                    const createdDate = new Date(latestPdf.created_at);
+                    const dateStr = createdDate.toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                    });
+                    const timeStr = createdDate.toLocaleTimeString('en-IN', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    document.getElementById('pdfCreatedInfo').textContent = `Created: ${dateStr} ${timeStr}`;
+                } else {
+                    document.getElementById('pdfCreatedInfo').textContent = `Created: Unknown`;
+                }
+                
+                // Store PDF data in buttons
+                document.getElementById('viewPdfBtn').dataset.pdfFilename = latestPdf.pdf_filename;
+                document.getElementById('downloadPdfBtn').dataset.pdfFilename = latestPdf.pdf_filename;
+                
+                // Enable buttons if file exists
+                const fileExists = result.fileExists !== false;
+                document.getElementById('viewPdfBtn').disabled = !fileExists;
+                document.getElementById('downloadPdfBtn').disabled = !fileExists;
+                
+                if (!fileExists) {
+                    document.getElementById('pdfFileName').innerHTML += ' <span class="badge bg-warning">File not found on disk</span>';
+                }
+                
+                // Show PDF info card
+                document.getElementById('pdfInfoCard').style.display = 'block';
+                
+                // Update approval status
+                updateApprovalStatus(latestPdf);
+                
+                // Update refresh time
+                updateRefreshTime();
+                
+                // Show success notification if this was a manual refresh
+                if (!showLoading) {
+                    showCompactNotification('✅ PDF information refreshed successfully', 'success', 2000);
+                }
+                
+                return latestPdf;
+            } else {
+                // No PDF records
+                document.getElementById('noPdfCard').style.display = 'block';
+                const noPdfCard = document.getElementById('noPdfCard');
+                noPdfCard.querySelector('#noPdfTitle').textContent = `No PDF for ${result.project.name}`;
+                noPdfCard.querySelector('#noPdfMessage').textContent = 'This project doesn\'t have any saved PDFs yet.';
+                
+                if (!showLoading) {
+                    showCompactNotification('ℹ️ No PDF available for this project yet', 'info', 3000);
+                }
+                return null;
+            }
+        } else {
+            // Error
+            document.getElementById('errorPdfCard').style.display = 'block';
+            const errorCard = document.getElementById('errorPdfCard');
+            errorCard.querySelector('#errorTitle').textContent = 'Error Loading PDF';
+            errorCard.querySelector('#errorMessage').textContent = result?.error || 'Unable to load PDF information.';
+            
+            showCompactNotification('❌ Error loading PDF information', 'error', 3000);
+            return null;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error fetching PDF info:', error);
+        
+        // Stop refresh animation
+        const refreshIcon = document.getElementById('refreshIcon');
+        refreshIcon.className = 'bi bi-arrow-clockwise';
+        
+        document.getElementById('pdfLoadingSpinner').style.display = 'none';
+        document.getElementById('errorPdfCard').style.display = 'block';
+        
+        // Update error message
+        const errorTitle = document.getElementById('errorTitle');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            errorTitle.textContent = 'Network Error';
+            errorMessage.textContent = 'Unable to connect to server. Please check your internet connection.';
+        } else if (error.message.includes('404')) {
+            errorTitle.textContent = 'Endpoint Not Found';
+            errorMessage.textContent = `The PDF endpoint was not found.`;
+        } else {
+            errorTitle.textContent = 'Error Loading PDF';
+            errorMessage.textContent = `Error: ${error.message}`;
+        }
+        
+        showCompactNotification('❌ Error loading PDF information', 'error', 3000);
+        return null;
+    }
+}
+
+// Function to update approval status in modal
+function updateApprovalStatus(pdf) {
+    const statusCard = document.getElementById('pdfStatusCard');
+    
+    // Set level 1 status
+    const level1Badge = document.getElementById('level1Status');
+    const level1Approver = document.getElementById('level1Approver');
+    const level1Date = document.getElementById('level1Date');
+    
+    if (pdf.level1_status === 'approved') {
+        level1Badge.className = 'badge bg-success';
+        level1Badge.textContent = 'APPROVED';
+        level1Approver.textContent = pdf.level1_approver || '';
+        if (pdf.level1_approval_date) {
+            const date = new Date(pdf.level1_approval_date);
+            level1Date.textContent = date.toLocaleDateString('en-IN');
+        }
+    } else if (pdf.level1_status === 'rejected') {
+        level1Badge.className = 'badge bg-danger';
+        level1Badge.textContent = 'REJECTED';
+    } else {
+        level1Badge.className = 'badge bg-secondary';
+        level1Badge.textContent = 'PENDING';
+        level1Approver.textContent = '';
+        level1Date.textContent = '';
+    }
+    
+    // Set level 2 status
+    const level2Badge = document.getElementById('level2Status');
+    const level2Approver = document.getElementById('level2Approver');
+    const level2Date = document.getElementById('level2Date');
+    
+    if (pdf.level2_status === 'approved') {
+        level2Badge.className = 'badge bg-success';
+        level2Badge.textContent = 'APPROVED';
+        level2Approver.textContent = pdf.level2_approver || '';
+        if (pdf.level2_approval_date) {
+            const date = new Date(pdf.level2_approval_date);
+            level2Date.textContent = date.toLocaleDateString('en-IN');
+        }
+    } else if (pdf.level2_status === 'rejected') {
+        level2Badge.className = 'badge bg-danger';
+        level2Badge.textContent = 'REJECTED';
+    } else if (pdf.level1_status !== 'approved') {
+        level2Badge.className = 'badge bg-secondary';
+        level2Badge.textContent = 'WAITING L1';
+        level2Approver.textContent = '';
+        level2Date.textContent = '';
+    } else {
+        level2Badge.className = 'badge bg-secondary';
+        level2Badge.textContent = 'PENDING';
+        level2Approver.textContent = '';
+        level2Date.textContent = '';
+    }
+    
+    // Set level 3 status
+    const level3Badge = document.getElementById('level3Status');
+    const level3Approver = document.getElementById('level3Approver');
+    const level3Date = document.getElementById('level3Date');
+    
+    if (pdf.level3_status === 'approved') {
+        level3Badge.className = 'badge bg-success';
+        level3Badge.textContent = 'APPROVED';
+        level3Approver.textContent = pdf.level3_approver || '';
+        if (pdf.level3_approval_date) {
+            const date = new Date(pdf.level3_approval_date);
+            level3Date.textContent = date.toLocaleDateString('en-IN');
+        }
+    } else if (pdf.level3_status === 'rejected') {
+        level3Badge.className = 'badge bg-danger';
+        level3Badge.textContent = 'REJECTED';
+    } else if (pdf.level2_status !== 'approved' || pdf.level1_status !== 'approved') {
+        level3Badge.className = 'badge bg-secondary';
+        level3Badge.textContent = 'WAITING L2';
+        level3Approver.textContent = '';
+        level3Date.textContent = '';
+    } else {
+        level3Badge.className = 'badge bg-secondary';
+        level3Badge.textContent = 'PENDING';
+        level3Approver.textContent = '';
+        level3Date.textContent = '';
+    }
+    
+    // Show status card
+    statusCard.style.display = 'block';
+}
+
+// FIXED: Function to open PDF viewer - Using the correct route
+function openPdfViewer() {
+    const viewBtn = document.getElementById('viewPdfBtn');
+    const pdfFilename = viewBtn.dataset.pdfFilename;
+    
+    if (!pdfFilename) {
+        showCompactNotification('❌ No PDF filename available', 'error', 3000);
+        return;
+    }
+    
+    // Show preview card
+    document.getElementById('pdfPreviewCard').style.display = 'block';
+    
+    // Use the inline PDF route (which works based on your logs)
+    const pdfUrl = `/pdf/inline/${encodeURIComponent(pdfFilename)}`;
+    const iframe = document.getElementById('pdfPreviewFrame');
+    
+    console.log('📄 Opening PDF URL:', pdfUrl);
+    
+    // Clear previous iframe content
+    iframe.src = '';
+    
+    // Add loading indicator
+    iframe.onloadstart = function() {
+        console.log('📄 PDF iframe loading started');
+    };
+    
+    iframe.onload = function() {
+        console.log('📄 PDF iframe loaded');
+        try {
+            // Try to check if the iframe contains an error
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const bodyText = iframeDoc.body ? iframeDoc.body.innerText : '';
+            
+            if (bodyText.includes('File not found') || bodyText.includes('404') || 
+                bodyText.includes('PDF file not found') || bodyText.includes('Invalid file')) {
+                console.error('❌ PDF not found in iframe');
+                showCompactNotification('❌ PDF file not found or has been deleted', 'error', 3000);
+                closePdfPreview();
+            }
+        } catch (e) {
+            // Cross-origin error, can't check content - assume it loaded successfully
+            console.log('📄 PDF loaded (CORS restricted)');
+        }
+    };
+    
+    iframe.onerror = function() {
+        console.error('❌ PDF iframe load error');
+        showCompactNotification('❌ Failed to load PDF. The file may not exist.', 'error', 3000);
+        closePdfPreview();
+    };
+    
+    // Set the iframe source
+    iframe.src = pdfUrl;
+    
+    // Scroll to preview
+    document.getElementById('pdfPreviewCard').scrollIntoView({ behavior: 'smooth' });
+    
+    showCompactNotification('📄 Opening PDF preview...', 'info', 2000);
+}
+
+// Function to refresh PDF preview
+function refreshPdfPreview() {
+    const viewBtn = document.getElementById('viewPdfBtn');
+    const pdfFilename = viewBtn.dataset.pdfFilename;
+    
+    if (!pdfFilename) {
+        showCompactNotification('❌ No PDF filename available', 'error', 3000);
+        return;
+    }
+    
+    // Reload iframe
+    const iframe = document.getElementById('pdfPreviewFrame');
+    iframe.src = iframe.src; // Simple reload
+    
+    showCompactNotification('🔄 Refreshing PDF preview...', 'info', 2000);
+}
+
+// Function to close PDF preview
+function closePdfPreview() {
+    document.getElementById('pdfPreviewCard').style.display = 'none';
+    document.getElementById('pdfPreviewFrame').src = '';
+}
+
+// FIXED: Function to download PDF - Using the correct route
+function downloadPdf() {
+    const downloadBtn = document.getElementById('downloadPdfBtn');
+    const pdfFilename = downloadBtn.dataset.pdfFilename;
+    
+    if (!pdfFilename) {
+        showCompactNotification('❌ No PDF filename available', 'error', 3000);
+        return;
+    }
+    
+    // Use the correct Flask route
+    const downloadUrl = `/pdf/download/${encodeURIComponent(pdfFilename)}`;
+    
+    console.log('📥 Downloading PDF from:', downloadUrl);
+    
+    // Create a temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.target = '_blank';
+    link.download = pdfFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showCompactNotification('📥 Downloading PDF...', 'success', 2000);
+}
+
+// Function to copy PDF link
+function copyPdfLink() {
+    const viewBtn = document.getElementById('viewPdfBtn');
+    const pdfFilename = viewBtn.dataset.pdfFilename;
+    
+    if (!pdfFilename) {
+        showCompactNotification('❌ No PDF filename available', 'error', 3000);
+        return;
+    }
+    
+    // Use the inline route (which works)
+    const pdfUrl = `${window.location.origin}/pdf/inline/${encodeURIComponent(pdfFilename)}`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(pdfUrl).then(() => {
+        showCompactNotification('📋 PDF link copied to clipboard!', 'success', 2000);
+        
+        // Show visual feedback on button
+        const copyBtn = document.getElementById('copyLinkBtn');
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+        copyBtn.classList.add('btn-success');
+        copyBtn.classList.remove('btn-outline-secondary');
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalHTML;
+            copyBtn.classList.remove('btn-success');
+            copyBtn.classList.add('btn-outline-secondary');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showCompactNotification('❌ Failed to copy link', 'error', 3000);
+    });
+}
+
+// Function to refresh latest PDF
+function refreshLatestPdf() {
+    if (!currentProjectId) {
+        currentProjectId = extractStationId();
+        if (!currentProjectId) {
+            showCompactNotification('❌ Could not identify project. Please save draft first.', 'error', 3000);
+            return;
+        }
+    }
+    
+    showCompactNotification('🔄 Refreshing PDF information...', 'info', 2000);
+    fetchLatestPdf(currentProjectId, false); // Don't show full loading animation
+}
+
+// Function to show PDF modal
+function showPdfModal() {
+    // First, extract station ID
+    const projectId = extractStationId();
+    
+    if (!projectId) {
+        showCompactNotification('❌ Could not identify project. Please save draft first.', 'error', 3000);
+        return;
+    }
+    
+    // Show modal
+    const pdfModal = new bootstrap.Modal(document.getElementById('pdfViewModal'));
+    pdfModal.show();
+    
+    // Fetch latest PDF
+    setTimeout(() => {
+        fetchLatestPdf(projectId);
+    }, 300);
+}
+
+// Function to continue to next workflow step
+function continueToNextStep() {
+    // Close modal
+    const pdfModal = bootstrap.Modal.getInstance(document.getElementById('pdfViewModal'));
+    if (pdfModal) {
+        pdfModal.hide();
+    }
+    
+    // Navigate to next step or show message
+    showCompactNotification('➡️ Continuing workflow...', 'info', 2000);
+    
+    // You can add navigation logic here
+    // For example: window.location.href = '/next-workflow-step';
+}
+
+// ============================================================================
+// 📋 DRAFT SAVE FUNCTIONALITY WITH JUNCTION DATA UPDATE
+// ============================================================================
+
+// Function to save draft via AJAX
+async function saveJunctionBoxDraft() {
+    try {
+        const totalRows = {{ junction_count }};
+        const junctionsData = [];
+        
+        console.log(`📝 Starting draft save for ${totalRows} locations...`);
+        
+        // Collect all junction data
+        for (let i = 0; i < totalRows; i++) {
+            const junctionData = collectJunctionData(i);
+            
+            console.log(`📍 Location ${i} data:`, junctionData);
+            
+            // For draft, save data even if some fields are missing
+            // We only need junction_id to save
+            if (junctionData.junction_id) {
+                junctionsData.push(junctionData);
+                
+                // Store project ID for later use
+                if (i === 0 && junctionData.station_id) {
+                    currentProjectId = junctionData.station_id;
+                }
+                
+                // Update the input field with formatted name (ONLY for display)
+                const nameInput = document.querySelector(`input[name="junctions[${i}][junction_name]"]`);
+                if (nameInput && junctionData.junction_name) {
+                    nameInput.value = junctionData.junction_name;
+                }
+            } else {
+                console.log(`⚠️ Skipping location ${i}: No junction_id`);
+            }
+        }
+        
+        console.log(`📦 Collected ${junctionsData.length} junctions for draft save`);
+        
+        if (junctionsData.length === 0) {
+            showCompactNotification('No complete junction data to save. Please fill in at least the Location ID fields.', 'warning', 3000);
+            return false;
+        }
+        
+        // Show saving notification with junction data update message
+        showCompactNotification('💾 Saving draft and updating junction data...', 'info', 2000);
+        
+        // Send AJAX request
+        const response = await fetch('/save_junction_box_draft', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                junctions: junctionsData
+            })
+        });
+        
+        const result = await response.json();
+        console.log('📨 Server response:', result);
+        
+        if (result.success) {
+            // Store project ID for PDF modal
+            if (result.project_id) {
+                currentProjectId = result.project_id;
+            }
+            
+            // Enhanced success message mentioning junction data update
+            showCompactNotification(`✅ ${result.message} (Junction data updated in project)`, 'success', 4000);
+            
+            // Optional: Reload or update UI elements to reflect updated junction data
+            setTimeout(() => {
+                console.log('🔄 Draft saved successfully. Junction data has been updated in project.');
+            }, 1000);
+            
+            return true;
+        } else {
+            showCompactNotification(`❌ ${result.message}`, 'error', 3000);
+            return false;
+        }
+        
+    } catch (error) {
+        console.error('❌ Error saving draft:', error);
+        showCompactNotification('❌ Error saving draft. Please try again.', 'error', 3000);
+        return false;
+    }
+}
+
+// ============================================================================
+// 📋 PREVIEW BUTTON FUNCTIONALITY - UPDATED
+// ============================================================================
+
+// Main preview function
+async function handlePreview() {
+    try {
+        console.log('👁️ Preview button clicked - starting preview process');
+        
+        // Disable button while processing
+        const previewBtn = document.getElementById('previewBtn');
+        const originalText = previewBtn.innerHTML;
+        previewBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating...';
+        previewBtn.disabled = true;
+        
+        // Show loading notification
+        showCompactNotification('📊 Preparing preview...', 'info', 2000);
+        
+        // Step 1: First save a draft to ensure we have the latest data
+        console.log('💾 Saving draft before preview...');
+        const draftSaved = await saveJunctionBoxDraft();
+        
+        if (!draftSaved) {
+            showCompactNotification('❌ Cannot generate preview because draft save failed.', 'error', 3000);
+            previewBtn.disabled = false;
+            previewBtn.innerHTML = originalText;
+            return;
+        }
+        
+        // Step 2: Generate and download the XLSX file using PREVIEW endpoint
+        showCompactNotification('📥 Downloading preview file...', 'info', 2000);
+        
+        // Use a hidden iframe to trigger the PREVIEW download
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = '/download_preview/';  // This is the PREVIEW endpoint
+        document.body.appendChild(iframe);
+        
+        // Step 3: After download, show PDF modal
+        setTimeout(() => {
+            // Clean up iframe
+            if (iframe.parentNode) {
+                document.body.removeChild(iframe);
+            }
+            
+            // Show success message
+            showCompactNotification('✅ Preview downloaded successfully!', 'success', 4000);
+            
+            // Step 4: Show PDF modal with latest PDF
+            console.log('📄 Showing PDF modal...');
+            setTimeout(() => {
+                showPdfModal();
+            }, 1000);
+            
+        }, 2000); // Wait for download to complete
+        
+        console.log('✅ Preview process completed');
+        
+    } catch (error) {
+        console.error('❌ Error in preview process:', error);
+        showCompactNotification('❌ Error generating preview: ' + error.message, 'error', 4000);
+    } finally {
+        // Re-enable button
+        const previewBtn = document.getElementById('previewBtn');
+        if (previewBtn) {
+            previewBtn.disabled = false;
+            previewBtn.innerHTML = '<i class="bi bi-eye-fill"></i> Preview';
+        }
+    }
+}
+
+// ============================================================================
+// 📋 FINAL SAVE VALIDATION
+// ============================================================================
+
+// Function to handle form submission for "Save Additional Locations"
+function handleSaveFormSubmit(e) {
+    const totalRows = {{ junction_count }};
+    let allValid = true;
+    let errorMessage = '';
+    
+    console.log('📋 Validating form for final save...');
+    
+    for (let i = 0; i < totalRows; i++) {
+        const junctionData = collectJunctionData(i);
+        
+        // Update the input value with the formatted name
+        const nameInput = document.querySelector(`input[name="junctions[${i}][junction_name]"]`);
+        if (nameInput && junctionData.junction_name) {
+            nameInput.value = junctionData.junction_name;
+        }
+        
+        // Check if required fields are filled
+        const isValid = junctionData.junction_id && 
+                       junctionData.junction_name && 
+                       junctionData.junction_size && 
+                       junctionData.junction_row;
+        
+        if (!isValid) {
+            allValid = false;
+            errorMessage = 'Please fill all required fields (Location Name, Location Size, and Location Row) for all locations.';
+            console.log(`❌ Location ${i} validation failed:`, junctionData);
+            break;
+        }
+    }
+    
+    if (!allValid) {
+        e.preventDefault();
+        showCompactNotification(`✕ ${errorMessage}`, 'error', 3000);
+        return false;
+    }
+    
+    // Prevent submission if not all cables are configured
+    let configuredCount = 0;
+    for (let i = 0; i < totalLocations; i++) {
+        if (locationCablesConfigured[i]) {
+            configuredCount++;
+        }
+    }
+    
+    if (configuredCount < totalLocations) {
+        e.preventDefault();
+        showCompactNotification(`✕ Please configure cables for all locations before saving. (${configuredCount}/${totalLocations} completed)`, 'error', 3000);
+        return false;
+    }
+    
+    console.log('✅ Form validation passed, proceeding with save...');
+    
+    // Show saving notification
+    showCompactNotification('💾 Saving locations and updating junction data...', 'info', 2000);
+    
+    return true;
+}
+
+// ============================================================================
+// 📋 PAGE INITIALIZATION
+// ============================================================================
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    
+    console.log('🚀 Initializing location management system...');
+    
+    // Add CSS for spinning animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .bi-arrow-clockwise.spin {
+            animation: spin 1s linear infinite;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Add event listeners to all location size dropdowns
+    const sizeSelects = document.querySelectorAll('.junction-size-select');
+    sizeSelects.forEach((select) => {
+        select.addEventListener('change', function() {
+            const junctionIndex = this.getAttribute('data-junction-index');
+            validateLocationRow(junctionIndex);
+        });
+    });
+    
+    // Add event listeners to all location name inputs
+    const nameInputs = document.querySelectorAll('.junction-name-input');
+    nameInputs.forEach((input) => {
+        input.addEventListener('blur', function() {
+            const junctionIndex = this.getAttribute('data-junction-index');
+            validateLocationRow(junctionIndex);
+        });
+    });
+    
+    // Add event listeners to all location row inputs
+    const rowInputs = document.querySelectorAll('.junction-row-input');
+    rowInputs.forEach((input) => {
+        input.addEventListener('input', function() {
+            const junctionIndex = this.getAttribute('data-junction-index');
+            validateLocationRow(junctionIndex);
+        });
+        
+        input.addEventListener('blur', function() {
+            const junctionIndex = this.getAttribute('data-junction-index');
+            validateLocationRow(junctionIndex);
+        });
+    });
+    
+    // Add event listener for Preview button
+    const previewBtn = document.getElementById('previewBtn');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            console.log('👁️ Preview button clicked');
+            await handlePreview();
+        });
+    }
+    
+    // Save Draft button click handler
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', async function() {
+            console.log('💾 Save Draft button clicked');
+            this.disabled = true;
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+            
+            try {
+                await saveJunctionBoxDraft();
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        });
+    }
+    
+    // Form submission handler for final save
+    const addMoreJunctionGridForm = document.getElementById('addMoreJunctionGridForm');
+    if (addMoreJunctionGridForm) {
+        addMoreJunctionGridForm.addEventListener('submit', handleSaveFormSubmit);
+    }
+    
+    // Previous button - SIMPLE NAVIGATION (no validation)
+    const previousBtn = document.getElementById('previousBtn');
+    if (previousBtn && previousBtn.tagName === 'A') {
+        previousBtn.addEventListener('click', function(e) {
+            console.log('⏮️ Previous button clicked - navigating without validation');
+            // Allow navigation without any validation
+            return true;
+        });
+    }
+    
+    // Config cables button handlers
+    const configButtons = document.querySelectorAll('.config-cables-btn');
+    configButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const junctionIndex = this.getAttribute('data-junction-index');
+            if (!this.disabled) {
+                console.log('🔧 Opening cable configuration for location index:', junctionIndex);
+                // The actual modal opening is handled by add_more_flow.js
+            }
+        });
+    });
+    
+    // Edit cables button handlers
+    const editCablesButtons = document.querySelectorAll('.edit-cables-btn');
+    editCablesButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const junctionIndex = this.getAttribute('data-junction-index');
+            console.log('✏️ Editing cables for location index:', junctionIndex);
+            // Implement edit cable configuration logic here
+        });
+    });
+    
+    // Initialize validation for all rows
+    console.log('🔍 Initializing validation for all location rows...');
+    for (let i = 0; i < totalLocations; i++) {
+        validateLocationRow(i);
+    }
+    
+    // Initialize location tracking
+    initializeLocationTracking();
+    
+    // Also initialize from existing cable status spans (in case of page reload)
+    document.querySelectorAll('.cable-status').forEach(status => {
+        const junctionIndex = status.dataset.junctionIndex;
+        if (status.style.display !== 'none') {
+            locationCablesConfigured[junctionIndex] = true;
+        }
+    });
+    
+    // Check initial button state
+    checkAllCablesConfigured();
+    
+    // Check if there's a success message to show from previous save
+    setTimeout(() => {
+        if (sessionStorage.getItem('showDraftSavedMessage')) {
+            showCompactNotification('✅ Draft saved successfully! Junction data updated in project.', 'success', 3000);
+            sessionStorage.removeItem('showDraftSavedMessage');
+        }
+    }, 500);
+    
+    console.log('✅ Location management system initialized successfully');
+});
+
+// ============================================================================
+// 📋 SESSION STORAGE HELPERS
+// ============================================================================
+
+// Function to set draft saved message for next page load
+function setDraftSavedMessage() {
+    sessionStorage.setItem('showDraftSavedMessage', 'true');
+}
+
+// Function to check if we should show draft saved message
+function shouldShowDraftSavedMessage() {
+    return sessionStorage.getItem('showDraftSavedMessage') === 'true';
+}
+</script>

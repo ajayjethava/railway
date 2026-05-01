@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Railway Signalling - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/railway_logo.jpg') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    .login-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%); /* Match main content gradient */
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .login-card {
+      border: none; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      width: 100%; max-width: 450px; border-top: 4px solid #00695c; /* Teal border */
+    }
+    .card-header {
+      background: linear-gradient(135deg, #00695c 0%, #00796b 100%); /* Teal gradient */
+      color: white; border-radius: 10px 10px 0 0 !important; padding: 1.5rem;
+      position: relative;
+    }
+    .btn-login {
+      background: linear-gradient(135deg, #00695c 0%, #00796b 100%); /* Teal gradient */
+      border: none; padding: 12px; font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3); /* Teal shadow */
+    }
+    .btn-login:hover {
+      background: linear-gradient(135deg, #00796b 0%, #00695c 100%);
+      transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0, 105, 92, 0.4);
+    }
+    .password-toggle { cursor: pointer; border: 1px solid #ced4da; background-color: #fff; border-left: none; }
+    .password-toggle:hover { background-color: #f8f9fa; }
+    .form-control:focus { border-color: #00695c; box-shadow: 0 0 0 0.2rem rgba(0, 105, 92, 0.25); } /* Teal focus */
+    .input-group-text { background-color: #f8f9fa; border-color: #ced4da; }
+    
+    /* Logo Styles */
+    .railway-logo {
+      max-width: 100px;
+      max-height: 100px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      transition: transform 0.3s ease;
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      background-color: transparent;
+      padding: 0;
+      border: none;
+    }
+    .railway-logo:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .logo-text-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin: 0 auto;
+      padding: 5px 0;
+    }
+    .brand-title {
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .brand-subtitle {
+      font-size: 0.95rem;
+      opacity: 0.95;
+      font-weight: 400;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .logo-wrapper {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 8px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+      min-width: 100px;
+      min-height: 100px;
+    }
+    
+    /* Alert styling to match theme */
+    .alert-info {
+      background-color: #e8f5e9;
+      border-color: #a5d6a7;
+      color: #2e7d32;
+    }
+    
+    .alert-danger {
+      background-color: #ffebee;
+      border-color: #ef9a9a;
+      color: #c62828;
+    }
+    
+    /* Additional teal accents */
+    .input-group-text {
+      background-color: #f0f7f6;
+      border-color: #b2dfdb;
+      color: #00695c;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .railway-logo {
+        max-width: 90px;
+        max-height: 90px;
+      }
+      .brand-title {
+        font-size: 1.5rem;
+      }
+      .logo-text-container {
+        gap: 15px;
+      }
+      .logo-wrapper {
+        min-width: 90px;
+        min-height: 90px;
+      }
+    }
+    @media (max-width: 576px) {
+      .logo-text-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+      }
+      .railway-logo {
+        max-width: 85px;
+        max-height: 85px;
+      }
+      .brand-title {
+        font-size: 1.4rem;
+      }
+      .brand-subtitle {
+        font-size: 0.9rem;
+      }
+      .logo-wrapper {
+        min-width: 85px;
+        min-height: 85px;
+      }
+    }
+  </style>
+</head>
+<body class="login-container">
+  <div class="login-card card">
+    <div class="card-header text-center py-4">
+      <div class="header-content">
+        <!-- Horizontal Layout: Logo on left, text on right -->
+        <div class="logo-text-container">
+          <!-- Logo with wrapper for better visibility -->
+          <div class="logo-wrapper">
+            <img src="{{ url_for('static', filename='images/railway_logo.jpg') }}" 
+                 alt="Indian Railway Logo" 
+                 class="railway-logo"
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/100x100/00695c/ffffff?text=Railway';">
+          </div>
+          <div>
+            <h3 class="brand-title mb-2">
+              Railway Signalling
+            </h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body px-5 py-4">
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              <strong>
+                {% if category == 'danger' %}Login Failed{% else %}Notice{% endif %}
+              </strong>: {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            <i class="bi bi-person me-1" style="color: #00695c;"></i> Username 
+          </label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-person-fill" style="color: #00695c;"></i>
+            </span>
+            <input type="text" class="form-control" name="username"
+                   placeholder="Enter your username or mobile number" required
+                   value="{{ request.form.username if request.form.username else '' }}">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">
+            <i class="bi bi-key me-1" style="color: #00695c;"></i> Password
+          </label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-lock-fill" style="color: #00695c;"></i>
+            </span>
+            <input type="password" class="form-control" id="password" name="password"
+                   placeholder="Enter your password" required>
+            <span class="input-group-text password-toggle" id="togglePassword">
+              <i class="bi bi-eye-slash" id="eyeIcon" style="color: #00695c;"></i>
+            </span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-login text-white w-100 py-2 mb-3 fw-semibold">
+          <i class="bi bi-box-arrow-in-right me-2"></i> Login 
+        </button>
+      </form>
+
+      <div class="text-center mt-4 pt-3 border-top">
+        <small class="text-muted fw-semibold fs-6">
+          <i class="bi bi-info-circle me-1" style="color: #00695c;"></i>
+          Contact administrator for account creation
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Eye Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const togglePassword = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+
+      if (togglePassword && passwordInput && eyeIcon) {
+        togglePassword.addEventListener('click', function () {
+          if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeIcon.classList.remove('bi-eye-slash');
+            eyeIcon.classList.add('bi-eye');
+          } else {
+            passwordInput.type = 'password';
+            eyeIcon.classList.remove('bi-eye');
+            eyeIcon.classList.add('bi-eye-slash');
+          }
+        });
+      }
+      
+      // Auto-focus on username field on page load
+      const usernameInput = document.querySelector('input[name="username"]');
+      if (usernameInput) {
+        usernameInput.focus();
+      }
+      
+      // Debug: Check if image loaded properly
+      const logoImg = document.querySelector('.railway-logo');
+      if (logoImg) {
+        logoImg.addEventListener('load', function() {
+          console.log('Logo loaded successfully');
+        });
+        logoImg.addEventListener('error', function() {
+          console.error('Logo failed to load, using fallback');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
