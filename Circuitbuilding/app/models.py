@@ -633,6 +633,7 @@ class GeneratedPDF(db.Model):
     level1_approver = db.relationship('User', foreign_keys=[level1_approver_id])
     level2_approver = db.relationship('User', foreign_keys=[level2_approver_id])
     level3_approver = db.relationship('User', foreign_keys=[level3_approver_id])
+    signed_status = db.Column(db.Integer)
     project = db.relationship('Project', backref='generated_pdfs')
 
     @property

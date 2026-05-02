@@ -9,3 +9,5 @@ processed_excel/
 logs/
 flask_session/
 downloaded_xlsx_files/
+Circuitbuilding/app/__pycache__/
+checksum.log

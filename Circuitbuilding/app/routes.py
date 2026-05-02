@@ -3636,6 +3636,95 @@ def excel_to_pdf():
     # Render upload form; pass force_new so template can persist via hidden input
     return render_template("excel_to_pdf.html", current_project=current_project, force_new=force_new)
 
+
+@bp.route("/upload_pdf", methods=["GET", "POST"])
+@login_required
+def upload_pdf():
+    if request.method == "POST":  
+        upload_dir = "uploads"
+
+        file = request.files.get("file")
+        project_id = request.form.get('project_id')  # get from form
+
+        signed_status = request.form.get('signed_status')
+
+         # Clean filename
+        filename = secure_filename(file.filename)
+
+        # Timestamp
+        timestamp = int(time.time())
+
+        # Custom filename
+        new_filename = f"Project_{project_id}_{timestamp}_{filename}"
+        
+        if file and file.filename.endswith(".pdf"):
+            #pdf_path = os.path.join(upload_dir, file.filename)
+            pdf_path = os.path.join(upload_dir, new_filename)
+            file.save(pdf_path)
+            if os.path.exists(pdf_path):
+
+                file_md5 = _md5_of_file(pdf_path)
+                file_size = os.path.getsize(pdf_path)
+
+                # No converter → no stdout metadata
+                meta = {}
+
+                db_checksum = file_md5
+
+                max_version_record = GeneratedPDF.query.filter_by(project_id=project_id)\
+                    .order_by(GeneratedPDF.version.desc()).first()
+
+                next_version = max_version_record.version + 1 if max_version_record else 1
+
+                # Junction data
+                junction_boxes = JunctionBox.query.filter_by(project_id=project_id).all()
+                junction_data_list = []
+
+                for jb in junction_boxes:
+                    junction_data_list.append({
+                        'junction_id': jb.junction_id,
+                        'junction_name': jb.junction_name,
+                        'junction_size': jb.junction_size,
+                        'station_id': jb.station_id,
+                        'latitude': jb.latitude,
+                        'longitude': jb.longitude,
+                        'junction_row': jb.junction_row
+                    })
+
+                import json
+                remarks='';
+                junction_data_json = json.dumps(junction_data_list) if junction_data_list else None
+
+                record = GeneratedPDF(
+                    project_id=project_id,
+                    pdf_filename=new_filename,
+                    xlsx_filename=None,  # ❗ no Excel now
+                    checksum_md5=db_checksum,
+                    file_size=file_size,
+                    checksum_algo="md5",
+                    metadata_checksum=None,
+                    metadata_data=None,
+                    initial_size_bytes=file_size,
+                    final_size_bytes=file_size,
+                    metadata_ts_ist=get_ist_now(),
+                    station_code=None,
+                    source_pdf_name=new_filename,
+                    full_file_md5=file_md5,
+                    remarks=remarks if remarks else None,
+                    created_at=get_ist_now(),
+                    version=next_version,
+                    junction_data=junction_data_json,
+                    signed_status=signed_status
+                )
+
+                db.session.add(record)
+                db.session.commit()
+            return redirect(url_for('main.approval_tracking'))  # make sure this route exists
+        else:
+            return "Invalid file. Please upload a PDF."
+
+
+
 @bp.route("/new_drawing/<int:project_id>", methods=["GET", "POST"])
 @login_required
 def new_drawing(project_id):
