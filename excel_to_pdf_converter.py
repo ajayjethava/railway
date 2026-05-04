@@ -2614,10 +2614,35 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                             == str(i)
                         )
                     ]
+                    choke_relay__rows = df_choke[
+                            (df_choke['cable_id'] == cable_id) &
+                            (df_choke['output_type'].str.lower() == "relay") &
+                            (
+                                (
+                                    (pd.to_numeric(df_choke['input_terminal'], errors='coerce') == int(i)) &
+                                    (pd.to_numeric(df_choke['input_terminal'], errors='coerce') != 0)
+                                ) |
+                                (
+                                    (pd.to_numeric(df_choke['output_terminal'], errors='coerce') == int(i)) &
+                                    (pd.to_numeric(df_choke['output_terminal'], errors='coerce') != 0)
+                                )
+                            )
+                        ]
                     if not choke_relay__rows.empty:
                         choke_row = choke_relay__rows.iloc[0]
 
                         output_text = str(choke_row.get('output_text', '')).strip()
+
+                        input_val = pd.to_numeric(choke_row['input_terminal'], errors='coerce')
+                        output_val = pd.to_numeric(choke_row['output_terminal'], errors='coerce')
+                        is_input_match = (input_val == val_i) and (input_val != 0)
+                        is_output_match = (output_val == val_i) and (output_val != 0)
+
+                        if is_output_match:
+                            is_input_match = False
+                        elif is_input_match:
+                            is_output_match = False
+
 
                         #current_x = current_x + pin_spacing
                         x_center = current_x
@@ -2627,24 +2652,35 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
 
                         # vertical line (top to choke)
                         ax.plot([x_center, x_center], [top_y, capsule_y_center + 0.5], color='black', linewidth=1)
+                        if is_input_match:
+                              y_top_point = top_y  # where your vertical line starts
 
-                        y_top_point = top_y  # where your vertical line starts
+                              ax.plot(
+                                    [x_center, x_center - pin_spacing],
+                                    [y_top_point, y_top_point],
+                                    color='black',
+                                    linewidth=1
+                                )
+                              down_x = x_center - pin_spacing
+                              last_y = row_symbol_tops[-1]  # terminal top position
 
-                        ax.plot(
-                            [x_center, x_center - pin_spacing],
-                            [y_top_point, y_top_point],
-                            color='black',
-                            linewidth=1
-                        )
-                        down_x = x_center - pin_spacing
-                        last_y = row_symbol_tops[-1]  # terminal top position
+                              ax.plot(
+                                    [down_x, down_x],
+                                    [y_top_point, last_y],
+                                    color='black',
+                                    linewidth=1
+                                ) 
+                        if is_output_match :
+                              y_top_point = top_y  # where your vertical line starts
 
-                        ax.plot(
-                            [down_x, down_x],
-                            [y_top_point, last_y],
-                            color='black',
-                            linewidth=1
-                        ) 
+                              ax.plot(
+                                    [x_center, x_center - pin_spacing/2],
+                                    [y_top_point, y_top_point],
+                                    color='black',
+                                    linewidth=1
+                                )
+                                
+
                         # vertical line (choke to bottom)
                         ax.plot([x_center, x_center], [capsule_y_center - 0.5, bottom_y], color='black', linewidth=1)
 
