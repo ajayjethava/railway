@@ -2597,141 +2597,12 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                 #print("Group Data")
                 #print(group)
                 while i < len(group):
+                    print ("i=",i) 
                     row = group.iloc[i]
                     symbol = str(row.get('symbol', '')).strip().lower()
                     symbols_to_add = 2 if symbol == 'dual_fuse' else 1
                    
-                    # New Code Start 30apr
-
-                    choke_relay__rows = df_choke[
-                        (df_choke['cable_id'] == cable_id) & 
-                        (df_choke['output_type'].str.lower() == "relay") &
-                        (
-                            df_choke['input_terminal']
-                            .astype(str)
-                            .str.replace('.0', '')
-                            .str.strip()
-                            == str(i)
-                        )
-                    ]
-                    choke_relay__rows = df_choke[
-                            (df_choke['cable_id'] == cable_id) &
-                            (df_choke['output_type'].str.lower() == "relay") &
-                            (
-                                (
-                                    (pd.to_numeric(df_choke['input_terminal'], errors='coerce') == int(i)) &
-                                    (pd.to_numeric(df_choke['input_terminal'], errors='coerce') != 0)
-                                ) |
-                                (
-                                    (pd.to_numeric(df_choke['output_terminal'], errors='coerce') == int(i)) &
-                                    (pd.to_numeric(df_choke['output_terminal'], errors='coerce') != 0)
-                                )
-                            )
-                        ]
-                    if not choke_relay__rows.empty:
-                        choke_row = choke_relay__rows.iloc[0]
-
-                        output_text = str(choke_row.get('output_text', '')).strip()
-
-                        input_val = pd.to_numeric(choke_row['input_terminal'], errors='coerce')
-                        output_val = pd.to_numeric(choke_row['output_terminal'], errors='coerce')
-                        is_input_match = (input_val == val_i) and (input_val != 0)
-                        is_output_match = (output_val == val_i) and (output_val != 0)
-
-                        if is_output_match:
-                            is_input_match = False
-                        elif is_input_match:
-                            is_output_match = False
-
-
-                        #current_x = current_x + pin_spacing
-                        x_center = current_x
-                           
-                        top_y = y_top_bus_group
-                        bottom_y = y_bottom_bus_group
-
-                        # vertical line (top to choke)
-                        ax.plot([x_center, x_center], [top_y, capsule_y_center + 0.5], color='black', linewidth=1)
-                        if is_input_match:
-                              y_top_point = top_y  # where your vertical line starts
-
-                              ax.plot(
-                                    [x_center, x_center - pin_spacing],
-                                    [y_top_point, y_top_point],
-                                    color='black',
-                                    linewidth=1
-                                )
-                              down_x = x_center - pin_spacing
-                              last_y = row_symbol_tops[-1]  # terminal top position
-
-                              ax.plot(
-                                    [down_x, down_x],
-                                    [y_top_point, last_y],
-                                    color='black',
-                                    linewidth=1
-                                ) 
-                        if is_output_match :
-                              y_top_point = top_y  # where your vertical line starts
-
-                              ax.plot(
-                                    [x_center, x_center - pin_spacing/2],
-                                    [y_top_point, y_top_point],
-                                    color='black',
-                                    linewidth=1
-                                )
-                                
-
-                        # vertical line (choke to bottom)
-                        ax.plot([x_center, x_center], [capsule_y_center - 0.5, bottom_y], color='black', linewidth=1)
-
-                        dx = 0.2   # width
-                        dy = 0.05  # small height → makes it flatter
-
-                        ax.plot(
-                            [x_center - dx, x_center + dx],
-                            [bottom_y - dy, bottom_y + dy],
-                            color='black',
-                            linewidth=1
-                        )
-
-                        # output text (below slash)
-                        output_text = str(choke_row.get('output_text', '')).strip()
-
-                        if output_text:
-                            ax.text(
-                                x_center,
-                                bottom_y - 0.15,   # adjust spacing
-                                output_text,
-                                fontsize=16,
-                                ha='center',
-                                va='top'
-                            )
-                        
-
-                        # choke box
-                        box_width = 0.3
-                        box_height = 0.9
-
-                        choke_box = FancyBboxPatch(
-                            (x_center - box_width/2, capsule_y_center - box_height/2),
-                            box_width, box_height,
-                            boxstyle="round,pad=0.02",
-                            edgecolor='black', facecolor='white', linewidth=1.5
-                        )
-                        ax.add_patch(choke_box)
-
-                        # label
-                        choke_label = str(choke_row.get('terminal_name', 'CHOKE'))
-                        ax.text(
-                                x_center, capsule_y_center,
-                                choke_label,
-                                fontsize=14,
-                                ha='center',
-                                va='center',
-                                rotation=90
-                            )        
-                        current_x = current_x + pin_spacing
-                    # End Code End 30apr
+                    
 
                     # Handle capsule types
                     if symbol in ['capsule', 'ara', 'wago', 'ara/wago']:
@@ -2867,6 +2738,157 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                         current_row_max_x = max(current_row_max_x, current_x)
                         current_terminal_count += 1
                         i += 1
+                
+                    # New Code Start 30apr
+
+                    choke_relay__rows = df_choke[
+                        (df_choke['cable_id'] == cable_id) & 
+                        (df_choke['output_type'].str.lower() == "relay") &
+                        (
+                            df_choke['input_terminal']
+                            .astype(str)
+                            .str.replace('.0', '')
+                            .str.strip()
+                            == str(i)
+                        )
+                    ]
+                    choke_relay__rows = df_choke[
+                            (df_choke['cable_id'] == cable_id) &
+                            (df_choke['output_type'].str.lower() == "relay") &
+                            (
+                                (
+                                    (pd.to_numeric(df_choke['input_terminal'], errors='coerce') == int(i)) &
+                                    (pd.to_numeric(df_choke['input_terminal'], errors='coerce') != 0)
+                                ) |
+                                (
+                                    (pd.to_numeric(df_choke['output_terminal'], errors='coerce') == int(i)) &
+                                    (pd.to_numeric(df_choke['output_terminal'], errors='coerce') != 0)
+                                )
+                            )
+                        ]
+                    if not choke_relay__rows.empty:
+                        choke_row = choke_relay__rows.iloc[0]
+
+                        output_text = str(choke_row.get('output_text', '')).strip()
+                        val_i = pd.to_numeric(i, errors='coerce')    
+                        input_val = pd.to_numeric(choke_row['input_terminal'], errors='coerce')
+                        output_val = pd.to_numeric(choke_row['output_terminal'], errors='coerce')
+                        is_input_match = (input_val == val_i) and (input_val != 0)
+                        is_output_match = (output_val == val_i) and (output_val != 0)
+
+                        if is_output_match:
+                            is_input_match = False
+                        elif is_input_match:
+                            is_output_match = False
+
+
+                        #current_x = current_x + pin_spacing
+                        x_center = current_x
+                           
+                        top_y = y_top_bus_group
+                        bottom_y = y_bottom_bus_group
+
+                        # vertical line (top to choke)
+                        ax.plot([x_center, x_center], [top_y, capsule_y_center + 0.5], color='black', linewidth=1)
+                        if is_input_match:
+                              y_top_point = top_y  # where your vertical line starts
+
+                              ax.plot(
+                                    [x_center, x_center - pin_spacing],
+                                    [y_top_point, y_top_point],
+                                    color='black',
+                                    linewidth=1
+                                )
+                              down_x = x_center - pin_spacing
+                              last_y = row_symbol_tops[-1]  # terminal top position
+
+                              ax.plot(
+                                    [down_x, down_x],
+                                    [y_top_point, last_y],
+                                    color='black',
+                                    linewidth=1
+                                ) 
+                        if is_output_match :
+                            y_top_point = top_y  # where your vertical line starts
+
+                            ax.plot(
+                                    [x_center, x_center - pin_spacing/2],
+                                    [y_top_point, y_top_point],
+                                    color='black',
+                                    linewidth=1
+                                )
+                            branch_x = x_center - pin_spacing / 2
+                            branch_y = y_top_point
+
+                            down_y = branch_y - 2.7   # adjust length as needed
+
+                            ax.plot(
+                                [branch_x, branch_x],
+                                [branch_y, down_y],
+                                color='black',
+                                linewidth=1
+                            )
+                            half_left_x = branch_x - pin_spacing / 2
+
+                            ax.plot(
+                                [branch_x, half_left_x],
+                                [down_y, down_y],
+                                color='black',
+                                linewidth=1
+                            )  
+                                
+
+                        # vertical line (choke to bottom)
+                        ax.plot([x_center, x_center], [capsule_y_center - 0.5, bottom_y], color='black', linewidth=1)
+
+                        dx = 0.2   # width
+                        dy = 0.05  # small height → makes it flatter
+
+                        ax.plot(
+                            [x_center - dx, x_center + dx],
+                            [bottom_y - dy, bottom_y + dy],
+                            color='black',
+                            linewidth=1
+                        )
+
+                        # output text (below slash)
+                        output_text = str(choke_row.get('output_text', '')).strip()
+
+                        if output_text:
+                            ax.text(
+                                x_center,
+                                bottom_y - 0.15,   # adjust spacing
+                                output_text,
+                                fontsize=16,
+                                ha='center',
+                                va='top'
+                            )
+                        
+
+                        # choke box
+                        box_width = 0.3
+                        box_height = 0.9
+
+                        choke_box = FancyBboxPatch(
+                            (x_center - box_width/2, capsule_y_center - box_height/2),
+                            box_width, box_height,
+                            boxstyle="round,pad=0.02",
+                            edgecolor='black', facecolor='white', linewidth=1.5
+                        )
+                        ax.add_patch(choke_box)
+
+                        # label
+                        choke_label = str(choke_row.get('terminal_name', 'CHOKE'))
+                        ax.text(
+                                x_center, capsule_y_center,
+                                choke_label,
+                                fontsize=14,
+                                ha='center',
+                                va='center',
+                                rotation=90
+                            )        
+                        current_x = current_x + pin_spacing
+                    # End Code End 30apr 
                 # Add Overlay
                 R = SYMBOL_RADIUS * 0.8
                 # spacing safe
