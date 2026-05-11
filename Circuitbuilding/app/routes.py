@@ -18255,7 +18255,7 @@ def upload_ctr_xlsx():
                         
                         from datetime import datetime, timedelta
 
-                        ctr_upload.pdf_generated_date = datetime.now() + timedelta(minutes=30 )   
+                        ctr_upload.pdf_generated_date = datetime.now()    
 
                         #ctr_upload.pdf_generated_date = datetime.now()
                         #local_time = request.form.get("local_time")

@@ -24,6 +24,8 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A2, landscape
+from reportlab.lib.pagesizes import A1, landscape
+from reportlab.lib.pagesizes import A0, landscape
 
 # ================= LOGGING SETUP =================
 def setup_logging(log_level=logging.INFO, log_file=None):
@@ -716,14 +718,48 @@ class TerminalDiagram(Flowable):
                  desc_colors=None,
                  width=400*mm, row_marker="A", table_shift_right=10*mm, compact_mode=False,
                  is_overflow=False, overflow_index=0, start_terminal=1,
-                 super_compact_mode=False):
+                 super_compact_mode=False,count_rows=1):
         Flowable.__init__(self)
+        self.scaler=1
         self.groups = groups
         self.descriptions = descriptions
         self.cable_names = cable_names
         self.total_terminals = total_terminals
         self.width = width
-        
+        if count_rows > 10 :
+           self.mm=8*mm
+           self.dh=30*mm 
+        if count_rows == 1 :
+           self.mm=160*mm
+           self.dh=180*mm
+        if count_rows == 2 :
+           self.mm=80*mm
+           self.dh=90*mm 
+        if count_rows == 3 :
+           self.mm=50*mm
+           self.dh=60*mm
+        if count_rows == 4 :
+           self.mm=45*mm
+           self.dh=50*mm   
+        if count_rows == 5 :
+           self.mm=40*mm
+           self.dh=45*mm
+        if count_rows == 6 :
+           self.mm=35*mm
+           self.dh=40*mm   
+        if count_rows == 7 :
+           self.mm=25*mm
+           self.dh=30*mm
+        if count_rows == 8 :
+           self.mm=15*mm
+           self.dh=30*mm
+        if count_rows == 9 :
+           self.mm=15*mm
+           self.dh=30*mm               
+        if count_rows == 10 :
+           self.mm=12*mm
+           self.dh=30*mm               
+          
         # Adjust heights based on mode
         if super_compact_mode:
             # SUPER-COMPACT: For 7 diagrams per page
@@ -733,9 +769,9 @@ class TerminalDiagram(Flowable):
             self.row_heights = [12*mm, 6*mm, 6*mm, 6*mm]  # Total: 30mm
         else:
             # NORMAL: For fewer diagrams per page
-            self.row_heights = [14*mm, 8*mm, 8*mm, 8*mm]  # Total: 38mm
-        
-        self.height = sum(self.row_heights)
+            #self.row_heights = [14*mm, 8*mm, 8*mm, 8*mm]  # Total: 38mm
+            self.row_heights = [self.dh, self.mm, self.mm, self.mm]  # Total: 38mm
+        self.height = sum(self.row_heights) 
         self.marker_width = 10*mm
         self.label_width = 30*mm
         self.desc_block_sizes = desc_block_sizes or [1] * len(groups)
@@ -852,13 +888,14 @@ class TerminalDiagram(Flowable):
             return result
         else:
             # Original wrapping logic for larger blocks
+            text = str(text).replace('\u200b', '').replace('\ufeff', '')
             words = str(text).split()
             if not words:
                 return text
                 
             lines = []
             current_line = []
-            
+            '''
             for word in words:
                 current_line.append(word)
                 test_line = ' '.join(current_line)
@@ -879,11 +916,60 @@ class TerminalDiagram(Flowable):
                         current_line.pop()
                         lines.append(' '.join(current_line))
                         current_line = [word]
-            
+            '''
+            for word in words:
+
+                test_line = ' '.join(current_line + [word])
+
+                line_width = canv.stringWidth(
+                    test_line,
+                    font_name,
+                    font_size
+                )
+
+                if line_width <= max_width:
+                    current_line.append(word)
+
+                else:
+                    if current_line:
+                        lines.append(' '.join(current_line))
+
+                    # Handle very long single word
+                    word_width = canv.stringWidth(
+                        word,
+                        font_name,
+                        font_size
+                    )
+
+                    if word_width > max_width:
+
+                        chunk = ""
+
+                        for ch in word:
+                            test_chunk = chunk + ch
+
+                            if canv.stringWidth(
+                                test_chunk,
+                                font_name,
+                                font_size
+                            ) <= max_width:
+                                chunk = test_chunk
+                            else:
+                                lines.append(chunk)
+                                chunk = ch
+
+                        current_line = [chunk]
+
+                    else:
+                        current_line = [word]
+
             if current_line:
                 lines.append(' '.join(current_line))
             
-            result = '\n'.join(lines)
+            #result = '\n'.join(lines)
+            
+              
+            result = '\n'.join(line for line in lines if line.strip()).rstrip('\n')
             return result
 
     def _get_optimal_font_size(self, text, font_name, max_width, max_height, min_font_size=4.5, block_size=None):
@@ -951,6 +1037,20 @@ class TerminalDiagram(Flowable):
                 logger.debug(f"Drawing TerminalDiagram for row_marker={self.row_marker}, start_terminal={self.start_terminal}")
             
             canv = self.canv
+            canv.saveState()
+            canv.scale(1, 1)
+            vertical_align = "middle"
+            extra_space = self.height - sum(self.row_heights)
+
+            if vertical_align == "top":
+                vertical_offset = extra_space
+
+            elif vertical_align == "middle":
+                vertical_offset = extra_space / 5
+
+            else:
+                vertical_offset = 0
+
             avail_width = self.width - 2*self.marker_width - self.label_width
             if self.total_terminals <= 0:
                 logger.warning(f"Total terminals is {self.total_terminals}, skipping draw")
@@ -963,27 +1063,40 @@ class TerminalDiagram(Flowable):
             # Adjust row positions based on mode
             if self.super_compact_mode:
                 # For 7 rows per page
-                y_term_bottom = 0  # Terminal numbers row (bottom)
+                y_term_bottom = vertical_offset
+                #y_term_bottom = 0  # Terminal numbers row (bottom)
                 y_cable_bottom = y_term_bottom + 5*mm  # Cable names row
                 y_core_bottom = y_cable_bottom + 5*mm  # Core numbers row
                 y_desc_bottom = y_core_bottom + 5*mm   # Description row (top)
                 desc_row_height = 10*mm
             elif self.compact_mode:
                 # For 4 rows per page
-                y_term_bottom = 0
+                #y_term_bottom = 0
+                y_term_bottom = vertical_offset
                 y_cable_bottom = y_term_bottom + 6*mm
                 y_core_bottom = y_cable_bottom + 6*mm
                 y_desc_bottom = y_core_bottom + 6*mm
                 desc_row_height = 12*mm
             else:
-                y_term_bottom = 0
-                y_cable_bottom = y_term_bottom + 8*mm
-                y_core_bottom = y_cable_bottom + 8*mm
-                y_desc_bottom = y_core_bottom + 8*mm
-                desc_row_height = 14*mm
+                #y_term_bottom = 0
+                y_term_bottom =  vertical_offset   
+                y_cable_bottom = y_term_bottom + self.mm
+                #y_cable_bottom = 4* y_cable_bottom 
+                y_core_bottom = y_cable_bottom + self.mm
+                #y_core_bottom = 4* y_core_bottom
+                
+                y_desc_bottom = y_core_bottom + self.mm
 
+                desc_row_height = self.dh
+            
             canv.setStrokeColor(colors.black)
             canv.setLineWidth(1)
+
+            print("y_term_bottom =", y_term_bottom)
+            print("y_cable_bottom =", y_cable_bottom)
+            print("y_core_bottom =", y_core_bottom)
+            print("y_desc_bottom =", y_desc_bottom)
+            print("desc_row_height =", desc_row_height)
 
             # Apply shift to ALL elements
             shift = self.table_shift_right
@@ -1027,7 +1140,7 @@ class TerminalDiagram(Flowable):
             elif self.compact_mode:
                 label_font_size = 6
             else:
-                label_font_size = 8
+                label_font_size = 9
             
             canv.setFont(FONT_BOLD, label_font_size)
             
@@ -1061,13 +1174,13 @@ class TerminalDiagram(Flowable):
                 desc_label_y = y_desc_bottom + (desc_row_height - label_font_size*0.75) / 2
                 canv.drawRightString(lx, desc_label_y, "DESCRIPTION")
             else:
-                term_label_y = y_term_bottom + (8*mm - label_font_size*0.75) / 2
+                term_label_y = y_term_bottom + (self.mm - label_font_size*0.75) / 2
                 canv.drawRightString(lx, term_label_y, "TERMINAL NO")
                 
-                cable_label_y = y_cable_bottom + (8*mm - label_font_size*0.75) / 2
+                cable_label_y = y_cable_bottom + (self.mm - label_font_size*0.75) / 2
                 canv.drawRightString(lx, cable_label_y, "CABLE NO")
                 
-                core_label_y = y_core_bottom + (8*mm - label_font_size*0.75) / 2
+                core_label_y = y_core_bottom + (self.mm - label_font_size*0.75) / 2
                 canv.drawRightString(lx, core_label_y, "CABLE CORE NO")
                 
                 desc_label_y = y_desc_bottom + (desc_row_height - label_font_size*0.75) / 2
@@ -1104,7 +1217,7 @@ class TerminalDiagram(Flowable):
                             elif self.compact_mode:
                                 canv.line(x_offset + shift, y_cable_bottom + 6*mm, x_offset + shift, self.height)
                             else:
-                                canv.line(x_offset + shift, y_cable_bottom + 8*mm, x_offset + shift, self.height)
+                                canv.line(x_offset + shift, y_cable_bottom + self.mm, x_offset + shift, self.height)
 
                 for b in range(n_blocks):
                     start = b * block_size
@@ -1112,7 +1225,11 @@ class TerminalDiagram(Flowable):
                     bx = x_offset + shift + start * cell_width
                     bw = (end - start) * cell_width
 
+                    #desc = self.descriptions[g_idx][b] if b < len(self.descriptions[g_idx]) else ""
+                    #desc = re.findall(r"\S+(?:\s*'\w+)?", str(desc))
+
                     desc = self.descriptions[g_idx][b] if b < len(self.descriptions[g_idx]) else ""
+                    desc = desc.replace(" '", "'")
                     
                     # Get colors - Fixed condition
                     if (self.desc_colors and 
@@ -1135,7 +1252,7 @@ class TerminalDiagram(Flowable):
                        
                     # AUTO-TEXT WRAPPING AND SIZING
                     if desc:
-                        available_width = bw - 4*mm
+                        available_width = bw - 5*mm
                         group_block_size = self.desc_block_sizes[g_idx] if g_idx < len(self.desc_block_sizes) else 1
                         
                         # Determine appropriate font size for wrapping based on mode and block size
@@ -1145,7 +1262,7 @@ class TerminalDiagram(Flowable):
                             wrap_font_size = 3.5 if group_block_size == 1 else 4.0
                         else:
                             wrap_font_size = 4.5 if group_block_size == 1 else 5.5
-                        
+                        wrap_font_size=14
                         wrapped_text = self._wrap_text_to_fit_box(
                             desc, FONT_BOLD, wrap_font_size, available_width, group_block_size
                         )
@@ -1153,15 +1270,18 @@ class TerminalDiagram(Flowable):
                         # Compute optimal font size for the wrapped text
                         optimal_font_size = self._get_optimal_font_size(
                             wrapped_text, FONT_BOLD, available_width, desc_row_height,
-                            min_font_size=2.5 if self.super_compact_mode else (3.0 if self.compact_mode else 3.5),
+                            min_font_size=wrap_font_size,
                             block_size=group_block_size
                         )
+
+                        optimal_font_size = wrap_font_size
                         
-                        canv.setFont(FONT_BOLD, optimal_font_size)
+                        canv.setFont(FONT_BOLD, wrap_font_size)
                         
                         # Split wrapped text into lines
-                        text_lines = wrapped_text.split('\n')
-                        line_height = optimal_font_size * 1.1  # Reduced line spacing
+                        #text_lines = wrapped_text.split('\n')
+                        text_lines = wrapped_text.rstrip('\n').split('\n')
+                        line_height = wrap_font_size * 1.1  # Reduced line spacing
                         total_text_height = len(text_lines) * line_height
                         
                         # Calculate vertical starting position to center text
@@ -1171,9 +1291,18 @@ class TerminalDiagram(Flowable):
                             canv.drawCentredString(bx + bw/2, text_y, text_lines[0])
                         else:
                             # Multiple lines: distribute evenly
-                            start_y = y_desc_bottom + (desc_row_height - total_text_height) / 2 + line_height
+                            #start_y = y_desc_bottom + (desc_row_height - optimal_font_size*0.75) 
+                            #start_y = y_desc_bottom + (desc_row_height - total_text_height) / 2 + line_height
+                            #start_y = y_desc_bottom + (desc_row_height - total_text_height) / 2 + line_height
+
+                            total_text_height = len(text_lines) * line_height
+
+                            start_y = y_desc_bottom + (
+                                (desc_row_height + total_text_height) / 2
+                            ) - line_height
                             for i, line in enumerate(text_lines):
-                                line_y = start_y - (i * line_height)
+                                line_y = start_y -  (i * line_height)
+                                #if (i==0 or i==1):                               
                                 canv.drawCentredString(bx + bw/2, line_y, line)
 
                 # Draw core numbers
@@ -1184,7 +1313,7 @@ class TerminalDiagram(Flowable):
                     core_font_size = 5.0
                 else:
                     core_font_size = 6.0
-                
+                core_font_size=13;
                 canv.setFont(FONT_BOLD, core_font_size)
                 for t in range(g_size):
                     tx = x_offset + shift + t * cell_width
@@ -1193,7 +1322,7 @@ class TerminalDiagram(Flowable):
                     elif self.compact_mode:
                         row_height = 6*mm
                     else:
-                        row_height = 8*mm
+                        row_height = self.mm
                     
                     canv.rect(tx, y_core_bottom, cell_width, row_height, fill=0, stroke=1)
                     if g_idx < len(self.cable_core_numbers) and t < len(self.cable_core_numbers[g_idx]):
@@ -1212,7 +1341,7 @@ class TerminalDiagram(Flowable):
                 elif self.compact_mode:
                     term_font_size = 6.0
                 else:
-                    term_font_size = 7.5
+                    term_font_size = 13
                 
                 canv.setFont(FONT_BOLD, term_font_size)
                 for t in range(g_size):
@@ -1222,7 +1351,7 @@ class TerminalDiagram(Flowable):
                     elif self.compact_mode:
                         row_height = 6*mm
                     else:
-                        row_height = 8*mm
+                        row_height = self.mm
                     
                     canv.rect(tx, y_term_bottom, cell_width, row_height, fill=0, stroke=1)
                     num_str = str(current_terminal)
@@ -1242,7 +1371,7 @@ class TerminalDiagram(Flowable):
             elif self.compact_mode:
                 cable_font_size = 6
             else:
-                cable_font_size = 8
+                cable_font_size = 20
             
             canv.setFont(FONT_BOLD, cable_font_size)
             for cable_start, cable_end, cable_name in self.cable_ranges:
@@ -1255,7 +1384,7 @@ class TerminalDiagram(Flowable):
                 elif self.compact_mode:
                     row_height = 6*mm
                 else:
-                    row_height = 8*mm
+                    row_height = self.mm
                 
                 canv.rect(start_x, y_cable_bottom, cable_width, row_height, fill=0, stroke=1)
                 
@@ -1289,7 +1418,9 @@ class TerminalDiagram(Flowable):
             canv.line(sx, y_desc_bottom, ex, y_desc_bottom)
             canv.line(sx, y_core_bottom, ex, y_core_bottom)
             canv.line(sx, y_cable_bottom, ex, y_cable_bottom)
-            
+
+
+            canv.restoreState()
             if self.is_overflow:
                 logger.debug(f"Successfully drew Overflow TerminalDiagram for row_marker={self.row_marker}, overflow_index={self.overflow_index}, start_terminal={self.start_terminal}")
             else:
@@ -1331,7 +1462,13 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         drawing_no = footer_data.get('station_code', 'SC/PL 411/14')
         zone = footer_data.get('zone', 'WESTERN')
         division = footer_data.get('division', 'AHMEDABAD')
-        version = footer_data.get('version', '')  # New version field
+        #version = footer_data.get('version', '')  # New version field
+
+        version = footer_data.get('ver_no', '')  # New version field
+        page_no = footer_data.get('page_no', '')  # New version field
+        date = footer_data.get('date', '')  # New version field
+
+        page_num = page_no 
         
         division_line1 = f"{zone} RLY."
         division_line2 = f"{division} DIVISION"
@@ -1398,13 +1535,13 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         right_edge_x = footer_x_start + footer_width - 10  # 10pt from right border
 
         # Page number (top row, right cell)
-        page_num_text = f"PAGE NO-{page_num}"
+        page_num_text = f"PAGE NO-{page_num}/{version}"
         canvas.drawRightString(right_edge_x, top_cell_top - 20, page_num_text)   # moved down from -17 to -20
         
         # Version (top row, right cell) – only if present
         if version:
             version_text = f"VER {version}"
-            canvas.drawRightString(right_edge_x, top_cell_top - 28, version_text) # moved down from -27 to -28
+           # canvas.drawRightString(right_edge_x, top_cell_top - 28, version_text) # moved down from -27 to -28
         
         # Station (top row, middle cell) – raised slightly to avoid overlap
         middle_center_x = col1_x + (col2_x - col1_x) / 2
@@ -1415,16 +1552,20 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         
         # ========== BOTTOM ROW (drawing number & division text) ==========
         # Drawing number (bottom row, right cell) – raised to avoid overlap with division text
-        canvas.drawRightString(right_edge_x, bot_cell_top - 12, drawing_no)      # was -18, now -12
-        
+        canvas.drawRightString(right_edge_x, bot_cell_top - 8, drawing_no)      # was -18, now -12
+        #canvas.drawRightString(right_edge_x, bot_cell_top - 16, date)
         # "SIG PLAN NO-" label (middle row, right cell) – unchanged
         canvas.drawString(col2_x + 5, mid_cell_top - 18, "SIG PLAN NO-")
         
         # ========== DESIGNATIONS (signature column) ==========
         des_y_offset = 18
+
+        #canvas.drawString(sig_col_x + 5, top_cell_top - des_y_offset, date)
         canvas.drawString(sig_col_x + 5, top_cell_top - des_y_offset, des1)
         canvas.drawString(sig_col_x + 5, mid_cell_top - des_y_offset, des2)
         canvas.drawString(sig_col_x + 5, bot_cell_top - des_y_offset, des3)
+
+        
         
         # ========== DIVISION TEXT (bottom row, middle column) ==========
         try:
@@ -1443,9 +1584,9 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
             canvas.setFont(FONT_BOLD, 9)
         except:
             canvas.setFont("Helvetica-Bold", 9)
-        completion_x = footer_x_start + footer_width - 65
+        completion_x = footer_x_start + footer_width - 150
         completion_y = footer_y + footer_height + 5
-        canvas.drawString(completion_x, completion_y, "COMPLETION")
+        canvas.drawString(completion_x, completion_y,  f"COMPLETION  {date}")
         
         canvas.restoreState()
         logger.debug(f"Footer added successfully to page {page_num}")
@@ -1473,10 +1614,13 @@ def load_footer_data_from_excel(excel_path):
             'designation3': ['desg3', 'designation3', 'designation 3', 'sse'],
             'station_name': ['station_name', 'Station', 'station name', 'station'],
             'junction_name': ['name', 'Project', 'junction_name', 'junction name', 'junction', 'track'],
-            'station_code': ['station_code', 'station code', 'drawing_name', 'drg_no', 'drawing no', 'big plan'],
+            'station_code': ['station_code', 'station code', 'drawing_name', 'drg_no', 'drawing no', 'big plan','sig_play_no'],
             'zone': ['zone', 'zone name', 'zone_no'],
             'division': ['division', 'division name', 'div'],
-            'version': ['version', 'version_no', 'revision', 'ver']   # New version column mapping
+            'version': ['version', 'version_no', 'revision', 'ver_no'],   # New version column mapping
+            'page_no' : ['page_no','page no'],
+            'date' : ['date','Date'],
+            'ver_no' : ['ver_no']
         }
         
         for key, possible_names in column_mapping.items():
@@ -1520,6 +1664,11 @@ def load_data_from_excel(excel_path):
     no_of_rows = 0
     no_of_terminal_per_row = 0
 
+    ver_no=1;
+    page_no=1;
+    date="";
+    sig_play_no="";
+
     # ---- Summary sheet ----
     if 'Summary' in sheet_names:
         try:
@@ -1559,6 +1708,30 @@ def load_data_from_excel(excel_path):
                         logger.info(f"no_of_terminal_per_row from Summary: {no_of_terminal_per_row}")
                     except:
                         pass
+                if 'ver_no' in summary_df.columns:
+                    try:
+                        ver_no = int(float(str(row0['ver_no'])))
+                        logger.info(f"no_of_terminal_per_row from Summary: {ver_no}")
+                    except:
+                        pass
+                if 'page_no' in summary_df.columns:
+                    try:
+                        page_no = int(float(str(row0['page_no'])))
+                        logger.info(f"no_of_terminal_per_row from Summary: {page_no}")
+                    except:
+                        pass
+                if 'date' in summary_df.columns:
+                    try:
+                        date = str(row0['date'])
+                        logger.info(f"no_of_terminal_per_row from Summary: {no_of_terminal_per_row}")
+                    except:
+                        pass
+                if 'sig_play_no' in summary_df.columns:
+                    try:
+                        sig_play_no = str(row0['sig_play_no'])
+                        logger.info(f"no_of_terminal_per_row from Summary: {sig_play_no}")
+                    except:
+                        pass                                
         except Exception as e:
             logger.error(f"Error reading Summary sheet: {e}")
     else:
@@ -1621,7 +1794,13 @@ def load_data_from_excel(excel_path):
         logger.error(f"Error processing RowDetail sheet: {e}")
         logger.error(traceback.format_exc())
 
-    return station_name, project_name, ctr_df, rows, no_of_rows, no_of_terminal_per_row
+    extra_data = {
+        "ver_no": ver_no,
+        "page_no": page_no,
+        "date": date,
+        "sig_play_no": sig_play_no
+    } 
+    return station_name, project_name, ctr_df, rows, no_of_rows, no_of_terminal_per_row,extra_data
     
 @log_exceptions
 def split_row_by_terminal_limit(row_data, max_terminals_per_row=60):
@@ -1967,7 +2146,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         logger.info(f"Parameters: station={station_name}, project={project_name}, rows={len(rows)}, y_offset={diagram_start_y_offset}")
         
         # Create document with adjusted bottom margin to accommodate footer
-        doc = SimpleDocTemplate(pdf_path, pagesize=landscape(A2),
+        doc = SimpleDocTemplate(pdf_path, pagesize=landscape(A0),
                                leftMargin=10*mm, rightMargin=10*mm,
                                topMargin=10*mm, bottomMargin=60*mm)
         
@@ -1978,17 +2157,17 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         styles = getSampleStyleSheet()
 
         station_style = ParagraphStyle('Station', parent=styles['Heading1'], 
-                                       fontSize=30, alignment=2,
+                                       fontSize=30, alignment=1,
                                        spaceAfter=0, fontName=FONT_BOLD,
                                        textColor=colors.black,
-                                       leftIndent=40*mm,
+                                       
                                        spaceBefore=0)
         
         project_style = ParagraphStyle('Project', parent=styles['Heading2'], 
                                        fontSize=20, alignment=1,
                                        spaceAfter=0, fontName=FONT_BOLD,
                                        textColor=colors.black,
-                                       leftIndent=65*mm,
+                                       
                                        spaceBefore=12*mm)
         
         station_text = Paragraph(station_name, station_style)
@@ -2016,10 +2195,11 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
             
             if logo_img:
                 # Three columns: Logo, Text, CTR Image
-                logo_col_width = 180
-                text_col_width = doc.width * 0.45
-                ctr_col_width = doc.width * 0.37
+                logo_col_width = 140
                 
+                ctr_col_width = 140 # doc.width * 0.37
+                text_col_width = doc.width -  logo_col_width - ctr_col_width
+
                 text_table_data = [
                     [station_text],
                     [project_text]
@@ -2110,8 +2290,12 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
             if os.path.exists(logo_path):
                 try:
                     logo_img = Image(logo_path, width=140, height=140)
-                    logo_col_width = 180
-                    text_col_width = doc.width - logo_col_width
+                    logo_col_width = 140
+                    #text_col_width = doc.width - logo_col_width
+                    #ctr_col_width = doc.width * 0.37
+                    text_col_width = doc.width - (2 * logo_col_width)-70
+                    ctr_col_width = doc.width * 0.37
+                    #text_col_width = doc.width
                     
                     text_table_data = [
                         [station_text],
@@ -2120,11 +2304,11 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     
                     text_table = Table(text_table_data, colWidths=[text_col_width])
                     text_table.setStyle(TableStyle([
-                        ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                         ('BOTTOMPADDING', (0, 0), (0, 0), 0),
                         ('TOPPADDING', (0, 1), (0, 1), 8*mm),
-                        ('LEFTPADDING', (0, 0), (-1, -1), 15*mm),
+                        ('LEFTPADDING', (0, 0), (-1, -1), 0),
                         ('ALIGN', (0, 1), (0, 1), 'CENTER'),
                     ]))
                     
@@ -2143,15 +2327,15 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     ]))
                     
                     header_table_data = [
-                        [logo_table, text_table]
+                        [logo_table, text_table, Spacer(1, 1)]
                     ]
                     
-                    header_table = Table(header_table_data, colWidths=[logo_col_width, text_col_width])
+                    header_table = Table(header_table_data, colWidths=[logo_col_width, text_col_width,logo_col_width])
                     header_table.setStyle(TableStyle([
-                        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+                        ('ALIGN', (0, 0), (0, 0), 'CENTER'),
                         ('VALIGN', (0, 0), (0, 0), 'TOP'),
-                        ('LEFTPADDING', (0, 0), (0, 0), 30),
-                        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+                        ('LEFTPADDING', (0, 0), (0, 0), 0),
+                        ('ALIGN', (1, 0), (1, 0), 'CENTER'),
                         ('VALIGN', (1, 0), (1, 0), 'TOP'),
                         ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
                         ('TOPPADDING', (0, 0), (-1, -1), 0),
@@ -2212,7 +2396,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         diagram_height_super_compact = 23*mm
         
         # Calculate available space
-        page_height = landscape(A2)[1]  # Height in points
+        page_height = landscape(A0)[1]  # Height in points
         header_height = 200  # Estimated header height
         footer_height = 60*mm
         
@@ -2289,7 +2473,8 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
             
             current_index += rows_this_page
         '''
-        use_super_compact = True 
+        use_super_compact = False
+         
         for j, row in enumerate(ordered_rows):
                 is_overflow = row.get('is_overflow', False)
                 overflow_index = row.get('overflow_index', 0)
@@ -2309,11 +2494,12 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     width=diagram_width,
                     row_marker=row.get('row_marker', 'A'),
                     table_shift_right=10*mm,
-                    compact_mode=True,
+                    compact_mode=False,
                     super_compact_mode=use_super_compact,
                     is_overflow=is_overflow,
                     overflow_index=overflow_index,
-                    start_terminal=start_terminal
+                    start_terminal=start_terminal,
+                    count_rows=len(ordered_rows)
                 )
                 elements.append(diagram)
                 print(diagram) 
@@ -2372,7 +2558,7 @@ def generate_ctr_pdf_from_excel(excel_path, output_dir=None, logo_path=None, dia
     logger.info(f"Output dir: {output_dir}, Logo: {logo_path}, Y-offset: {diagram_start_y_offset}, Version: {version}")
 
     # Load all data
-    station_name, project_name, ctr_df, rows, no_of_rows, no_of_terminal_per_row = load_data_from_excel(excel_path)
+    station_name, project_name, ctr_df, rows, no_of_rows, no_of_terminal_per_row,extra_data = load_data_from_excel(excel_path)
 
     if not rows:
         logger.error("No terminal diagram data loaded from 'RowDetail' sheet!")
