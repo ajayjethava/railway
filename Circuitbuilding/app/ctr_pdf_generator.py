@@ -268,7 +268,7 @@ CTR_TOTAL_COLUMNS = 15
 CTR_PAGE_W, CTR_PAGE_H = 11.69, 8.27  # A4 landscape (inches)
 
 @log_exceptions
-def vtext(ax, x, y, text, fontsize=7, rotation=0, max_dim=None):
+def vtext(ax, x, y, text, fontsize=10, rotation=0, max_dim=None):
     """
     Add text with optional auto-sizing.
     If max_dim is provided (in inches), the font size will be reduced so that
@@ -288,7 +288,8 @@ def vtext(ax, x, y, text, fontsize=7, rotation=0, max_dim=None):
             # max_dim is maximum height in inches (for rotated text)
             required_fs = (max_dim * 72) / (text_len * char_factor)
         # Use the smaller of the requested fontsize and the required one, but not below 4
-        fontsize = max(4, min(fontsize, required_fs))
+        #fontsize = max(4, min(fontsize, required_fs))
+        #fontsize=10
         logger.debug(f"Auto-sized '{text}' to {fontsize:.1f}pt (max_dim={max_dim:.2f}\")")
     ax.text(x, y, text, fontsize=fontsize, rotation=rotation,
             ha='center', va='center')
@@ -366,7 +367,7 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
                     logger.debug(f"Row {i+1}: Using index as terminal: {terminal}")
            
             # Draw positive text (horizontal)
-            vtext(ax, x, y_pos, row.get('positive', 'SP'), 7, max_dim=col_width*0.9)
+            vtext(ax, x, y_pos, row.get('positive', 'SP'), 10, max_dim=col_width*0.9)
            
             # Draw S-FUSE with terminal
             ft, fb, fic, foc = draw_s_fuse(
@@ -399,7 +400,7 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
             draw_vertical_line(ax, x, cb[1], y_neg+0.35)
            
             # Draw negative text (horizontal)
-            vtext(ax, x, y_neg, row.get('negative', 'SP'), 7, max_dim=col_width*0.9)
+            vtext(ax, x, y_neg, row.get('negative', 'SP'), 10, max_dim=col_width*0.9)
            
             fuse_pts.append(fb)
             cap_pts.append(ct)
@@ -739,19 +740,19 @@ class TerminalDiagram(Flowable):
            self.mm=50*mm
            self.dh=60*mm
         if count_rows == 4 :
-           self.mm=45*mm
+           self.mm=40*mm
            self.dh=50*mm   
         if count_rows == 5 :
-           self.mm=40*mm
-           self.dh=45*mm
+           self.mm=32*mm
+           self.dh=40*mm
         if count_rows == 6 :
-           self.mm=35*mm
-           self.dh=40*mm   
+           self.mm=28*mm
+           self.dh=30*mm   
         if count_rows == 7 :
-           self.mm=25*mm
+           self.mm=22*mm
            self.dh=30*mm
         if count_rows == 8 :
-           self.mm=15*mm
+           self.mm=17*mm
            self.dh=30*mm
         if count_rows == 9 :
            self.mm=15*mm
