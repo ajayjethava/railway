@@ -608,6 +608,21 @@
                                                         </div>
                                                     {% endif %}
                                                 {% endif %}
+
+                                                {% if can_user_sign(upload.id, user_role) %}
+
+                                                <a href="{{ url_for('main.download_pdf_for_sign', upload_id=upload.id) }}"
+                                                class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+
+                                                <button class="btn btn-sm btn-success"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#signUploadModal{{ upload.id }}">
+                                                    <i class="bi bi-upload"></i>
+                                                </button>
+
+                                                {% endif %}
                                                 
                                                 <!-- Delete Button -->
                                                 {% if current_user.id == upload.user_id or user_role == 4 %}
@@ -909,6 +924,45 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="signUploadModal{{ upload.id }}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <form method="POST"
+                    enctype="multipart/form-data"
+                    action="{{ url_for('main.upload_signed_pdf', upload_id=upload.id) }}">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Signed PDF</h5>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <input type="file"
+                            name="signed_pdf"
+                            accept=".pdf"
+                            required
+                            class="form-control">
+
+                        <textarea name="comments"
+                                class="form-control mt-2"
+                                placeholder="Comments"></textarea>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit"
+                                class="btn btn-success">
+                            Upload
+                        </button>
+                    </div>
+
+                </form>
+
             </div>
         </div>
     </div>

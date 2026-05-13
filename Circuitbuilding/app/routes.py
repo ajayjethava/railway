@@ -93,6 +93,89 @@ def _parse_project_ids(project_ids):
     
     return result
 
+def get_next_approval_level(upload_id):
+    approvals = CTRApproval.query.filter_by(
+        ctr_upload_id=upload_id
+    ).order_by(CTRApproval.approval_level.asc()).all()
+
+    if not approvals:
+        return 1
+
+    highest = max(a.approval_level for a in approvals)
+
+    if highest == 1:
+        return 2
+    elif highest == 2:
+        return 3
+
+    return None
+def can_user_sign(upload_id, user_role):
+    approvals = CTRApproval.query.filter_by(
+        ctr_upload_id=upload_id
+    ).all()
+
+    levels = [a.approval_level for a in approvals]
+
+    if user_role == 1:
+        return 1 not in levels
+
+    elif user_role == 2:
+        return 1 in levels and 2 not in levels
+
+    elif user_role == 3:
+        return 2 in levels and 3 not in levels
+
+    return False
+@main.route('/upload-signed-pdf/<int:upload_id>', methods=['POST'])
+@login_required
+def upload_signed_pdf(upload_id):
+
+    file = request.files.get('signed_pdf')
+
+    if not file:
+        flash('PDF required', 'danger')
+        return redirect(url_for('main.ctr_drawing'))
+
+    approval_level = current_user.role_id
+
+    approval = CTRApproval(
+        ctr_upload_id=upload_id,
+        approver_role_id=current_user.role_id,
+        approver_user_id=current_user.id,
+        approval_level=approval_level,
+        approval_status='approved',
+        comments=request.form.get('comments')
+    )
+
+    db.session.add(approval)
+    history = CTRApprovalHistory(
+        ctr_upload_id=upload_id,
+        action='approved',
+        action_level=approval_level,
+        action_details=f'Level {approval_level} signed PDF uploaded',
+        action_by_user_id=current_user.id,
+        action_by_role_id=current_user.role_id,
+        previous_status_id=None,
+        new_status_id=None,
+        version_number=1
+    )
+
+    db.session.add(history)
+
+    db.session.commit()
+
+    upload = CTRUpload.query.get(upload_id)
+
+    if approval_level == 1:
+        upload.current_approval_level = 2
+
+    elif approval_level == 2:
+        upload.current_approval_level = 3
+
+    elif approval_level == 3:
+        upload.is_fully_approved = True
+
+    db.session.commit()     
 
 def sync_station_to_master(station_drawing):
     """
