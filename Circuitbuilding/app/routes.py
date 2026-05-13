@@ -125,8 +125,8 @@ def can_user_sign(upload_id, user_role):
     elif user_role == 3:
         return 2 in levels and 3 not in levels
 
-    return False
-@main.route('/upload-signed-pdf/<int:upload_id>', methods=['POST'])
+    return True
+@bp.route('/upload-signed-pdf/<int:upload_id>', methods=['POST'])
 @login_required
 def upload_signed_pdf(upload_id):
 
@@ -17815,7 +17815,8 @@ def ctr_drawing():
                          version_filter=version_filter,
                          search_query=search_query,
                          get_approval_summary=get_approval_summary,
-                         get_approval_status_for_user=get_approval_status_for_user)
+                         get_approval_status_for_user=get_approval_status_for_user,
+                         can_user_sign=can_user_sign)
 
 
 @bp.route('/upload_ctr_xlsx', methods=['POST'])

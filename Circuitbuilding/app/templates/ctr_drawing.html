@@ -611,14 +611,14 @@
 
                                                 {% if can_user_sign(upload.id, user_role) %}
 
-                                                <a href="{{ url_for('main.download_pdf_for_sign', upload_id=upload.id) }}"
+                                                <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
                                                 class="btn btn-sm btn-primary">
                                                     <i class="bi bi-download"></i>
                                                 </a>
 
                                                 <button class="btn btn-sm btn-success"
                                                         data-bs-toggle="modal"
-                                                        data-bs-target="#signUploadModal{{ upload.id }}">
+                                                        data-bs-target="#signUploadModal">
                                                     <i class="bi bi-upload"></i>
                                                 </button>
 
@@ -634,6 +634,7 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -928,44 +929,44 @@
         </div>
     </div>
 
-    <div class="modal fade" id="signUploadModal{{ upload.id }}">
-        <div class="modal-dialog">
-            <div class="modal-content">
+    <div class="modal fade" id="signUploadModal">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
 
-                <form method="POST"
-                    enctype="multipart/form-data"
-                    action="{{ url_for('main.upload_signed_pdf', upload_id=upload.id) }}">
+                                                <form method="POST"
+                                                    enctype="multipart/form-data"
+                                                    action="">
 
-                    <div class="modal-header">
-                        <h5 class="modal-title">Upload Signed PDF</h5>
-                    </div>
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Upload Signed PDF</h5>
+                                                    </div>
 
-                    <div class="modal-body">
+                                                    <div class="modal-body">
 
-                        <input type="file"
-                            name="signed_pdf"
-                            accept=".pdf"
-                            required
-                            class="form-control">
+                                                        <input type="file"
+                                                            name="signed_pdf"
+                                                            accept=".pdf"
+                                                            required
+                                                            class="form-control">
 
-                        <textarea name="comments"
-                                class="form-control mt-2"
-                                placeholder="Comments"></textarea>
+                                                        <textarea name="comments"
+                                                                class="form-control mt-2"
+                                                                placeholder="Comments"></textarea>
 
-                    </div>
+                                                    </div>
 
-                    <div class="modal-footer">
-                        <button type="submit"
-                                class="btn btn-success">
-                            Upload
-                        </button>
-                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="submit"
+                                                                class="btn btn-success">
+                                                            Upload
+                                                        </button>
+                                                    </div>
 
-                </form>
+                                                </form>
 
-            </div>
-        </div>
-    </div>
+                                            </div>
+                                        </div>
+                                    </div>  
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
