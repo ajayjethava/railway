@@ -728,17 +728,17 @@ class TerminalDiagram(Flowable):
         self.total_terminals = total_terminals
         self.width = width
         if count_rows > 10 :
-           self.mm=8*mm
-           self.dh=30*mm 
+           self.mm=40*mm
+           self.dh=50*mm 
         if count_rows == 1 :
-           self.mm=160*mm
-           self.dh=180*mm
+           self.mm=40*mm
+           self.dh=50*mm
         if count_rows == 2 :
-           self.mm=80*mm
-           self.dh=90*mm 
+           self.mm=40*mm
+           self.dh=50*mm 
         if count_rows == 3 :
-           self.mm=50*mm
-           self.dh=60*mm
+           self.mm=40*mm
+           self.dh=50*mm
         if count_rows == 4 :
            self.mm=40*mm
            self.dh=50*mm   

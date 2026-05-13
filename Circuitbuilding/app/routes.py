@@ -337,11 +337,11 @@ def login():
             return redirect(url_for('main.login'))
         
         # Check if password is correct
-        '''
+        
         if not user.check_password(password):
             flash("Invalid username/mobile number or password")
             return redirect(url_for('main.login'))
-        '''
+        
         
         # If all checks pass, log in the user
         login_user(user, remember=False)
@@ -17220,7 +17220,10 @@ def download_ctr_sample_template():
             "desg1", 
             "desg2", 
             "desg3",
-            "station_code"
+            "sig_play_no",
+            "ver_no",
+            "page_no",
+            "date"
         ]
         summary_sheet.append(summary_headers)
         
@@ -17525,7 +17528,10 @@ def download_ctr_blank_template():
             "desg1", 
             "desg2", 
             "desg3",
-            "station_code"
+            "sig_play_no",
+            "ver_no",
+            "page_no",
+            "date"
         ]
         summary_sheet.append(summary_headers)
         

@@ -306,7 +306,7 @@ def draw_cable_box_row(ax, x_start, y_center, cable_info, pin_spacing=0.8):
     #rect_width = 1.5
     #rect_height = 0.7
     rect_width = 1   # narrow
-    rect_height = 3.5  # tall
+    rect_height = 0.7  # tall
     
     # Draw the rectangle
     #rect_x = x_start + 1.0 - rect_width / 2
@@ -338,13 +338,16 @@ def draw_cable_box_row(ax, x_start, y_center, cable_info, pin_spacing=0.8):
     # Inside text (cable name) - centered in the rectangle
     if pd.notna(cable_name) and str(cable_name).strip() != '':
         cable_text = str(cable_name).strip()
-        ax.text(x_start + 1.0, y_center, cable_text,
+        bottom_text = cable_info.get('output')
+        ax.text(x_start + 1.0, y_center, bottom_text,
                 fontsize=18, ha='center', va='center', fontname='Arial', fontweight='bold')
         # NEW: Text below inner rectangle
        
-        bottom_text = cable_info.get('output')
+        
+        '''
         ax.text(x_start + 1.0, rect_y - 0.15, bottom_text,   # slightly below the rectangle
                 fontsize=14, ha='center', va='top', fontname='Arial', fontweight='bold')
+        '''
     return x_positions, input_connected_flags, output_connected_flags
 
 # === UPDATED FUNCTION: Draw extra connections ===
@@ -2506,7 +2509,7 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                         all_output_connected_flags.extend(output_connected_flags)
                        
                         # Add extra space after cable boxes for ALL letters
-                        current_x += pin_spacing * 2 # Double spacing for cable boxes in any row
+                        current_x += pin_spacing * 4 # Double spacing for cable boxes in any row
                         current_row_max_x = max(current_row_max_x, current_x)
                        
                         min_y = min(min_y, y_bottom_bus_group - 1.8)
@@ -3015,6 +3018,9 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
 
 
                     for idx in indices_to_draw:
+
+                        if idx + 1 >= len(row_x_positions) or idx + 1 >= len(row_symbol_bottoms):
+                            break
                         
                         x1 = row_x_positions[idx]
                         x2 = row_x_positions[idx + 1]
@@ -3841,6 +3847,7 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                 max_y = max(max_y, y_top_bus_group + 1.8)
         # FIXED: Move to next row AFTER processing all cables in current row
         #hereeeeeeeeeeeeeeeeeeeeeeeeee
+        '''
         if box_left_edges:
             outer_left = min(box_left_edges) - 0.9
             outer_right = max(box_right_edges) + 0.9
@@ -3855,6 +3862,7 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                 facecolor='none',
                 linewidth=2
             ))
+        '''
         # FIXED: Move to next row AFTER processing all cables in current row
         y_offset -= vertical_gap
     
