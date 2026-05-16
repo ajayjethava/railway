@@ -17869,6 +17869,86 @@ def ctr_drawing():
                          get_approval_status_for_user=get_approval_status_for_user
                          )
 
+@bp.route('/station_ctr_drawing')
+@login_required
+def station_ctr_drawing():
+    """Station-wise CTR Drawing PDFs"""
+    from collections import defaultdict
+    permissions = get_user_permissions(current_user)
+
+    user_role = int(current_user.role_name) if current_user.role_name.isdigit() else 4
+
+    # Allow roles
+    if user_role not in [0, 1, 2, 3, 4]:
+        flash("You don't have permission to access CTR Drawing page.", "danger")
+        return redirect(url_for('main.approval_tracking'))
+
+    # Filters
+    station_filter = request.args.get('station', '')
+    search_query = request.args.get('search', '')
+
+    # Base query
+    if user_role == 4:
+        query = CTRUpload.query
+
+    else:
+        assigned_projects_query = Project.query\
+            .join(user_projects, Project.id == user_projects.c.project_id)\
+            .filter(user_projects.c.user_id == current_user.id)\
+            .with_entities(Project.id, Project.name).distinct()
+
+        assigned_projects = [{'id': row[0], 'name': row[1]} for row in assigned_projects_query if row[1]]
+
+        assigned_project_ids = [str(p['id']) for p in assigned_projects]
+        assigned_station_names = [p['name'] for p in assigned_projects]
+
+        query = CTRUpload.query.filter(
+            or_(
+                CTRUpload.station_id.in_(assigned_project_ids),
+                CTRUpload.station_name.in_(assigned_station_names)
+            )
+        )
+
+    # Only approved PDFs for role 0
+    if user_role == 0:
+        query = query.filter_by(is_fully_approved=True)
+
+    # Station filter
+    if station_filter:
+        query = query.filter_by(station_name=station_filter)
+
+    # Search filter
+    if search_query:
+        search = f"%{search_query}%"
+
+        query = query.filter(or_(
+            CTRUpload.station_name.ilike(search),
+            CTRUpload.stored_filename.ilike(search)
+        ))
+
+    # Get uploads
+    uploads = query.order_by(
+        CTRUpload.station_name.asc(),
+        CTRUpload.upload_date.desc()
+    ).all()
+
+    # Group station-wise
+    station_uploads = defaultdict(list)
+
+    for upload in uploads:
+
+        # only show PDFs
+        if upload.sign_document:
+
+            station_uploads[upload.station_name].append(upload)
+
+    return render_template(
+        'station_ctr_drawing.html',
+        permissions=permissions,
+        station_uploads=station_uploads,
+        station_filter=station_filter,
+        search_query=search_query
+    )
 
 @bp.route('/upload_ctr_xlsx', methods=['POST'])
 @login_required

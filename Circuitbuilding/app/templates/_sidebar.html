@@ -74,6 +74,12 @@
                 <i class="bi bi-file-earmark-excel"></i>
                 <span>CTR Drawing</span>
             </a>
+
+            <!-- CTR Drawing Page Button -->
+            <a class="sidebar-btn" href="{{ url_for('main.station_ctr_drawing') }}">
+                <i class="bi bi-file-earmark-excel"></i>
+                <span>Station CTR Drawing</span>
+            </a>
             {% endif %}
 
             {% if current_user.role_name in ['2', '3'] %}
