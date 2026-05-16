@@ -717,7 +717,7 @@ class TerminalDiagram(Flowable):
     def __init__(self, groups, descriptions, cable_names, total_terminals,
                  desc_block_sizes=None, cable_core_numbers=None,
                  desc_colors=None,
-                 width=400*mm, row_marker="A", table_shift_right=10*mm, compact_mode=False,
+                 width=450*mm, row_marker="A", table_shift_right=10*mm, compact_mode=False,
                  is_overflow=False, overflow_index=0, start_terminal=1,
                  super_compact_mode=False,count_rows=1):
         Flowable.__init__(self)
@@ -728,34 +728,34 @@ class TerminalDiagram(Flowable):
         self.total_terminals = total_terminals
         self.width = width
         if count_rows > 10 :
-           self.mm=40*mm
-           self.dh=50*mm 
+           self.mm=8*mm
+           self.dh=30*mm 
         if count_rows == 1 :
-           self.mm=40*mm
+           self.mm=38*mm
            self.dh=50*mm
         if count_rows == 2 :
-           self.mm=40*mm
+           self.mm=38*mm
            self.dh=50*mm 
         if count_rows == 3 :
-           self.mm=40*mm
+           self.mm=38*mm
            self.dh=50*mm
         if count_rows == 4 :
-           self.mm=40*mm
+           self.mm=38*mm
            self.dh=50*mm   
         if count_rows == 5 :
-           self.mm=32*mm
+           self.mm=30*mm
            self.dh=40*mm
         if count_rows == 6 :
-           self.mm=28*mm
+           self.mm=26*mm
            self.dh=30*mm   
         if count_rows == 7 :
-           self.mm=22*mm
+           self.mm=20*mm
            self.dh=30*mm
         if count_rows == 8 :
            self.mm=17*mm
            self.dh=30*mm
         if count_rows == 9 :
-           self.mm=15*mm
+           self.mm=13*mm
            self.dh=30*mm               
         if count_rows == 10 :
            self.mm=12*mm
@@ -773,8 +773,8 @@ class TerminalDiagram(Flowable):
             #self.row_heights = [14*mm, 8*mm, 8*mm, 8*mm]  # Total: 38mm
             self.row_heights = [self.dh, self.mm, self.mm, self.mm]  # Total: 38mm
         self.height = sum(self.row_heights) 
-        self.marker_width = 10*mm
-        self.label_width = 30*mm
+        self.marker_width = 20*mm
+        self.label_width = 50*mm
         self.desc_block_sizes = desc_block_sizes or [1] * len(groups)
         self.cable_core_numbers = cable_core_numbers or [list(range(1, g+1)) for g in groups]
         self.desc_colors = desc_colors or []
@@ -1116,7 +1116,7 @@ class TerminalDiagram(Flowable):
             elif self.compact_mode:
                 marker_font_size = 8
             else:
-                marker_font_size = 10
+                marker_font_size = 12
             
             canv.setFont(FONT_BOLD, marker_font_size)
             # Calculate proper vertical centering for marker
@@ -1141,9 +1141,9 @@ class TerminalDiagram(Flowable):
             elif self.compact_mode:
                 label_font_size = 6
             else:
-                label_font_size = 9
+                label_font_size = 16
             
-            canv.setFont(FONT_BOLD, label_font_size)
+            canv.setFont("Helvetica-Bold", label_font_size)
             
             # Calculate label positions with proper centering
             if self.super_compact_mode:
@@ -1449,6 +1449,8 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         footer_x_start = page_width - 370
         footer_width = 340
         
+        footer_x_start = page_width - 870
+        footer_width = 840
         # Left margin for the long horizontal lines
         page_left_margin = 50 
 
@@ -1468,6 +1470,8 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         version = footer_data.get('ver_no', '')  # New version field
         page_no = footer_data.get('page_no', '')  # New version field
         date = footer_data.get('date', '')  # New version field
+
+        madeby=footer_data.get('madeby', '')
 
         page_num = page_no 
         
@@ -1505,10 +1509,10 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         canvas.line(page_left_margin, horizontal_y, footer_x_start + footer_width, horizontal_y)
 
         # Signature & other column vertical lines (only inside footer height)
-        sig_box_width = 80 
+        sig_box_width = 200 
         sig_col_x = footer_x_start + sig_box_width
-        col1_x = footer_x_start + 160 
-        col2_x = footer_x_start + 260
+        col1_x = footer_x_start + 350 
+        col2_x = footer_x_start + 610
         
         canvas.line(sig_col_x, footer_y, sig_col_x, footer_y + footer_height)
         canvas.line(col1_x, footer_y, col1_x, footer_y + footer_height)
@@ -1528,9 +1532,9 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         
         # Font setup
         try:
-            canvas.setFont(FONT_BOLD, 9)
+            canvas.setFont(FONT_BOLD, 12)
         except:
-            canvas.setFont("Helvetica-Bold", 9)
+            canvas.setFont("Helvetica-Bold", 12)
         
         # ========== TOP ROW (right cell: page & version; middle cell: station) ==========
         right_edge_x = footer_x_start + footer_width - 10  # 10pt from right border
@@ -1582,13 +1586,19 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         
         # ========== COMPLETION LABEL (above footer) ==========
         try:
-            canvas.setFont(FONT_BOLD, 9)
+            canvas.setFont(FONT_BOLD, 12)
         except:
-            canvas.setFont("Helvetica-Bold", 9)
-        completion_x = footer_x_start + footer_width - 150
+            canvas.setFont("Helvetica-Bold", 12)
+        completion_x = footer_x_start + footer_width - 250
         completion_y = footer_y + footer_height + 5
-        canvas.drawString(completion_x, completion_y,  f"COMPLETION  {date}")
         
+        #canvas.drawString(completion_x, completion_y,  f"COMPLETION {date}")
+        
+        canvas.drawString(
+            completion_x,
+            completion_y,
+            f"COMPLETION {pd.to_datetime(date).date().strftime('%d-%m-%Y')}"
+        )
         canvas.restoreState()
         logger.debug(f"Footer added successfully to page {page_num}")
         
@@ -1621,7 +1631,8 @@ def load_footer_data_from_excel(excel_path):
             'version': ['version', 'version_no', 'revision', 'ver_no'],   # New version column mapping
             'page_no' : ['page_no','page no'],
             'date' : ['date','Date'],
-            'ver_no' : ['ver_no']
+            'ver_no' : ['ver_no'],
+            'madeby' : ['madeby','made by']
         }
         
         for key, possible_names in column_mapping.items():
@@ -2158,14 +2169,14 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         styles = getSampleStyleSheet()
 
         station_style = ParagraphStyle('Station', parent=styles['Heading1'], 
-                                       fontSize=30, alignment=1,
+                                       fontSize=50, alignment=1,
                                        spaceAfter=0, fontName=FONT_BOLD,
                                        textColor=colors.black,
                                        
                                        spaceBefore=0)
         
-        project_style = ParagraphStyle('Project', parent=styles['Heading2'], 
-                                       fontSize=20, alignment=1,
+        project_style = ParagraphStyle('Project', parent=styles['Normal'], 
+                                       fontSize=40, alignment=1,
                                        spaceAfter=0, fontName=FONT_BOLD,
                                        textColor=colors.black,
                                        
@@ -2181,14 +2192,14 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         logger.info("Adding header for first page only")
         if ctr_image_path and os.path.exists(ctr_image_path):
             logger.info(f"Including CTR image: {ctr_image_path}")
-            ctr_img = Image(ctr_image_path, width=380, height=228)
+            ctr_img = Image(ctr_image_path, width=750, height=280)
             
             # Check if logo exists
             logo_img = None
             if os.path.exists(logo_path):
                 try:
                     # Bigger logo size - 140x140
-                    logo_img = Image(logo_path, width=140, height=140)
+                    logo_img = Image(logo_path, width=180, height=180)
                     logger.info(f"Loaded logo: {logo_path}")
                 except Exception as e:
                     logger.warning(f"Could not load logo {logo_path}: {e}")
@@ -2196,9 +2207,9 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
             
             if logo_img:
                 # Three columns: Logo, Text, CTR Image
-                logo_col_width = 140
+                logo_col_width = 180
                 
-                ctr_col_width = 140 # doc.width * 0.37
+                ctr_col_width = 250 # doc.width * 0.37
                 text_col_width = doc.width -  logo_col_width - ctr_col_width
 
                 text_table_data = [
@@ -2211,15 +2222,15 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('BOTTOMPADDING', (0, 0), (0, 0), 0),
-                    ('TOPPADDING', (0, 1), (0, 1), 8*mm),
+                    ('TOPPADDING', (0, 1), (0, 1), 28*mm),
                     ('LEFTPADDING', (0, 0), (-1, -1), 15*mm),
                     ('ALIGN', (0, 1), (0, 1), 'CENTER'),
                 ]))
                 
                 # Create a separate table for logo with perfect border
                 logo_table = Table([[logo_img]], 
-                                  colWidths=[140],
-                                  rowHeights=[140])
+                                  colWidths=[180],
+                                  rowHeights=[180])
                 
                 logo_table.setStyle(TableStyle([
                     ('BOX', (0, 0), (0, 0), 1, colors.black),
@@ -2290,8 +2301,8 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
             # No CTR image - just station and project text
             if os.path.exists(logo_path):
                 try:
-                    logo_img = Image(logo_path, width=140, height=140)
-                    logo_col_width = 140
+                    logo_img = Image(logo_path, width=180, height=180)
+                    logo_col_width = 180
                     #text_col_width = doc.width - logo_col_width
                     #ctr_col_width = doc.width * 0.37
                     text_col_width = doc.width - (2 * logo_col_width)-70
@@ -2308,14 +2319,14 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                         ('BOTTOMPADDING', (0, 0), (0, 0), 0),
-                        ('TOPPADDING', (0, 1), (0, 1), 8*mm),
+                        ('TOPPADDING', (0, 1), (0, 1), 28*mm),
                         ('LEFTPADDING', (0, 0), (-1, -1), 0),
                         ('ALIGN', (0, 1), (0, 1), 'CENTER'),
                     ]))
                     
                     logo_table = Table([[logo_img]], 
-                                      colWidths=[140],
-                                      rowHeights=[140])
+                                      colWidths=[180],
+                                      rowHeights=[180])
                     
                     logo_table.setStyle(TableStyle([
                         ('BOX', (0, 0), (0, 0), 1, colors.black),
@@ -2328,7 +2339,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     ]))
                     
                     header_table_data = [
-                        [logo_table, text_table, Spacer(1, 1)]
+                        [logo_table, text_table, Spacer(1, 280)]
                     ]
                     
                     header_table = Table(header_table_data, colWidths=[logo_col_width, text_col_width,logo_col_width])

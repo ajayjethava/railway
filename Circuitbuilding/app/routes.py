@@ -109,23 +109,9 @@ def get_next_approval_level(upload_id):
         return 3
 
     return None
-def can_user_sign(upload_id, user_role):
-    approvals = CTRApproval.query.filter_by(
-        ctr_upload_id=upload_id
-    ).all()
+def can_user_sign(upload, user_role):
+   return upload.current_approval_level == user_role
 
-    levels = [a.approval_level for a in approvals]
-
-    if user_role == 1:
-        return 1 not in levels
-
-    elif user_role == 2:
-        return 1 in levels and 2 not in levels
-
-    elif user_role == 3:
-        return 2 in levels and 3 not in levels
-
-    return True
 @bp.route('/upload-signed-pdf/<int:upload_id>', methods=['POST'])
 @login_required
 def upload_signed_pdf(upload_id):
@@ -136,11 +122,42 @@ def upload_signed_pdf(upload_id):
         flash('PDF required', 'danger')
         return redirect(url_for('main.ctr_drawing'))
 
-    approval_level = current_user.role_id
+    # Get upload record
+    upload = CTRUpload.query.get_or_404(upload_id)
+
+    # =========================
+    # SAVE PDF FILE
+    # =========================
+    filename = secure_filename(file.filename)
+
+    # Optional: make unique filename
+    unique_filename = filename   #f"{upload_id}_{current_user.id}_{filename}"
+    
+    
+    
+    upload_folder = r"C:\Railway\git\static\signed_pdfs"
+    # Create folder if not exists
+    os.makedirs(upload_folder, exist_ok=True)
+
+    file_path = os.path.join(upload_folder, unique_filename)
+
+    # Save file
+    file.save(file_path)
+
+    # Save filename/path in DB field
+    upload.sign_document = unique_filename
+    approval_level =  int(request.form.get('roleid'))
+    
+    upload.current_approval_level = approval_level
+    
+    # =========================
+    # APPROVAL ENTRY
+    # =========================
+   
 
     approval = CTRApproval(
         ctr_upload_id=upload_id,
-        approver_role_id=current_user.role_id,
+        approver_role_id=approval_level, #current_user.role_id,
         approver_user_id=current_user.id,
         approval_level=approval_level,
         approval_status='approved',
@@ -148,6 +165,10 @@ def upload_signed_pdf(upload_id):
     )
 
     db.session.add(approval)
+
+    # =========================
+    # HISTORY ENTRY
+    # =========================
     history = CTRApprovalHistory(
         ctr_upload_id=upload_id,
         action='approved',
@@ -162,20 +183,29 @@ def upload_signed_pdf(upload_id):
 
     db.session.add(history)
 
+    
     db.session.commit()
 
-    upload = CTRUpload.query.get(upload_id)
+    flash('Signed PDF uploaded successfully', 'success')
 
-    if approval_level == 1:
-        upload.current_approval_level = 2
+    return redirect(url_for('main.ctr_drawing'))
 
-    elif approval_level == 2:
-        upload.current_approval_level = 3
+@bp.route('/view-signed-pdf/<int:upload_id>/<int:level>')
+def view_signed_pdf(upload_id, level):
+    upload = CTRUpload.query.get_or_404(upload_id)
 
-    elif approval_level == 3:
-        upload.is_fully_approved = True
+    if not upload.sign_document:
+        abort(404, description="Signed PDF not found")
 
-    db.session.commit()     
+    file_path = os.path.join(
+        r"C:\Railway\git\static\signed_pdfs",
+        upload.sign_document
+    )
+
+    return send_file(
+      file_path,
+      as_attachment=True
+    )
 
 def sync_station_to_master(station_drawing):
     """
@@ -17815,8 +17845,8 @@ def ctr_drawing():
                          version_filter=version_filter,
                          search_query=search_query,
                          get_approval_summary=get_approval_summary,
-                         get_approval_status_for_user=get_approval_status_for_user,
-                         can_user_sign=can_user_sign)
+                         get_approval_status_for_user=get_approval_status_for_user
+                         )
 
 
 @bp.route('/upload_ctr_xlsx', methods=['POST'])
