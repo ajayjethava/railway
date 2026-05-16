@@ -147,8 +147,15 @@ def upload_signed_pdf(upload_id):
     # Save filename/path in DB field
     upload.sign_document = unique_filename
     approval_level =  int(request.form.get('roleid'))
-    
     upload.current_approval_level = approval_level
+
+    FINAL_APPROVAL_LEVEL = 3
+
+    if approval_level == FINAL_APPROVAL_LEVEL:
+        upload.is_fully_approved = True
+        upload.fully_approved_at = datetime.utcnow()
+    else:
+        upload.is_fully_approved = False
     
     # =========================
     # APPROVAL ENTRY
@@ -189,6 +196,20 @@ def upload_signed_pdf(upload_id):
     flash('Signed PDF uploaded successfully', 'success')
 
     return redirect(url_for('main.ctr_drawing'))
+
+
+
+@bp.route("/download-file/<filename>")
+def download_file(filename):
+    file_path = os.path.join(
+        r"C:\Railway\git\Circuitbuilding\uploads_ctr",
+        filename
+    )
+
+    if not os.path.exists(file_path):
+        return abort(404, description="File not found")
+
+    return send_file(file_path, as_attachment=True)
 
 @bp.route('/view-signed-pdf/<int:upload_id>/<int:level>')
 def view_signed_pdf(upload_id, level):

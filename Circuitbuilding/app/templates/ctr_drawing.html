@@ -380,7 +380,7 @@
                                                 <span class="badge bg-secondary">Unknown</span>
                                             {% endif %}
                                         </td>
-                                         <td>
+                                        <td>
                                             {% if upload.status_id %}
                                                 {% set status_obj = StatusMaster.query.get(upload.status_id) %}
                                                 {% if status_obj %}
@@ -395,62 +395,47 @@
                                                         </span>
                                                     {% else %}
                                                         <div class="approval-progress">
-                                                            
-                                                            <div class="d-flex align-items-center mb-1">
-                                                                <span class="badge approval-level-badge {% if upload.sent_for_approval %}completed{% else %}pending{% endif %} me-1">
-                                                                    L1
-                                                                </span>
-                                                                <small class="{% if not upload.sent_for_approval %}text-pending{% else %}text-completed{% endif %}">
-                                                                    {% if not upload.sent_for_approval %}Pending{% else %}Done{% endif %}
-                                                                </small>
-                                                            </div>
-                                                            
-                                                            
-                                                            {% if upload.sent_for_approval %}
-                                                                {% set approval_summary = get_approval_summary(upload) %}
-                                                                <div class="d-flex align-items-center mb-1">
-                                                                    <span class="badge approval-level-badge 
-                                                                        {% if approval_summary[2].status == 'approved' %}completed
-                                                                        {% elif approval_summary[2].status == 'rejected' %}bg-danger
-                                                                        {% elif approval_summary[2].status == 'changes_requested' %}bg-warning
-                                                                        {% elif approval_summary[2].status == 'not_started' %}bg-secondary
-                                                                        {% else %}pending{% endif %} me-1">
-                                                                        L2
-                                                                    </span>
-                                                                    <small class="
-                                                                        {% if approval_summary[2].status == 'pending' %}text-pending
-                                                                        {% elif approval_summary[2].status == 'approved' %}text-completed
-                                                                        {% elif approval_summary[2].status == 'rejected' %}text-rejected
-                                                                        {% elif approval_summary[2].status == 'changes_requested' %}text-changes-requested
-                                                                        {% elif approval_summary[2].status == 'not_started' %}text-muted
-                                                                        {% endif %}">
-                                                                        {{ approval_summary[2].status|replace('_', ' ')|title }}
-                                                                    </small>
-                                                                </div>
-                                                                
-                                                                
-                                                                {% if approval_summary[2].status == 'approved' or upload.current_approval_level >= 3 %}
-                                                                <div class="d-flex align-items-center">
-                                                                    <span class="badge approval-level-badge 
-                                                                        {% if approval_summary[3].status == 'approved' %}completed
-                                                                        {% elif approval_summary[3].status == 'rejected' %}bg-danger
-                                                                        {% elif approval_summary[3].status == 'changes_requested' %}bg-warning
-                                                                        {% elif approval_summary[3].status == 'not_started' %}bg-secondary
-                                                                        {% else %}pending{% endif %} me-1">
-                                                                        L3
-                                                                    </span>
-                                                                    <small class="
-                                                                        {% if approval_summary[3].status == 'pending' %}text-pending
-                                                                        {% elif approval_summary[3].status == 'approved' %}text-completed
-                                                                        {% elif approval_summary[3].status == 'rejected' %}text-rejected
-                                                                        {% elif approval_summary[3].status == 'changes_requested' %}text-changes-requested
-                                                                        {% elif approval_summary[3].status == 'not_started' %}text-muted
-                                                                        {% endif %}">
-                                                                        {{ approval_summary[3].status|replace('_', ' ')|title }}
-                                                                    </small>
-                                                                </div>
+                                                            {% set max_level = 3 %}
+                                                            {% set current_level = upload.current_approval_level|default(1)|int %}
+
+
+                                                            {% for level in range(1, max_level + 1) %}
+
+                                                                {% if level < upload.current_approval_level %}
+
+                                                                    {% set status = 'approved' %}
+
+                                                                {% elif level == upload.current_approval_level %}
+
+                                                                    {% if level == 1 and not upload.sign_document %}
+                                                                        {% set status = 'pending' %}
+                                                                    {% else %}
+                                                                        {% set status = 'approved' %}
+                                                                    {% endif %}
+
+                                                                {% else %}
+
+                                                                    {% set status = 'pending' %}
+
                                                                 {% endif %}
-                                                            {% endif %}
+
+                                                                <div class="d-flex align-items-center mb-1">
+
+                                                                    
+
+                                                                    <span class="badge approval-level-badge {% if status == 'approved' %}completed{% else %}pending{% endif %} me-1">
+                                                                        L{{ level }}
+                                                                    </span>
+                                                                    <small class="{% if status == 'approved' %}text-completed{% else %}text-pending{% endif %}">
+                                                                        {{ status|replace('_', ' ')|title }}
+                                                                    </small>
+
+                                                                   
+
+                                                                </div>
+
+                                                            {% endfor %}
+
                                                         </div>
                                                     {% endif %}
                                                 {% else %}
@@ -471,7 +456,7 @@
                                                     <span class="badge bg-warning">R:{{ rowdetail_count }}</span>
                                                 </small>
                                             </div>
-                                        </td>  
+                                        </td>
                                         <td>
                                             <div class="d-flex flex-wrap gap-1">
                                                 {% if upload.generated_pdf and upload.status_id %}
@@ -491,11 +476,17 @@
                                                                class="btn btn-sm btn-outline-success" target="_blank" title="Download PDF" download>
                                                                 <i class="bi bi-download"></i>
                                                             </a>
+                                                            <a href="{{ url_for('main.download_file', filename=upload.stored_filename) }}"
+                                                                class="btn btn-sm btn-outline-success"
+                                                                title="Download Excel"
+                                                                download>
+                                                                    <i class="bi bi-file-earmark-excel"></i>
+                                                            </a>
                                                         {% endif %}
                                                     {% endif %}
                                                 {% endif %}
                                                 
-                                                
+                                                <!-- Send for Approval Button (Role 1 only) -->
                                                 {% if user_role == 1 and upload.status_id %}
                                                     {% set status_obj = StatusMaster.query.get(upload.status_id) %}
                                                     {% if status_obj and status_obj.status_code == 'completed' and not upload.sent_for_approval and upload.user_id == current_user.id %}
@@ -508,7 +499,7 @@
                                                     {% endif %}
                                                 {% endif %}
                                                 
-                                                
+                                                <!-- Admin Send for Approval Button -->
                                                 {% if user_role == 4 and not upload.sent_for_approval and upload.status_id %}
                                                     {% set status_obj = StatusMaster.query.get(upload.status_id) %}
                                                     {% if status_obj and status_obj.status_code == 'completed' %}
@@ -663,6 +654,15 @@
                                                         onclick="confirmDelete({{ upload.id }}, '{{ upload.filename }}')">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
+                                                {% endif %}
+
+                                                {% if upload.sign_document %}
+                                                    <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=upload.current_approval_level|default(1)) }}"
+                                                    class="btn btn-sm btn-info"
+                                                    target="_blank"
+                                                    title="View Signed Document">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
                                                 {% endif %}
                                             </div>
                                         </td>
