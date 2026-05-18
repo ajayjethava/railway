@@ -916,6 +916,7 @@ class CTRUpload(db.Model):
     status = db.relationship('StatusMaster', foreign_keys=[status_id], backref='ctr_uploads')
     parent_version = db.relationship('CTRUpload', remote_side=[id], backref='child_versions', uselist=False)
     sign_document = db.Column(db.String(255))
+    name = db.Column(db.String(255))
     
     def __repr__(self):
         return f'<CTRUpload {self.id}: {self.filename} (v{self.version})>'

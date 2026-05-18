@@ -335,6 +335,12 @@
                                                 {% else %}
                                                     no pdf date
                                                 {% endif %}
+                                                 <br>Approved Date <br>
+                                                {% if upload.fully_approved_at %}
+                                                    {{ upload.fully_approved_at.strftime('%d-%m-%Y %H:%M') }}
+                                                {% else %}
+                                                    no pdf date
+                                                {% endif %}
 
                                         </td>
                                         <td>
@@ -468,14 +474,44 @@
                                                         {% endif %}
                                                         
                                                         {% if can_view %}
-                                                            <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}" 
-                                                               class="btn btn-sm btn-success" target="_blank" title="View PDF">
-                                                                <i class="bi bi-file-pdf"></i>
-                                                            </a>
-                                                            <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}" 
-                                                               class="btn btn-sm btn-outline-success" target="_blank" title="Download PDF" download>
-                                                                <i class="bi bi-download"></i>
-                                                            </a>
+                                                                                                                        
+                                                            {% if upload.sign_document %}
+
+                                                                <!-- SIGNED PDF -->
+                                                                <a href="{{ url_for('main.view_signed_pdf1', upload_id=upload.id, level=1) }}"
+                                                                class="btn btn-sm btn-success"
+                                                                target="_blank"
+                                                                title="View Signed PDF">
+                                                                    <i class="bi bi-file-pdf"></i>
+                                                                </a>
+
+                                                                <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=1) }}"
+                                                                class="btn btn-sm btn-outline-success"
+                                                                target="_blank"
+                                                                title="Download Signed PDF"
+                                                                download>
+                                                                    <i class="bi bi-download"></i>
+                                                                </a>
+
+                                                            {% else %}
+
+                                                                <!-- NORMAL PDF -->
+                                                                <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
+                                                                class="btn btn-sm btn-success"
+                                                                target="_blank"
+                                                                title="View PDF">
+                                                                    <i class="bi bi-file-pdf"></i>
+                                                                </a>
+
+                                                                <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
+                                                                class="btn btn-sm btn-outline-success"
+                                                                target="_blank"
+                                                                title="Download PDF"
+                                                                download>
+                                                                    <i class="bi bi-download"></i>
+                                                                </a>
+
+                                                            {% endif %}
                                                             <a href="{{ url_for('main.download_file', filename=upload.stored_filename) }}"
                                                                 class="btn btn-sm btn-outline-success"
                                                                 title="Download Excel"
@@ -601,14 +637,10 @@
                                                 {% endif %}
 
                                                 
-                                                {% if user_role == 1 and not upload.sign_document %}
+                                                {% if user_role == 1 and upload.current_approval_level==0 %}
 
                                                     <!-- Role 1: download original + upload signed1 -->
-                                                    <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
-                                                    class="btn btn-sm btn-primary" target="_blank" title="Download PDF" download>
-                                                        <i class="bi bi-download"></i>
-                                                    </a>
-
+                                                    
                                                     <button class="btn btn-sm btn-success"
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#signUploadModal"
@@ -619,10 +651,7 @@
                                                 {% elif user_role == 2 and upload.current_approval_level == 1 and upload.sign_document %}
 
                                                     <!-- Role 2: download signed1 + upload signed2 -->
-                                                    <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=1) }}"
-                                                    class="btn btn-sm btn-primary">
-                                                        <i class="bi bi-download"></i>
-                                                    </a>
+                                                    
 
                                                     <button class="btn btn-sm btn-success"
                                                             data-bs-toggle="modal"
@@ -634,10 +663,7 @@
                                                 {% elif  user_role == 3 and upload.current_approval_level == 2 %}
 
                                                     <!-- Role 3: download signed2 + upload final -->
-                                                    <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=2) }}"
-                                                    class="btn btn-sm btn-primary">
-                                                        <i class="bi bi-download"></i>
-                                                    </a>
+                                                    
 
                                                     <button class="btn btn-sm btn-success"
                                                             data-bs-toggle="modal"
@@ -656,14 +682,7 @@
                                                 </button>
                                                 {% endif %}
 
-                                                {% if upload.sign_document %}
-                                                    <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=upload.current_approval_level|default(1)) }}"
-                                                    class="btn btn-sm btn-info"
-                                                    target="_blank"
-                                                    title="View Signed Document">
-                                                        <i class="bi bi-eye"></i>
-                                                    </a>
-                                                {% endif %}
+                                                
                                             </div>
                                         </td>
                                     </tr>

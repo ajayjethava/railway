@@ -131,7 +131,7 @@ def upload_signed_pdf(upload_id):
     filename = secure_filename(file.filename)
 
     # Optional: make unique filename
-    unique_filename = filename   #f"{upload_id}_{current_user.id}_{filename}"
+    unique_filename = f"{upload_id}_{current_user.id}_{filename}"
     
     
     
@@ -144,16 +144,22 @@ def upload_signed_pdf(upload_id):
     # Save file
     file.save(file_path)
 
+   
+   
     # Save filename/path in DB field
     upload.sign_document = unique_filename
     approval_level =  int(request.form.get('roleid'))
     upload.current_approval_level = approval_level
-
+    ist = pytz.timezone('Asia/Kolkata')
+    upload.fully_approved_at = datetime.now(ist)
+    #upload.fully_approved_at = datetime.utcnow()
     FINAL_APPROVAL_LEVEL = 3
 
     if approval_level == FINAL_APPROVAL_LEVEL:
         upload.is_fully_approved = True
-        upload.fully_approved_at = datetime.utcnow()
+        ist = pytz.timezone('Asia/Kolkata')
+        upload.fully_approved_at = datetime.now(ist)
+
     else:
         upload.is_fully_approved = False
     
@@ -214,7 +220,7 @@ def download_file(filename):
 @bp.route('/view-signed-pdf/<int:upload_id>/<int:level>')
 def view_signed_pdf(upload_id, level):
     upload = CTRUpload.query.get_or_404(upload_id)
-
+    print("DEBUG sign_document:", upload.sign_document, type(upload.sign_document))
     if not upload.sign_document:
         abort(404, description="Signed PDF not found")
 
@@ -227,6 +233,22 @@ def view_signed_pdf(upload_id, level):
       file_path,
       as_attachment=True
     )
+@bp.route('/view-signed-pdf1/<int:upload_id>/<int:level>')
+def view_signed_pdf1(upload_id, level):
+    upload = CTRUpload.query.get_or_404(upload_id)
+    print("DEBUG sign_document:", upload.sign_document, type(upload.sign_document))
+    if not upload.sign_document:
+        abort(404, description="Signed PDF not found")
+
+    file_path = os.path.join(
+        r"C:\Railway\git\static\signed_pdfs",
+        upload.sign_document
+    )
+
+    return send_file(
+      file_path
+    )
+
 
 def sync_station_to_master(station_drawing):
     """
@@ -18069,11 +18091,25 @@ def upload_ctr_xlsx():
         # Clean station name
         if station_name:
             station_name = re.sub(r'\s+', ' ', station_name.strip())
+
+        excel_data_name = pd.read_excel(
+            temp_file_path,
+            sheet_name="Summary",
+            dtype=str
+        )
+
+        # Get first data row
+        first_row = excel_data_name.iloc[0]
+
+        # Read name column
+        current_name = str(first_row['name']).strip()
+     
         
         # ==================== VERSION DETERMINATION (CHANGED) ====================
         # Get ALL uploads for this station (across all users), ordered by version desc, then id desc
         existing_uploads = CTRUpload.query.filter(
-            CTRUpload.station_id == station_id
+            CTRUpload.station_id == station_id,
+            CTRUpload.name == current_name
         ).order_by(
             CTRUpload.version.desc(),
             CTRUpload.id.desc()
@@ -18165,11 +18201,12 @@ def upload_ctr_xlsx():
             station_id=station_id,
             version=version_number,
             is_latest_version=True,
-            current_approval_level=1,
+            current_approval_level=0,
             is_fully_approved=False,
             sent_for_approval=False,
             sent_for_approval_at=None,
-            parent_version_id=parent_version_id
+            parent_version_id=parent_version_id,
+            name=current_name
         )
         
         db.session.add(ctr_upload)
@@ -18756,9 +18793,12 @@ def view_ctr_pdf(upload_id):
             return redirect(url_for('main.ctr_drawing'))
     # Creators (role 1) can view their own uploads
     elif user_role == 1:
+        pass
+        '''
         if current_user.id != ctr_upload.user_id:
             flash("You can only view your own uploads.", "danger")
             return redirect(url_for('main.ctr_drawing'))
+        ''' 
     # Approvers (roles 2, 3) can view if they're assigned to the station
     elif user_role in [2, 3]:
         if ctr_upload.station_id or ctr_upload.station_name:
