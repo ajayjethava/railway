@@ -1465,9 +1465,9 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         drawing_no = footer_data.get('station_code', 'SC/PL 411/14')
         zone = footer_data.get('zone', 'WESTERN')
         division = footer_data.get('division', 'AHMEDABAD')
-        #version = footer_data.get('version', '')  # New version field
+        version = footer_data.get('version', '')  # New version field
 
-        version = footer_data.get('ver_no', '')  # New version field
+        ver_no = footer_data.get('ver_no', '')  # New version field
         page_no = footer_data.get('page_no', '')  # New version field
         date = footer_data.get('date', '')  # New version field
 
@@ -1540,7 +1540,7 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         right_edge_x = footer_x_start + footer_width - 10  # 10pt from right border
 
         # Page number (top row, right cell)
-        page_num_text = f"PAGE NO-{page_num}/{version}"
+        page_num_text = f"PAGE NO-{page_num}/{ver_no}"
         canvas.drawRightString(right_edge_x, top_cell_top - 20, page_num_text)   # moved down from -17 to -20
         
         # Version (top row, right cell) – only if present
@@ -1589,15 +1589,23 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
             canvas.setFont(FONT_BOLD, 12)
         except:
             canvas.setFont("Helvetica-Bold", 12)
-        completion_x = footer_x_start + footer_width - 250
+        completion_x = footer_x_start + footer_width - 300
         completion_y = footer_y + footer_height + 5
         
-        #canvas.drawString(completion_x, completion_y,  f"COMPLETION {date}")
-        
+        #canvas.drawString(completion_x, completion_y,  f"COMPLETION Version { version} {date}")
+        parsed_date = pd.to_datetime(date, errors='coerce')
+
+        if pd.notna(parsed_date):
+            formatted_date = parsed_date.strftime('%d-%m-%Y')
+        else:
+            formatted_date = ""
+
+        footer_text = f"COMPLETION    Version {version}           {formatted_date}"
         canvas.drawString(
             completion_x,
             completion_y,
-            f"COMPLETION {pd.to_datetime(date).date().strftime('%d-%m-%Y')}"
+            footer_text
+            
         )
         canvas.restoreState()
         logger.debug(f"Footer added successfully to page {page_num}")

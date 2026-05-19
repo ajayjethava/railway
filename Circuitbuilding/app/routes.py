@@ -17905,10 +17905,7 @@ def station_ctr_drawing():
         flash("You don't have permission to access CTR Drawing page.", "danger")
         return redirect(url_for('main.approval_tracking'))
 
-    # Filters
-    station_filter = request.args.get('station', '')
-    search_query = request.args.get('search', '')
-
+   
     # Base query
     if user_role == 4:
         query = CTRUpload.query
@@ -17935,41 +17932,29 @@ def station_ctr_drawing():
     if user_role == 0:
         query = query.filter_by(is_fully_approved=True)
 
-    # Station filter
-    if station_filter:
-        query = query.filter_by(station_name=station_filter)
-
-    # Search filter
-    if search_query:
-        search = f"%{search_query}%"
-
-        query = query.filter(or_(
-            CTRUpload.station_name.ilike(search),
-            CTRUpload.stored_filename.ilike(search)
-        ))
-
+    
+    
     # Get uploads
     uploads = query.order_by(
         CTRUpload.station_name.asc(),
         CTRUpload.upload_date.desc()
     ).all()
 
-    # Group station-wise
-    station_uploads = defaultdict(list)
+    grouped_uploads = defaultdict(list)
 
     for upload in uploads:
+        station = upload.station_name or "Unknown Station"
+        grouped_uploads[station].append(upload)
 
-        # only show PDFs
-        if upload.sign_document:
 
-            station_uploads[upload.station_name].append(upload)
-
+    # Group station-wise
+    
     return render_template(
         'station_ctr_drawing.html',
         permissions=permissions,
-        station_uploads=station_uploads,
-        station_filter=station_filter,
-        search_query=search_query
+        uploads=uploads,
+        grouped_uploads=grouped_uploads
+        
     )
 
 @bp.route('/upload_ctr_xlsx', methods=['POST'])
