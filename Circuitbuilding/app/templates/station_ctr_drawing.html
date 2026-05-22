@@ -81,6 +81,11 @@
             <!-- COLUMN 1 = STATION -->
             <td>
                 <strong>{{ station }}</strong>
+                  <a href="{{ url_for('main.download_station_pdfs', station_name=station) }}"
+                    class="btn btn-sm btn-danger">
+                        <i class="fa fa-file-pdf"></i>
+                        Download All PDFs
+                  </a>
             </td>
 
             <!-- COLUMN 2 = ALL PDFs -->
@@ -94,7 +99,7 @@
 
                         <div class="border rounded px-2 py-1 d-flex align-items-center">
 
-                            
+                                                        
 
                             {% if upload.sign_document %}
 

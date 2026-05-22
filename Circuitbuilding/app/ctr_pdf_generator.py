@@ -365,9 +365,15 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
                 elif i < len(df):
                     terminal = str(i+1)
                     logger.debug(f"Row {i+1}: Using index as terminal: {terminal}")
-           
+        
+            text = row.get('positive', 'SP')
+
+            # Split long text into 2 lines
+            if len(text) > 6:
+                mid = len(text) // 2
+                text = text[:mid] + '\n' + text[mid:]
             # Draw positive text (horizontal)
-            vtext(ax, x, y_pos, row.get('positive', 'SP'), 10, max_dim=col_width*0.9)
+            vtext(ax, x, y_pos, text, 10, max_dim=col_width*0.9)
            
             # Draw S-FUSE with terminal
             ft, fb, fic, foc = draw_s_fuse(
@@ -399,8 +405,8 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
             draw_vertical_line(ax, x, y_func-0.35, ct[1])
             draw_vertical_line(ax, x, cb[1], y_neg+0.35)
            
-            # Draw negative text (horizontal)
-            vtext(ax, x, y_neg, row.get('negative', 'SP'), 10, max_dim=col_width*0.9)
+            # Draw negative text (horizontal)  row.get('negative', 'SP')
+            vtext(ax, x, y_neg, text, 10, max_dim=col_width*0.9)
            
             fuse_pts.append(fb)
             cap_pts.append(ct)
@@ -1600,13 +1606,14 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         else:
             formatted_date = ""
 
-        footer_text = f"COMPLETION    Version {version}           {formatted_date}"
+        footer_text = f"COMPLETION                         {formatted_date}"
         canvas.drawString(
             completion_x,
             completion_y,
             footer_text
             
         )
+        canvas.setSubject(f"Version {version}")
         canvas.restoreState()
         logger.debug(f"Footer added successfully to page {page_num}")
         
@@ -2200,7 +2207,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         logger.info("Adding header for first page only")
         if ctr_image_path and os.path.exists(ctr_image_path):
             logger.info(f"Including CTR image: {ctr_image_path}")
-            ctr_img = Image(ctr_image_path, width=750, height=280)
+            ctr_img = Image(ctr_image_path, width=850, height=330)
             
             # Check if logo exists
             logo_img = None
@@ -2217,7 +2224,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                 # Three columns: Logo, Text, CTR Image
                 logo_col_width = 180
                 
-                ctr_col_width = 250 # doc.width * 0.37
+                ctr_col_width = 350 # doc.width * 0.37
                 text_col_width = doc.width -  logo_col_width - ctr_col_width
 
                 text_table_data = [

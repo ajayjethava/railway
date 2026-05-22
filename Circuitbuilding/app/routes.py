@@ -43,6 +43,9 @@ import pandas as pd
 from .ctr_pdf_generator import generate_ctr_pdf_from_excel
 import threading
 from flask import current_app
+from flask import send_file
+from PyPDF2 import PdfMerger
+from io import BytesIO
 
 
 
@@ -144,7 +147,7 @@ def upload_signed_pdf(upload_id):
     # Save file
     file.save(file_path)
 
-   
+       
    
     # Save filename/path in DB field
     upload.sign_document = unique_filename
@@ -159,6 +162,68 @@ def upload_signed_pdf(upload_id):
         upload.is_fully_approved = True
         ist = pytz.timezone('Asia/Kolkata')
         upload.fully_approved_at = datetime.now(ist)
+        from PyPDF2 import PdfReader,PdfWriter
+        from reportlab.pdfgen import canvas
+        from io import BytesIO
+
+        reader = PdfReader(file_path)
+
+        metadata = reader.metadata
+
+        pdf_version = metadata.get("/Subject")
+
+        writer = PdfWriter()
+
+        for page in reader.pages:
+
+            packet = BytesIO()
+            page_width = float(page.mediabox.width)
+            page_height = float(page.mediabox.height) 
+            can = canvas.Canvas(packet, pagesize=(page_width, page_height))
+
+        # page = reader.pages[0]
+
+            
+
+            #print(page_width)
+
+            footer_text = f"{pdf_version}"
+
+            text_width = can.stringWidth(footer_text)
+
+            right_margin = 50
+            
+            completion_x = 3150 # page_width - text_width - right_margin
+            completion_y = 135
+
+            # SAME POSITION
+            footer_text = f"{pdf_version}"
+
+            can.drawString(
+                completion_x,
+                completion_y,
+                footer_text
+            )
+
+            can.save()
+
+            packet.seek(0)
+
+            overlay_pdf = PdfReader(packet)
+
+            page.merge_page(overlay_pdf.pages[0])
+
+            writer.add_page(page)
+
+        # Keep metadata
+        writer.add_metadata({
+            "/Subject": pdf_version
+        })
+
+        # SAVE UPDATED FILE
+        with open(file_path, "wb") as output_file:
+            writer.write(output_file)
+
 
     else:
         upload.is_fully_approved = False
@@ -17955,6 +18020,87 @@ def station_ctr_drawing():
         uploads=uploads,
         grouped_uploads=grouped_uploads
         
+    )
+
+@bp.route('/download-station-pdfs/<station_name>')
+@login_required
+def download_station_pdfs(station_name):
+
+    user_role = int(current_user.role_name) if current_user.role_name.isdigit() else 4
+
+    # Base query
+    if user_role == 4:
+        query = CTRUpload.query.filter_by(station_name=station_name)
+
+    else:
+        assigned_projects_query = Project.query\
+            .join(user_projects, Project.id == user_projects.c.project_id)\
+            .filter(user_projects.c.user_id == current_user.id)\
+            .with_entities(Project.id, Project.name).distinct()
+
+        assigned_projects = [{'id': row[0], 'name': row[1]} for row in assigned_projects_query if row[1]]
+
+        assigned_project_ids = [str(p['id']) for p in assigned_projects]
+        assigned_station_names = [p['name'] for p in assigned_projects]
+
+        query = CTRUpload.query.filter(
+            and_(
+                CTRUpload.station_name == station_name,
+                or_(
+                    CTRUpload.station_id.in_(assigned_project_ids),
+                    CTRUpload.station_name.in_(assigned_station_names)
+                )
+            )
+        )
+
+    # Only approved PDFs for role 0
+    if user_role == 0:
+        query = query.filter_by(is_fully_approved=True)
+
+    uploads = query.order_by(CTRUpload.upload_date.desc()).all()
+
+    UPLOAD_FOLDER = r"C:\Railway\git\Circuitbuilding\uploads_ctr"
+
+    merger = PdfMerger()
+
+    for upload in uploads:
+
+        # Skip NULL or empty PDF names
+        if not upload.generated_pdf:
+            continue
+
+        pdf_file = str(upload.generated_pdf).strip()
+
+        # Skip blank values
+        if pdf_file == "":
+            continue
+
+        pdf_path = os.path.join(
+            UPLOAD_FOLDER,
+            pdf_file
+        )
+
+        # File exists check
+        if os.path.exists(pdf_path):
+            merger.append(pdf_path)
+
+    # No PDF found
+    if len(merger.pages) == 0:
+        flash("No valid PDFs found for this station.", "warning")
+        return redirect(url_for('main.station_ctr_drawing'))
+
+    merged_pdf = BytesIO()
+
+    merger.write(merged_pdf)
+    merger.close()
+
+    merged_pdf.seek(0)
+
+    return send_file(
+        merged_pdf,
+        as_attachment=True,
+        download_name=f"{station_name}_CTR_Drawings.pdf",
+        mimetype='application/pdf'
     )
 
 @bp.route('/upload_ctr_xlsx', methods=['POST'])
