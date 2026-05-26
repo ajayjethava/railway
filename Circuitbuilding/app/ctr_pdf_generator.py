@@ -2207,7 +2207,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         logger.info("Adding header for first page only")
         if ctr_image_path and os.path.exists(ctr_image_path):
             logger.info(f"Including CTR image: {ctr_image_path}")
-            ctr_img = Image(ctr_image_path, width=850, height=330)
+            ctr_img = Image(ctr_image_path, width=1000, height=330)
             
             # Check if logo exists
             logo_img = None
@@ -2224,7 +2224,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                 # Three columns: Logo, Text, CTR Image
                 logo_col_width = 180
                 
-                ctr_col_width = 350 # doc.width * 0.37
+                ctr_col_width = 450 # doc.width * 0.37
                 text_col_width = doc.width -  logo_col_width - ctr_col_width
 
                 text_table_data = [
