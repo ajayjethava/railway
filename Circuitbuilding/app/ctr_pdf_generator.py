@@ -723,7 +723,7 @@ class TerminalDiagram(Flowable):
     def __init__(self, groups, descriptions, cable_names, total_terminals,
                  desc_block_sizes=None, cable_core_numbers=None,
                  desc_colors=None,
-                 width=450*mm, row_marker="A", table_shift_right=10*mm, compact_mode=False,
+                 width=450*mm, row_marker="", table_shift_right=10*mm, compact_mode=False,
                  is_overflow=False, overflow_index=0, start_terminal=1,
                  super_compact_mode=False,count_rows=1):
         Flowable.__init__(self)
@@ -1790,7 +1790,13 @@ def load_data_from_excel(excel_path):
             if marker_col and term_col:
                 marker_groups = {}
                 for _, row in df_raw.iterrows():
-                    marker = str(row[marker_col]).strip()[0] if str(row[marker_col]).strip() else 'A'
+                    #marker = str(row[marker_col]).strip()[0] if str(row[marker_col]).strip() else 'A'
+                    marker_text = str(row[marker_col]).strip()
+
+                    if not marker_text:
+                        continue
+
+                    marker = marker_text[0]
                     term_val = 1
                     if str(row[term_col]).strip().isdigit():
                         term_val = int(float(str(row[term_col]).strip()))
@@ -2016,12 +2022,18 @@ def load_rows_from_rowdetail_sheet(excel_path, max_terminals_per_row=None):
     for idx, row in df.iterrows():
         try:
             # Row marker
+            '''
             if col_map['RowMarker']:
                 marker_val = str(row[col_map['RowMarker']]).strip()
                 marker = marker_val[0].upper() if marker_val else 'A'
             else:
                 marker = 'A'
+            '''    
+            marker_val = str(row[col_map['RowMarker']]).strip()
+            if not marker_val or marker_val.lower() in ['nan', 'none']:
+                continue   # 🚨 skip row completely
 
+            marker = marker_val[0].upper()
             if marker not in grouped_data:
                 grouped_data[marker] = {
                     'groups': [],
@@ -2168,6 +2180,11 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         diagram_start_y_offset: Vertical offset in points (positive = move down, negative = move up)
     """
     pdf_path = f"{filename}.pdf"
+    print([row.get('row_marker') for row in rows])
+
+    for r in rows:
+       print("ROW1 =", r)
+
     try:
         logger.info(f"Creating PDF: {pdf_path}")
         logger.info(f"Parameters: station={station_name}, project={project_name}, rows={len(rows)}, y_offset={diagram_start_y_offset}")
@@ -2399,7 +2416,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         
         # Create a custom sort function
         def sort_key(row):
-            marker = row.get('row_marker', 'A')
+            marker = row.get('row_marker')
             start_terminal = row.get('start_terminal', 1)
             # For marker: Z > A, so F > E > D > C > B > A
             # For start_terminal: higher first (61-120 before 1-60)
@@ -2450,57 +2467,10 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         # ===== ADD DIAGRAMS TO PAGES =====
         current_index = 0
         page_number = 0
-        '''
-        while current_index < len(ordered_rows):
-            page_number += 1
-            
-            if page_number == 1:
-                # First page with header
-                rows_this_page = rows_per_page_first
-                use_super_compact = True
-            else:
-                # Subsequent pages
-                rows_this_page = rows_per_page_subsequent
-                use_super_compact = True
-                # Add page break for pages after first
-                elements.append(PageBreak())
-                logger.info(f"Added PageBreak for page {page_number}")
-            
-            # Get rows for this page
-            chunk = ordered_rows[current_index:current_index + rows_this_page]
-            logger.info(f"Page {page_number}: {len(chunk)} rows (rows {current_index+1} to {current_index+len(chunk)})")
-            
-            # Add each diagram
-            for j, row in enumerate(chunk):
-                is_overflow = row.get('is_overflow', False)
-                overflow_index = row.get('overflow_index', 0)
-                start_terminal = row.get('start_terminal', 1)
-                
-                logger.debug(f"  Adding diagram {j+1}: marker={row.get('row_marker', 'A')}, "
-                           f"start={start_terminal}, overflow={is_overflow}")
-                
-                diagram = TerminalDiagram(
-                    row['groups'],
-                    row['descriptions'],
-                    row['cable_names'],
-                    row['total_terminals'],
-                    desc_block_sizes=row.get('desc_block_sizes'),
-                    cable_core_numbers=row.get('cable_core_numbers'),
-                    desc_colors=row.get('desc_colors'),
-                    width=diagram_width,
-                    row_marker=row.get('row_marker', 'A'),
-                    table_shift_right=10*mm,
-                    compact_mode=True,
-                    super_compact_mode=use_super_compact,
-                    is_overflow=is_overflow,
-                    overflow_index=overflow_index,
-                    start_terminal=start_terminal
-                )
-                elements.append(diagram)
-            
-            current_index += rows_this_page
-        '''
+        
         use_super_compact = False
+
+        
          
         for j, row in enumerate(ordered_rows):
                 is_overflow = row.get('is_overflow', False)
@@ -2509,6 +2479,10 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                 
                 logger.debug(f"  Adding diagram {j+1}: marker={row.get('row_marker', 'A')}, "
                            f"start={start_terminal}, overflow={is_overflow}")
+                row_marker = row.get('row_marker')
+
+                if not row_marker:
+                    continue           
                 
                 diagram = TerminalDiagram(
                     row['groups'],
@@ -2519,7 +2493,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     cable_core_numbers=row.get('cable_core_numbers'),
                     desc_colors=row.get('desc_colors'),
                     width=diagram_width,
-                    row_marker=row.get('row_marker', 'A'),
+                    row_marker=row_marker,
                     table_shift_right=10*mm,
                     compact_mode=False,
                     super_compact_mode=use_super_compact,

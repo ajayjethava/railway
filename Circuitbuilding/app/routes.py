@@ -839,14 +839,31 @@ def user_has_project_access(project_id):
 @bp.route("/admin/users")
 @login_required
 def admin_users():
+    '''
     if current_user.role_name != '4':
         flash("Access denied. Admin privileges required.", "danger")
         return redirect(url_for('main.index'))
+    '''
+    from sqlalchemy import cast, Integer
+    if current_user.role_name == '4':
+        users = User.query.all()
+        projects = Project.query.all()
+        roles = RoleMaster.query.filter_by(is_active=True).all()
+        designations = DesignationMaster.query.filter_by(is_active=True).all()
+    else:
+        users = User.query.filter(
+            cast(User.role, Integer) < int(current_user.role_name)
+        ).all()
 
-    users = User.query.all()
-    projects = Project.query.all()
-    roles = RoleMaster.query.filter_by(is_active=True).all()
-    designations = DesignationMaster.query.filter_by(is_active=True).all()
+
+        projects = Project.query.all()
+        
+        roles = RoleMaster.query.filter(
+            RoleMaster.is_active == True,
+            cast(RoleMaster.role_name, Integer) < int(current_user.role_name)
+        ).all()
+        designations = DesignationMaster.query.filter_by(is_active=True).all()
+        
 
     # DEBUG: Log to console (check server logs)
     print(f"DEBUG: Fetched {len(designations)} active designations: {[d.designation_name.strip() for d in designations]}")
@@ -865,10 +882,11 @@ def admin_users():
 @login_required
 def admin_add_user():
     """Add new user"""
+    '''
     if current_user.role_name != '4':
         flash("Access denied.", "danger")
         return redirect(url_for('main.index'))
-    
+    '''
     try:
         username = request.form.get('username')
         mobile_number = request.form.get('mobile_number') or None
@@ -941,10 +959,11 @@ def admin_add_user():
 @login_required
 def admin_edit_user(user_id):
     """Edit existing user"""
+    '''
     if current_user.role_name != '4':
         flash("Access denied.", "danger")
         return redirect(url_for('main.index'))
-    
+    '''
     user = User.query.get(user_id)
     if not user:
         flash("User not found", "danger")
@@ -1032,10 +1051,11 @@ def admin_edit_user(user_id):
 @login_required
 def admin_delete_user(user_id):
     """Delete user"""
+    '''
     if current_user.role_name != '4':
         flash("Access denied.", "danger")
         return redirect(url_for('main.index'))
-    
+    '''
     user = User.query.get(user_id)
     if not user:
         flash("User not found", "danger")
@@ -1079,6 +1099,35 @@ def admin_delete_user(user_id):
     
     return redirect(url_for('main.admin_users'))
 
+@bp.route('/change-password', methods=['GET', 'POST'])
+def change_password():
+
+    if request.method == 'POST':
+
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Check current password
+        if not check_password_hash(current_user.password_hash, current_password):
+            flash('Current password is incorrect.', 'danger')
+            return redirect(url_for('main.change_password'))
+
+        # Check confirm password
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'danger')
+            return redirect(url_for('main.approval_tracking'))
+
+        # Update password
+        current_user.password_hash = generate_password_hash(new_password)
+
+        db.session.commit()
+
+        flash('Password changed successfully.', 'success')
+
+        return redirect(url_for('main.index'))
+
+    return render_template('change_password.html')
 # ==================== EXISTING ROUTES (UPDATED WITH @login_required) ====================
 
 @bp.route("/a", methods=["GET"])
@@ -17853,14 +17902,16 @@ def ctr_drawing():
         
         if assigned_project_ids:
             base_query = CTRUpload.query.filter(
-                or_(
-                    CTRUpload.station_id.in_(assigned_project_ids),
-                    CTRUpload.station_name.in_(assigned_station_names)
+                and_(
+                    CTRUpload.is_deleted == 0,
+                    or_(
+                        CTRUpload.station_id.in_(assigned_project_ids),
+                        CTRUpload.station_name.in_(assigned_station_names)
+                    )
                 )
             )
         else:
-            base_query = CTRUpload.query.filter(False)
-    
+            base_query = CTRUpload.query.filter(False)    
     assigned_projects_list = [{'id': row[0], 'name': row[1]} for row in assigned_projects_query if row[1]]
     assigned_stations = sorted([p['name'] for p in assigned_projects_list])
     
@@ -20145,49 +20196,55 @@ def delete_ctr_upload(upload_id):
         return redirect(url_for('main.ctr_drawing'))
     
     try:
-        # Delete associated records
-        CTRSummary.query.filter_by(ctr_upload_id=upload_id).delete()
-        CTRDiagram.query.filter_by(ctr_upload_id=upload_id).delete()
-        CTRRowDetail.query.filter_by(ctr_upload_id=upload_id).delete()
-        CTRApproval.query.filter_by(ctr_upload_id=upload_id).delete()
-        CTRApprovalHistory.query.filter_by(ctr_upload_id=upload_id).delete()
-        
-        # Delete PDF file if exists
-        if ctr_upload.generated_pdf:
-            #pdf_folder = current_app.config.get('CTR_PDF_FOLDER', 'static/ctr_pdfs')
-            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-            pdf_folder=os.path.join(BASE_DIR, 'static', 'ctr_pdfs')
-            pdf_path = os.path.join(pdf_folder, ctr_upload.generated_pdf)
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
-        
-        # Delete Excel file if exists
-        upload_folder = current_app.config.get('CTR_UPLOAD_FOLDER', 'uploads_ctr')
-        excel_path = os.path.join(upload_folder, ctr_upload.stored_filename)
-        if os.path.exists(excel_path):
-            os.remove(excel_path)
-        
-        # Check if there are other versions for this station
-        if (ctr_upload.station_id or ctr_upload.station_name) and ctr_upload.is_latest_version:
-            # Find the next latest version (by any user)
-            other_versions = CTRUpload.query.filter(
-                or_(
-                    CTRUpload.station_id == ctr_upload.station_id,
-                    CTRUpload.station_name == ctr_upload.station_name
-                ),
-                CTRUpload.user_id == ctr_upload.user_id,
-                CTRUpload.id != upload_id
-            ).order_by(CTRUpload.version.desc()).all()
+
+        if current_user.role_name != "4":
+            ctr_upload.is_deleted = 1
+            db.session.commit()
+            flash(f"CTR upload '{ctr_upload.filename}' has been deleted successfully.", "success")
+        else :
+            # Delete associated records
+            CTRSummary.query.filter_by(ctr_upload_id=upload_id).delete()
+            CTRDiagram.query.filter_by(ctr_upload_id=upload_id).delete()
+            CTRRowDetail.query.filter_by(ctr_upload_id=upload_id).delete()
+            CTRApproval.query.filter_by(ctr_upload_id=upload_id).delete()
+            CTRApprovalHistory.query.filter_by(ctr_upload_id=upload_id).delete()
             
-            if other_versions:
-                # Mark the next version as latest
-                other_versions[0].is_latest_version = True
-        
-        # Delete the upload record
-        db.session.delete(ctr_upload)
-        db.session.commit()
-        
-        flash(f"CTR upload '{ctr_upload.filename}' has been deleted successfully.", "success")
+            # Delete PDF file if exists
+            if ctr_upload.generated_pdf:
+                #pdf_folder = current_app.config.get('CTR_PDF_FOLDER', 'static/ctr_pdfs')
+                BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+                pdf_folder=os.path.join(BASE_DIR, 'static', 'ctr_pdfs')
+                pdf_path = os.path.join(pdf_folder, ctr_upload.generated_pdf)
+                if os.path.exists(pdf_path):
+                    os.remove(pdf_path)
+            
+            # Delete Excel file if exists
+            upload_folder = current_app.config.get('CTR_UPLOAD_FOLDER', 'uploads_ctr')
+            excel_path = os.path.join(upload_folder, ctr_upload.stored_filename)
+            if os.path.exists(excel_path):
+                os.remove(excel_path)
+            
+            # Check if there are other versions for this station
+            if (ctr_upload.station_id or ctr_upload.station_name) and ctr_upload.is_latest_version:
+                # Find the next latest version (by any user)
+                other_versions = CTRUpload.query.filter(
+                    or_(
+                        CTRUpload.station_id == ctr_upload.station_id,
+                        CTRUpload.station_name == ctr_upload.station_name
+                    ),
+                    CTRUpload.user_id == ctr_upload.user_id,
+                    CTRUpload.id != upload_id
+                ).order_by(CTRUpload.version.desc()).all()
+                
+                if other_versions:
+                    # Mark the next version as latest
+                    other_versions[0].is_latest_version = True
+            
+            # Delete the upload record
+            db.session.delete(ctr_upload)
+            db.session.commit()
+            
+            flash(f"CTR upload '{ctr_upload.filename}' has been deleted successfully.", "success")
         
     except Exception as e:
         db.session.rollback()

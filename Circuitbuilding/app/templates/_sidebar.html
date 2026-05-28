@@ -62,6 +62,14 @@
             </a>
             {% endif %}
 
+            {% if current_user.role_name in ['1', '2','3'] %}
+            <a class="sidebar-btn" href="{{ url_for('main.admin_users') }}">
+                <i class="bi bi-people"></i>
+                <span>Manage Users</span>
+            </a>
+
+            {% endif %}
+
             {% if current_user.role_name in ['1', '4'] %}
             <!-- New Drawing Button -->
             <a class="sidebar-btn" href="{{ url_for('main.new_drawing_selection') }}">
@@ -82,7 +90,7 @@
             </a>
             {% endif %}
 
-            {% if current_user.role_name in ['2', '3'] %}
+            {% if current_user.role_name in ['0','2', '3'] %}
             <!-- CTR Drawing Page Button -->
             <a class="sidebar-btn" href="{{ url_for('main.ctr_drawing') }}">
                 <i class="bi bi-file-earmark-excel"></i>
@@ -96,6 +104,9 @@
        
             <!-- Logout Button -->
             {% if current_user.is_authenticated %}
+            <a class="sidebar-btn" href="{{ url_for('main.change_password') }}">
+                Change Password
+            </a>
             <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Logout</span>
