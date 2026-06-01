@@ -41,6 +41,8 @@ class User(UserMixin, db.Model):
     role_id = db.Column(db.Integer, ForeignKey('role_master.id'), nullable=True)
     designation_id = db.Column(db.Integer, ForeignKey('designation_master.id'), nullable=True)
 
+    password = db.Column(db.String(255), nullable=True)
+
     role_rel = db.relationship('RoleMaster', backref='users', lazy='joined')
     designation_rel = db.relationship('DesignationMaster', backref='users', lazy='joined')
 

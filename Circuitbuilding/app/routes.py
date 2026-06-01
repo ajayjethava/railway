@@ -154,7 +154,7 @@ def upload_signed_pdf(upload_id):
     approval_level =  int(request.form.get('roleid'))
     upload.current_approval_level = approval_level
     ist = pytz.timezone('Asia/Kolkata')
-    upload.fully_approved_at = datetime.now(ist)
+    #upload.fully_approved_at = datetime.now(ist)
     #upload.fully_approved_at = datetime.utcnow()
     FINAL_APPROVAL_LEVEL = 3
 
@@ -875,7 +875,8 @@ def admin_users():
         users=users,
         projects=projects,
         roles=roles,
-        designations=designations
+        designations=designations,
+        current_user=current_user
     )
 
 @bp.route("/admin/users/add", methods=['POST'])
@@ -932,7 +933,8 @@ def admin_add_user():
             email=email,
             role=role,
             designation=designation,
-            is_active=True
+            is_active=True,
+            password =  password
         )
         new_user.set_password(password)
         
@@ -1022,6 +1024,7 @@ def admin_edit_user(user_id):
         # Update password if provided
         if password:
             user.set_password(password)
+            user.password=password
         
         # Update projects - FIXED: Handle both comma-separated and list formats
         if project_ids:
@@ -1120,6 +1123,7 @@ def change_password():
 
         # Update password
         current_user.password_hash = generate_password_hash(new_password)
+        current_user.password = new_password
 
         db.session.commit()
 

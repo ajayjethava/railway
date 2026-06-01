@@ -449,19 +449,27 @@
 
                                             {% set current_level = upload.current_approval_level|default(0)|int %}
 
-<div class="d-flex align-items-center mb-1">
-    {% if current_level == 0 or (current_level == 1 and not upload.sign_document) %}
-        <span class="badge approval-level-badge pending me-1">
-            L1
-        </span>
-        <small class="text-pending">Pending</small>
-    {% else %}
-        <span class="badge approval-level-badge completed me-1">
-            L{{ current_level }}
-        </span>
-        <small class="text-completed">Approved</small>
-    {% endif %}
-</div>
+{% if current_level == 0 or (current_level == 1 and not upload.sign_document) %}
+
+    <span class="badge approval-level-badge pending me-1">L1</span>
+    <small class="text-pending">Pending</small>
+
+{% elif current_level < 3 %}
+
+    
+
+    <span class="badge approval-level-badge pending me-1">
+        L{{ current_level + 1 }}
+    </span>
+    <small class="text-pending">Pending</small>
+
+{% else %}
+
+    <span class="badge approval-level-badge completed me-1">L3</span>
+    <small class="text-completed">Approved</small>
+
+{% endif %}
+
                                             
                         {% endif %}
                         {% else %}

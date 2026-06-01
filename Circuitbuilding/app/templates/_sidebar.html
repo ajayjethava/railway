@@ -86,10 +86,7 @@
                     <span>Manage Designations</span>
                 </a>
 
-                <a class="sidebar-btn" href="{{ url_for('main.view_list') }}">
-                    <i class="bi bi-card-list"></i>
-                    <span>View List</span>
-                </a>
+                
                 {% endif %}
 
                 {% if current_user.role_name in ['1','2','3'] %}
@@ -110,6 +107,10 @@
                 <a class="sidebar-btn" href="{{ url_for('main.new_drawing_selection') }}">
                     <i class="bi bi-file-earmark-plus"></i>
                     <span>New Drawing</span>
+                </a>
+                <a class="sidebar-btn" href="{{ url_for('main.view_list') }}">
+                    <i class="bi bi-card-list"></i>
+                    <span>View List</span>
                 </a>
             </div>
             {% endif %}
