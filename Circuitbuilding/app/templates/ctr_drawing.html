@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/ctr.css') }}">
     <script src="{{ url_for('static', filename='js/ctr.js') }}" defer></script>
 </head>
+
 <body class="bg-light">
     {% include '_sidebar.html' %}
 
@@ -17,31 +19,42 @@
     <div class="main-content">
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in" role="alert">
-                        <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center fade-in"
+            role="alert">
+            <i class="bi me-2 {% if category == 'success' %}bi-check-circle-fill text-success
                             {% elif category == 'danger' %}bi-exclamation-triangle-fill text-danger
                             {% else %}bi-info-circle-fill text-info{% endif %} fs-5"></i>
-                        <div class="flex-grow-1">
-                            <strong class="me-2">{% if category == 'success' %}Success!
-                                {% elif category == 'danger' %}Error!
-                                {% else %}Note:{% endif %}
-                            </strong> {{ message }}
-                        </div>
-                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+            <div class="flex-grow-1">
+                <strong class="me-2">{% if category == 'success' %}Success!
+                    {% elif category == 'danger' %}Error!
+                    {% else %}Note:{% endif %}
+                </strong> {{ message }}
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+            </div>
+            <div class="d-flex align-items-center">
 
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
         <!-- Ultra-Compact Steps Guide -->
         <div class="steps-container fade-in">
             <h5 class="mb-3"><i class="bi bi-list-ol me-2"></i> CTR Drawing Workflow</h5>
-            
+
             <div class="steps-row">
-                
-                
+
+
                 <div class="step-item-compact">
                     <div class="step-number-compact">1</div>
                     <div class="step-content-compact">
@@ -49,7 +62,7 @@
                         <p>Get sample or blank template</p>
                     </div>
                 </div>
-                
+
                 <div class="step-item-compact">
                     <div class="step-number-compact">2</div>
                     <div class="step-content-compact">
@@ -72,7 +85,7 @@
                         <p>Upload completed .xlsx file</p>
                     </div>
                 </div>
-                
+
                 <div class="step-item-compact">
                     <div class="step-number-compact">5</div>
                     <div class="step-content-compact">
@@ -102,22 +115,25 @@
                     <div class="card-body">
                         <div class="compact-card-content">
                             <div class="template-options-compact">
-                                <a href="{{ url_for('main.download_ctr_sample_template') }}" class="template-btn-compact">
+                                <a href="{{ url_for('main.download_ctr_sample_template') }}"
+                                    class="template-btn-compact">
                                     <i class="bi bi-file-earmark-text"></i>
                                     <span class="btn-text">Sample Data</span>
                                     <span class="btn-desc">With example data</span>
                                 </a>
-                                
-                                <a href="{{ url_for('main.download_ctr_blank_template') }}" class="template-btn-compact">
+
+                                <a href="{{ url_for('main.download_ctr_blank_template') }}"
+                                    class="template-btn-compact">
                                     <i class="bi bi-file-earmark"></i>
                                     <span class="btn-text">Blank Template</span>
                                     <span class="btn-desc">Only headers</span>
                                 </a>
                             </div>
-                            
+
                             <div class="alert alert-info info-alert-compact py-2">
                                 <i class="bi bi-info-circle me-2"></i>
-                                <small>Includes 3 sheets: <strong>Summary</strong>, <strong>Diagram</strong>, and <strong>RowDetail</strong></small>
+                                <small>Includes 3 sheets: <strong>Summary</strong>, <strong>Diagram</strong>, and
+                                    <strong>RowDetail</strong></small>
                             </div>
                         </div>
                     </div>
@@ -133,23 +149,25 @@
                     <div class="card-body">
                         <div class="compact-card-content">
                             <!-- Compact Upload Form -->
-                            <form id="uploadForm" method="POST" action="{{ url_for('main.upload_ctr_xlsx') }}" enctype="multipart/form-data" class="compact-form">
+                            <form id="uploadForm" method="POST" action="{{ url_for('main.upload_ctr_xlsx') }}"
+                                enctype="multipart/form-data" class="compact-form">
                                 <input type="hidden" name="local_time" id="local_time">
                                 <!-- Station Selection -->
                                 <div class="form-group-compact">
                                     <label for="stationSelect" class="form-label-compact">Select Station: *</label>
-                                    <select class="form-select form-select-compact" id="stationSelect" name="station_name" required>
+                                    <select class="form-select form-select-compact" id="stationSelect"
+                                        name="station_name" required>
                                         <option value="" selected disabled>-- Select station --</option>
                                         {% if assigned_stations %}
-                                            {% for station in assigned_stations %}
-                                                <option value="{{ station }}">{{ station }}</option>
-                                            {% endfor %}
+                                        {% for station in assigned_stations %}
+                                        <option value="{{ station }}">{{ station }}</option>
+                                        {% endfor %}
                                         {% else %}
-                                            <option value="" disabled>No stations assigned</option>
+                                        <option value="" disabled>No stations assigned</option>
                                         {% endif %}
                                     </select>
                                 </div>
-                                
+
                                 <!-- File Upload -->
                                 <div class="file-input-wrapper-compact">
                                     <div class="file-input-label-compact" id="fileDropArea">
@@ -165,9 +183,9 @@
                                     </div>
                                     <input type="file" id="fileInput" name="ctr_file" accept=".xlsx" required>
                                 </div>
-                                
+
                                 <div id="fileName" class="file-name-compact text-center" style="display: none;"></div>
-                                
+
                                 <!-- Progress Bar -->
                                 <div id="progressContainer" class="d-none">
                                     <div class="progress-compact">
@@ -175,18 +193,19 @@
                                     </div>
                                     <div id="progressText" class="text-center mt-1 small text-muted">Uploading...</div>
                                 </div>
-                                
+
                                 <!-- Upload Status -->
                                 <div id="uploadStatus" class="upload-status-compact d-none"></div>
-                                
+
                                 <!-- Submit Button -->
                                 <div class="mt-2 pt-2 border-top">
-                                    <button type="submit" id="uploadBtn" class="btn btn-primary btn-compact w-100" disabled>
+                                    <button type="submit" id="uploadBtn" class="btn btn-primary btn-compact w-100"
+                                        disabled>
                                         <i class="bi bi-upload me-2"></i> Upload XLSX File
                                     </button>
                                 </div>
                             </form>
-                            
+
                             <div class="alert alert-warning warning-alert-compact py-2">
                                 <i class="bi bi-exclamation-triangle me-2"></i>
                                 <small>Ensure file follows template format with all 3 sheets</small>
@@ -227,53 +246,60 @@
                                     <label for="searchQuery">Search:</label>
                                     <div class="search-box">
                                         <i class="bi bi-search"></i>
-                                        <input type="text" class="form-control" id="searchQuery" name="search" 
-                                               placeholder="Search filename or station..." value="{{ search_query }}">
+                                        <input type="text" class="form-control" id="searchQuery" name="search"
+                                            placeholder="Search filename or station..." value="{{ search_query }}">
                                     </div>
                                 </div>
-                                
+
                                 <!-- Station Filter -->
                                 <div class="filter-group">
                                     <label for="stationFilter">Station:</label>
                                     <select id="stationFilter" name="station" class="form-select form-select-compact">
                                         <option value="">All Stations</option>
                                         {% for station in station_names %}
-                                        <option value="{{ station }}" {% if station_filter == station %}selected{% endif %}>{{ station }}</option>
+                                        <option value="{{ station }}" {% if station_filter==station %}selected{% endif
+                                            %}>{{ station }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
-                                
+
                                 <!-- Status Filter -->
                                 <div class="filter-group">
                                     <label for="statusFilter">Processing Status:</label>
                                     <select id="statusFilter" name="status" class="form-select form-select-compact">
                                         <option value="">All Statuses</option>
                                         {% for status in statuses %}
-                                        <option value="{{ status.status_code }}" {% if status_filter == status.status_code %}selected{% endif %}>{{ status.status_name|title }}</option>
+                                        <option value="{{ status.status_code }}" {% if status_filter==status.status_code
+                                            %}selected{% endif %}>{{ status.status_name|title }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
-                                
+
                                 <!-- Approval Status Filter -->
                                 <div class="filter-group">
                                     <label for="approvalFilter">Approval Status:</label>
                                     <select id="approvalFilter" name="approval" class="form-select form-select-compact">
                                         <option value="">All Approval Statuses</option>
-                                        <option value="fully_approved" {% if approval_filter == 'fully_approved' %}selected{% endif %}>Fully Approved</option>
-                                        <option value="pending" {% if approval_filter == 'pending' %}selected{% endif %}>Pending Approval</option>
-                                        <option value="rejected" {% if approval_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                                        <option value="fully_approved" {% if approval_filter=='fully_approved'
+                                            %}selected{% endif %}>Fully Approved</option>
+                                        <option value="pending" {% if approval_filter=='pending' %}selected{% endif %}>
+                                            Pending Approval</option>
+                                        <option value="rejected" {% if approval_filter=='rejected' %}selected{% endif
+                                            %}>Rejected</option>
                                     </select>
                                 </div>
-                                
+
                                 <!-- Version Filter -->
                                 <div class="filter-group">
                                     <label for="versionFilter">Version:</label>
                                     <select id="versionFilter" name="version" class="form-select form-select-compact">
-                                        <option value="latest" {% if version_filter == 'latest' %}selected{% endif %}>Latest Only</option>
-                                        <option value="all" {% if version_filter == 'all' %}selected{% endif %}>All Versions</option>
+                                        <option value="latest" {% if version_filter=='latest' %}selected{% endif %}>
+                                            Latest Only</option>
+                                        <option value="all" {% if version_filter=='all' %}selected{% endif %}>All
+                                            Versions</option>
                                     </select>
                                 </div>
-                                
+
                                 <!-- Filter Buttons -->
                                 <div class="filter-group">
                                     <label>&nbsp;</label>
@@ -281,14 +307,15 @@
                                         <button type="submit" class="btn btn-primary btn-compact">
                                             <i class="bi bi-filter me-1"></i> Apply
                                         </button>
-                                        <a href="{{ url_for('main.ctr_drawing') }}" class="btn btn-outline-secondary btn-compact">
+                                        <a href="{{ url_for('main.ctr_drawing') }}"
+                                            class="btn btn-outline-secondary btn-compact">
                                             <i class="bi bi-x-circle me-1"></i> Clear
                                         </a>
                                     </div>
                                 </div>
                             </form>
                         </div>
-                        
+
                         <div class="table-responsive">
                             <table class="table table-hover mb-0 table-smaller">
                                 <thead class="table-light">
@@ -297,9 +324,10 @@
                                         <th>Station name</th>
                                         <th>Version</th>
                                         <th>Upload Date</th>
+                                        <th>Approved Date</th>
                                         <th>Upload Status</th>
                                         <th>Approval Status</th>
-                                        <th>Records</th>
+                                        <!--<th>Records</th> !-->
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -307,13 +335,16 @@
                                     {% for upload in uploads %}
                                     {% set approval_summary = get_approval_summary(upload) %}
                                     {% set approval_info = get_approval_status_for_user(upload, user_role) %}
-                                    <tr id="upload-row-{{ upload.id }}" data-station="{{ upload.station_name }}" class="upload-row">
+                                    <tr id="upload-row-{{ upload.id }}" data-station="{{ upload.station_name }}"
+                                        class="upload-row">
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <i class="bi bi-file-earmark-excel text-success me-2"></i>
                                                 <div>
-                                                    <small class="d-block fw-medium">{{ upload.filename|truncate(20) }}</small>
-                                                    <small class="text-muted">{{ (upload.file_size / 1024)|round(1) }} KB</small>
+                                                    <small class="d-block fw-medium">{{ upload.filename|truncate(20)
+                                                        }}</small>
+                                                    <small class="text-muted">{{ (upload.file_size / 1024)|round(1) }}
+                                                        KB</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -331,406 +362,380 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                                {% if upload.pdf_generated_date %}
-                                                    {{ upload.pdf_generated_date.strftime('%d-%m-%Y %H:%M') }}
-                                                {% else %}
-                                                    no pdf date
-                                                {% endif %}
-                                                 <br>Approved Date <br>
-                                                {% if upload.fully_approved_at %}
-                                                    {{ upload.fully_approved_at.strftime('%d-%m-%Y %H:%M') }}
-                                                {% else %}
-                                                    no pdf date
-                                                {% endif %}
+                                            {% if upload.pdf_generated_date %}
+                                            {{ upload.pdf_generated_date.strftime('%d-%m-%Y %H:%M') }}
+                                            {% else %}
+                                            no pdf date
+                                            {% endif %}
+
 
                                         </td>
-                                        <td>
-                                            {% if upload.status_id %}
-                                                {% set status_obj = StatusMaster.query.get(upload.status_id) %}
-                                                {% if status_obj %}
-                                                    <!-- Display based on status code -->
-                                                    {% if status_obj.status_code == 'uploaded' %}
-                                                        <span class="badge bg-secondary"><i class="bi bi-upload me-1"></i> Uploaded</span>
-                                                    {% elif status_obj.status_code == 'processed' %}
-                                                        <span class="badge bg-info"><i class="bi bi-gear me-1"></i> Processed</span>
-                                                    {% elif status_obj.status_code == 'generating_pdf' %}
-                                                        <span class="badge bg-warning"><i class="bi bi-arrow-clockwise spinner me-1"></i> Generating</span>
-                                                    {% elif status_obj.status_code == 'completed' %}
-                                                        <span class="badge bg-primary"><i class="bi bi-check-circle me-1"></i> Completed</span>
-                                                    {% elif status_obj.status_code == 'pending_approval' %}
-                                                        <span class="badge bg-warning"><i class="bi bi-clock me-1"></i> Pending Approval</span>
-                                                    {% elif status_obj.status_code == 'approved_level_2' %}
-                                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Approved L2</span>
-                                                    {% elif status_obj.status_code == 'approved_level_3' %}
-                                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Approved L3</span>
-                                                    {% elif status_obj.status_code == 'fully_approved' %}
-                                                        <span class="badge bg-success"><i class="bi bi-check-all me-1"></i> Fully Approved</span>
-                                                    {% elif status_obj.status_code == 'rejected_level_2' %}
-                                                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Rejected L2</span>
-                                                    {% elif status_obj.status_code == 'rejected_level_3' %}
-                                                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Rejected L3</span>
-                                                    {% elif status_obj.status_code == 'changes_requested_level_2' %}
-                                                        <span class="badge bg-warning"><i class="bi bi-pencil-square me-1"></i> Changes L2</span>
-                                                    {% elif status_obj.status_code == 'changes_requested_level_3' %}
-                                                        <span class="badge bg-warning"><i class="bi bi-pencil-square me-1"></i> Changes L3</span>
-                                                    {% elif status_obj.status_code == 'pdf_generation_failed' %}
-                                                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> PDF Failed</span>
-                                                    {% elif status_obj.status_code == 'error' %}
-                                                        <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i> Error</span>
-                                                    {% else %}
-                                                        <span class="badge bg-secondary">{{ status_obj.status_name }}</span>
-                                                    {% endif %}
-                                                {% else %}
-                                                    <span class="badge bg-secondary">Unknown</span>
-                                                {% endif %}
+                                        <td>{% if upload.fully_approved_at %}
+                                            {{ upload.fully_approved_at.strftime('%d-%m-%Y %H:%M') }}
                                             {% else %}
-                                                <span class="badge bg-secondary">Unknown</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if upload.status_id %}
-                                                {% set status_obj = StatusMaster.query.get(upload.status_id) %}
-                                                {% if status_obj %}
-                                                    {% if status_obj.status_code == 'pdf_generation_failed' or status_obj.status_code == 'error' %}
-                                                        <div class="text-center">
-                                                            <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
-                                                            <small class="d-block text-muted">Xlsx not in Proper Format</small>
-                                                        </div>
-                                                    {% elif upload.is_fully_approved %}
-                                                        <span class="badge badge-approved">
-                                                            <i class="bi bi-check-circle me-1"></i> Approved
-                                                        </span>
-                                                    {% else %}
-                                                        <div class="approval-progress">
-                                                            {% set max_level = 3 %}
-                                                            {% set current_level = upload.current_approval_level|default(1)|int %}
-
-
-                                                            {% for level in range(1, max_level + 1) %}
-
-                                                                {% if level < upload.current_approval_level %}
-
-                                                                    {% set status = 'approved' %}
-
-                                                                {% elif level == upload.current_approval_level %}
-
-                                                                    {% if level == 1 and not upload.sign_document %}
-                                                                        {% set status = 'pending' %}
-                                                                    {% else %}
-                                                                        {% set status = 'approved' %}
-                                                                    {% endif %}
-
-                                                                {% else %}
-
-                                                                    {% set status = 'pending' %}
-
-                                                                {% endif %}
-
-                                                                <div class="d-flex align-items-center mb-1">
-
-                                                                    
-
-                                                                    <span class="badge approval-level-badge {% if status == 'approved' %}completed{% else %}pending{% endif %} me-1">
-                                                                        L{{ level }}
-                                                                    </span>
-                                                                    <small class="{% if status == 'approved' %}text-completed{% else %}text-pending{% endif %}">
-                                                                        {{ status|replace('_', ' ')|title }}
-                                                                    </small>
-
-                                                                   
-
-                                                                </div>
-
-                                                            {% endfor %}
-
-                                                        </div>
-                                                    {% endif %}
-                                                {% else %}
-                                                    <span class="badge bg-secondary">Unknown</span>
-                                                {% endif %}
+                                            {% set status_obj = StatusMaster.query.get(upload.status_id) %}
+                                            {% if status_obj %}
+                                            <!-- Display based on status code -->
+                                            {% if status_obj.status_code == 'uploaded' %}
+                                            <span class="badge bg-secondary"><i class="bi bi-upload me-1"></i>
+                                                Uploaded</span>
+                                            {% elif status_obj.status_code == 'processed' %}
+                                            <span class="badge bg-info"><i class="bi bi-gear me-1"></i> Processed</span>
+                                            {% elif status_obj.status_code == 'generating_pdf' %}
+                                            <span class="badge bg-warning"><i
+                                                    class="bi bi-arrow-clockwise spinner me-1"></i> Generating</span>
+                                            {% elif status_obj.status_code == 'completed' %}
+                                            <span class="badge bg-primary"><i class="bi bi-check-circle me-1"></i>
+                                                Completed</span>
+                                            {% elif status_obj.status_code == 'pending_approval' %}
+                                            <span class="badge bg-warning"><i class="bi bi-clock me-1"></i> Pending
+                                                Approval</span>
+                                            {% elif status_obj.status_code == 'approved_level_2' %}
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>
+                                                Approved L2</span>
+                                            {% elif status_obj.status_code == 'approved_level_3' %}
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>
+                                                Approved L3</span>
+                                            {% elif status_obj.status_code == 'fully_approved' %}
+                                            <span class="badge bg-success"><i class="bi bi-check-all me-1"></i> Fully
+                                                Approved</span>
+                                            {% elif status_obj.status_code == 'rejected_level_2' %}
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Rejected
+                                                L2</span>
+                                            {% elif status_obj.status_code == 'rejected_level_3' %}
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> Rejected
+                                                L3</span>
+                                            {% elif status_obj.status_code == 'changes_requested_level_2' %}
+                                            <span class="badge bg-warning"><i class="bi bi-pencil-square me-1"></i>
+                                                Changes L2</span>
+                                            {% elif status_obj.status_code == 'changes_requested_level_3' %}
+                                            <span class="badge bg-warning"><i class="bi bi-pencil-square me-1"></i>
+                                                Changes L3</span>
+                                            {% elif status_obj.status_code == 'pdf_generation_failed' %}
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> PDF
+                                                Failed</span>
+                                            {% elif status_obj.status_code == 'error' %}
+                                            <span class="badge bg-danger"><i
+                                                    class="bi bi-exclamation-triangle me-1"></i> Error</span>
                                             {% else %}
-                                                <span class="badge bg-secondary">Unknown</span>
+                                            <span class="badge bg-secondary">{{ status_obj.status_name }}</span>
+                                            {% endif %}
+                                            {% else %}
+                                            <span class="badge bg-secondary">Unknown</span>
+                                            {% endif %}
+                                            {% else %}
+                                            <span class="badge bg-secondary">Unknown</span>
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% set summary_count = upload.summary_list|length %}
-                                            {% set diagram_count = upload.diagram_list|length %}
-                                            {% set rowdetail_count = upload.rowdetail_list|length %}
-                                            <div>
-                                                <small class="d-block">
-                                                    <span class="badge bg-primary me-1">S:{{ summary_count }}</span>
-                                                    <span class="badge bg-success me-1">D:{{ diagram_count }}</span>
-                                                    <span class="badge bg-warning">R:{{ rowdetail_count }}</span>
-                                                </small>
+                                            {% if upload.status_id %}
+                                            {% set status_obj = StatusMaster.query.get(upload.status_id) %}
+                                            {% if status_obj %}
+                                            {% if status_obj.status_code == 'pdf_generation_failed' or
+                                            status_obj.status_code == 'error' %}
+                                            <div class="text-center">
+                                                <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+                                                <small class="d-block text-muted">Xlsx not in Proper Format</small>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <div class="d-flex flex-wrap gap-1">
-                                                {% if upload.generated_pdf and upload.status_id %}
-                                                    {% set status_obj = StatusMaster.query.get(upload.status_id) %}
-                                                    {% if status_obj and status_obj.status_code == 'completed' %}
-                                                        {% set can_view = true %}
-                                                        {% if user_role == 0 and not upload.is_fully_approved %}
-                                                            {% set can_view = false %}
-                                                        {% endif %}
-                                                        
-                                                        {% if can_view %}
-                                                                                                                        
-                                                            {% if upload.sign_document %}
+                                            {% elif upload.is_fully_approved %}
+                                            <span class="badge badge-approved">
+                                                <i class="bi bi-check-circle me-1"></i> Approved
+                                            </span>
+                                            {% else %}
 
-                                                                <!-- SIGNED PDF -->
-                                                                <a href="{{ url_for('main.view_signed_pdf1', upload_id=upload.id, level=1) }}"
-                                                                class="btn btn-sm btn-success"
-                                                                target="_blank"
-                                                                title="View Signed PDF">
-                                                                    <i class="bi bi-file-pdf"></i>
-                                                                </a>
+                                            {% set current_level = upload.current_approval_level|default(0)|int %}
 
-                                                                <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=1) }}"
-                                                                class="btn btn-sm btn-outline-success"
-                                                                target="_blank"
-                                                                title="Download Signed PDF"
-                                                                download>
-                                                                    <i class="bi bi-download"></i>
-                                                                </a>
-
-                                                            {% else %}
-
-                                                                <!-- NORMAL PDF -->
-                                                                <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
-                                                                class="btn btn-sm btn-success"
-                                                                target="_blank"
-                                                                title="View PDF">
-                                                                    <i class="bi bi-file-pdf"></i>
-                                                                </a>
-
-                                                                <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
-                                                                class="btn btn-sm btn-outline-success"
-                                                                target="_blank"
-                                                                title="Download PDF"
-                                                                download>
-                                                                    <i class="bi bi-download"></i>
-                                                                </a>
-
-                                                            {% endif %}
-                                                            <a href="{{ url_for('main.download_file', filename=upload.stored_filename) }}"
-                                                                class="btn btn-sm btn-outline-success"
-                                                                title="Download Excel"
-                                                                download>
-                                                                    <i class="bi bi-file-earmark-excel"></i>
-                                                            </a>
-                                                        {% endif %}
-                                                    {% endif %}
-                                                {% endif %}
-                                                
-                                                <!-- Send for Approval Button (Role 1 only) -->
-                                                {% if user_role == 1 and upload.status_id %}
-                                                    {% set status_obj = StatusMaster.query.get(upload.status_id) %}
-                                                    {% if status_obj and status_obj.status_code == 'completed' and not upload.sent_for_approval and upload.user_id == current_user.id %}
-                                                        <form action="{{ url_for('main.send_for_approval', upload_id=upload.id) }}" method="POST" style="display: inline;">
-                                                            <button type="submit" class="btn btn-sm btn-warning" title="Send for Approval" 
-                                                                    onclick="return confirm('Are you sure you want to send this drawing for approval? Once sent, you cannot edit it.')">
-                                                                <i class="bi bi-send-check"></i>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                {% endif %}
-                                                
-                                                <!-- Admin Send for Approval Button -->
-                                                {% if user_role == 4 and not upload.sent_for_approval and upload.status_id %}
-                                                    {% set status_obj = StatusMaster.query.get(upload.status_id) %}
-                                                    {% if status_obj and status_obj.status_code == 'completed' %}
-                                                        <form action="{{ url_for('main.admin_send_for_approval', upload_id=upload.id) }}" method="POST" style="display: inline;">
-                                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Send for Approval (Admin)"
-                                                                    onclick="return confirm('Send this drawing for approval on behalf of creator?')">
-                                                                <i class="bi bi-send-check"></i>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                {% endif %}
-                                                
-                                                <!-- Multi-level Approval Actions -->
-                                                {% if user_role in [2, 3, 4] and upload.generated_pdf and upload.sent_for_approval and not upload.is_fully_approved %}
-                                                    {% set approval_info = get_approval_status_for_user(upload, user_role) %}
-                                                    {% if approval_info.can_approve %}
-                                                        <div class="btn-group">
-                                                            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" 
-                                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                                <i class="bi bi-check-lg"></i>
-                                                            </button>
-                                                            <ul class="dropdown-menu">
-                                                                {% if user_role == 4 %}
-                                                                    <!-- Admin has special override buttons -->
-                                                                    <!-- Admin direct approve (bypass all levels) -->
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-approve-all" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="4">
-                                                                            <i class="bi bi-check-circle me-2"></i> Approve All Levels
-                                                                        </button>
-                                                                    </li>
-                                                                    
-                                                                    <!-- Admin direct reject -->
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-reject-all" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="4">
-                                                                            <i class="bi bi-x-circle me-2"></i> Reject All Levels
-                                                                        </button>
-                                                                    </li>
-                                                                    
-                                                                    <!-- Admin request changes -->
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-changes-all" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="4">
-                                                                            <i class="bi bi-pencil-square me-2"></i> Request Changes
-                                                                        </button>
-                                                                    </li>
-                                                                    
-                                                                    <!-- Admin can also approve at specific levels -->
-                                                                    {% if upload.sent_for_approval %}
-                                                                    <li><hr class="dropdown-divider"></li>
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-approve-level" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="2">
-                                                                            <i class="bi bi-check-square me-2"></i> Approve Level 2
-                                                                        </button>
-                                                                    </li>
-                                                                    {% if upload.current_approval_level >= 2 %}
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-approve-level" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="3">
-                                                                            <i class="bi bi-check-square me-2"></i> Approve Level 3
-                                                                        </button>
-                                                                    </li>
-                                                                    {% endif %}
-                                                                    {% endif %}
-                                                                {% else %}
-                                                                    <!-- Normal approver buttons for roles 2 and 3 -->
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-approve-level" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="{{ user_role }}">
-                                                                            <i class="bi bi-check-circle me-2"></i> Approve
-                                                                        </button>
-                                                                    </li>
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-reject-level" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="{{ user_role }}">
-                                                                            <i class="bi bi-x-circle me-2"></i> Reject
-                                                                        </button>
-                                                                    </li>
-                                                                    <li>
-                                                                        <button class="dropdown-item btn-changes-level" type="button"
-                                                                                data-upload-id="{{ upload.id }}"
-                                                                                data-level="{{ user_role }}">
-                                                                            <i class="bi bi-pencil-square me-2"></i> Request Changes
-                                                                        </button>
-                                                                    </li>
-                                                                {% endif %}
-                                                            </ul>
-                                                        </div>
-                                                    {% endif %}
-                                                {% endif %}
-
-                                                
-                                                {% if user_role == 1 and upload.current_approval_level==0 %}
-
-                                                    <!-- Role 1: download original + upload signed1 -->
-                                                    
-                                                    <button class="btn btn-sm btn-success"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#signUploadModal"
-                                                            data-upload-id="{{ upload.id }}">
-                                                        <i class="bi bi-upload"></i>
-                                                    </button>
-
-                                                {% elif user_role == 2 and upload.current_approval_level == 1 and upload.sign_document %}
-
-                                                    <!-- Role 2: download signed1 + upload signed2 -->
-                                                    
-
-                                                    <button class="btn btn-sm btn-success"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#signUploadModal"
-                                                            data-upload-id="{{ upload.id }}">
-                                                        <i class="bi bi-upload"></i>
-                                                    </button>
-
-                                                {% elif  user_role == 3 and upload.current_approval_level == 2 %}
-
-                                                    <!-- Role 3: download signed2 + upload final -->
-                                                    
-
-                                                    <button class="btn btn-sm btn-success"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#signUploadModal"
-                                                            data-upload-id="{{ upload.id }}">
-                                                        <i class="bi bi-upload"></i>
-                                                    </button>
-
-                                                {% endif %}
-                                                
-                                                <!-- Delete Button -->
-                                                {% if current_user.id == upload.user_id or user_role == 4 %}
-                                                <button class="btn btn-sm btn-danger" title="Delete" 
-                                                        onclick="confirmDelete({{ upload.id }}, '{{ upload.filename }}')">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                                {% endif %}
-
-                                                
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="row mt-3 fade-in">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body py-4">
-                        <div class="empty-state">
-                            <i class="bi bi-inbox display-4 text-muted mb-3"></i>
-                            <h5 class="text-muted">No uploads found</h5>
-                            <p class="text-muted small">
-                                {% if station_filter or status_filter or approval_filter or search_query %}
-                                    Try adjusting your filters or search criteria
-                                {% else %}
-                                    Follow the steps above to create your first CTR drawing
-                                {% endif %}
-                            </p>
-                            <div class="mt-3">
-                                {% if station_filter or status_filter or approval_filter or search_query %}
-                                <a href="{{ url_for('main.ctr_drawing') }}" class="btn btn-outline-secondary btn-compact">
-                                    <i class="bi bi-x-circle me-2"></i> Clear Filters
-                                </a>
-                                {% endif %}
-                                <a href="#uploadForm" class="btn btn-primary btn-compact">
-                                    <i class="bi bi-cloud-arrow-up me-2"></i> Start Uploading
-                                </a>
+<div class="d-flex align-items-center mb-1">
+    {% if current_level == 0 or (current_level == 1 and not upload.sign_document) %}
+        <span class="badge approval-level-badge pending me-1">
+            L1
+        </span>
+        <small class="text-pending">Pending</small>
+    {% else %}
+        <span class="badge approval-level-badge completed me-1">
+            L{{ current_level }}
+        </span>
+        <small class="text-completed">Approved</small>
+    {% endif %}
+</div>
+                                            
+                        {% endif %}
+                        {% else %}
+                        <span class="badge bg-secondary">Unknown</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="badge bg-secondary">Unknown</span>
+                        {% endif %}
+                        </td>
+                        <!--
+                        <td>
+                            {% set summary_count = upload.summary_list|length %}
+                            {% set diagram_count = upload.diagram_list|length %}
+                            {% set rowdetail_count = upload.rowdetail_list|length %}
+                            <div>
+                                <small class="d-block">
+                                    <span class="badge bg-primary me-1">S:{{ summary_count }}</span>
+                                    <span class="badge bg-success me-1">D:{{ diagram_count }}</span>
+                                    <span class="badge bg-warning">R:{{ rowdetail_count }}</span>
+                                </small>
                             </div>
+                        </td>
+                        !-->
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                                {% if upload.generated_pdf and upload.status_id %}
+                                {% set status_obj = StatusMaster.query.get(upload.status_id) %}
+                                {% if status_obj and status_obj.status_code == 'completed' %}
+                                {% set can_view = true %}
+                                {% if user_role == 0 and not upload.is_fully_approved %}
+                                {% set can_view = false %}
+                                {% endif %}
+
+                                {% if can_view %}
+
+                                {% if upload.sign_document %}
+
+                                <!-- SIGNED PDF -->
+                                <a href="{{ url_for('main.view_signed_pdf1', upload_id=upload.id, level=1) }}"
+                                    class="btn btn-sm btn-success" target="_blank" title="View Signed PDF">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
+
+                                <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=1) }}"
+                                    class="btn btn-sm btn-outline-success" target="_blank" title="Download Signed PDF"
+                                    download>
+                                    <i class="bi bi-download"></i>
+                                </a>
+
+                                {% else %}
+
+                                <!-- NORMAL PDF -->
+                                <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
+                                    class="btn btn-sm btn-success" target="_blank" title="View PDF">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
+
+                                <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
+                                    class="btn btn-sm btn-outline-success" target="_blank" title="Download PDF"
+                                    download>
+                                    <i class="bi bi-download"></i>
+                                </a>
+
+                                {% endif %}
+                                <a href="{{ url_for('main.download_file', filename=upload.stored_filename) }}"
+                                    class="btn btn-sm btn-outline-success" title="Download Excel" download>
+                                    <i class="bi bi-file-earmark-excel"></i>
+                                </a>
+                                {% endif %}
+                                {% endif %}
+                                {% endif %}
+
+                                <!-- Send for Approval Button (Role 1 only) -->
+                                {% if user_role == 1 and upload.status_id %}
+                                {% set status_obj = StatusMaster.query.get(upload.status_id) %}
+                                {% if status_obj and status_obj.status_code == 'completed' and not
+                                upload.sent_for_approval and upload.user_id == current_user.id %}
+                                <form action="{{ url_for('main.send_for_approval', upload_id=upload.id) }}"
+                                    method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-warning" title="Send for Approval"
+                                        onclick="return confirm('Are you sure you want to send this drawing for approval? Once sent, you cannot edit it.')">
+                                        <i class="bi bi-send-check"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% endif %}
+
+                                <!-- Admin Send for Approval Button -->
+                                {% if user_role == 4 and not upload.sent_for_approval and upload.status_id %}
+                                {% set status_obj = StatusMaster.query.get(upload.status_id) %}
+                                {% if status_obj and status_obj.status_code == 'completed' %}
+                                <form action="{{ url_for('main.admin_send_for_approval', upload_id=upload.id) }}"
+                                    method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning"
+                                        title="Send for Approval (Admin)"
+                                        onclick="return confirm('Send this drawing for approval on behalf of creator?')">
+                                        <i class="bi bi-send-check"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% endif %}
+
+                                <!-- Multi-level Approval Actions -->
+                                {% if user_role in [2, 3, 4] and upload.generated_pdf and upload.sent_for_approval and
+                                not upload.is_fully_approved %}
+                                {% set approval_info = get_approval_status_for_user(upload, user_role) %}
+                                {% if approval_info.can_approve %}
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% if user_role == 4 %}
+                                        <!-- Admin has special override buttons -->
+                                        <!-- Admin direct approve (bypass all levels) -->
+                                        <li>
+                                            <button class="dropdown-item btn-approve-all" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="4">
+                                                <i class="bi bi-check-circle me-2"></i> Approve All Levels
+                                            </button>
+                                        </li>
+
+                                        <!-- Admin direct reject -->
+                                        <li>
+                                            <button class="dropdown-item btn-reject-all" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="4">
+                                                <i class="bi bi-x-circle me-2"></i> Reject All Levels
+                                            </button>
+                                        </li>
+
+                                        <!-- Admin request changes -->
+                                        <li>
+                                            <button class="dropdown-item btn-changes-all" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="4">
+                                                <i class="bi bi-pencil-square me-2"></i> Request Changes
+                                            </button>
+                                        </li>
+
+                                        <!-- Admin can also approve at specific levels -->
+                                        {% if upload.sent_for_approval %}
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item btn-approve-level" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="2">
+                                                <i class="bi bi-check-square me-2"></i> Approve Level 2
+                                            </button>
+                                        </li>
+                                        {% if upload.current_approval_level >= 2 %}
+                                        <li>
+                                            <button class="dropdown-item btn-approve-level" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="3">
+                                                <i class="bi bi-check-square me-2"></i> Approve Level 3
+                                            </button>
+                                        </li>
+                                        {% endif %}
+                                        {% endif %}
+                                        {% else %}
+                                        <!-- Normal approver buttons for roles 2 and 3 -->
+                                        <li>
+                                            <button class="dropdown-item btn-approve-level" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="{{ user_role }}">
+                                                <i class="bi bi-check-circle me-2"></i> Approve
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item btn-reject-level" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="{{ user_role }}">
+                                                <i class="bi bi-x-circle me-2"></i> Reject
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item btn-changes-level" type="button"
+                                                data-upload-id="{{ upload.id }}" data-level="{{ user_role }}">
+                                                <i class="bi bi-pencil-square me-2"></i> Request Changes
+                                            </button>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                {% endif %}
+
+
+                                {% if user_role == 1 and upload.current_approval_level==0 %}
+
+                                <!-- Role 1: download original + upload signed1 -->
+
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                    data-bs-target="#signUploadModal" data-upload-id="{{ upload.id }}">
+                                    <i class="bi bi-upload"></i>
+                                </button>
+
+                                {% elif user_role == 2 and upload.current_approval_level == 1 and upload.sign_document
+                                %}
+
+                                <!-- Role 2: download signed1 + upload signed2 -->
+
+
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                    data-bs-target="#signUploadModal" data-upload-id="{{ upload.id }}">
+                                    <i class="bi bi-upload"></i>
+                                </button>
+
+                                {% elif user_role == 3 and upload.current_approval_level == 2 %}
+
+                                <!-- Role 3: download signed2 + upload final -->
+
+
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                    data-bs-target="#signUploadModal" data-upload-id="{{ upload.id }}">
+                                    <i class="bi bi-upload"></i>
+                                </button>
+
+                                {% endif %}
+
+                                <!-- Delete Button -->
+                                {% if current_user.id == upload.user_id or user_role == 4 %}
+                                <button class="btn btn-sm btn-danger" title="Delete"
+                                    onclick="confirmDelete({{ upload.id }}, '{{ upload.filename }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+
+
+                            </div>
+                        </td>
+                        </tr>
+
+                        {% endfor %}
+                        </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mt-3 fade-in">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body py-4">
+                    <div class="empty-state">
+                        <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                        <h5 class="text-muted">No uploads found</h5>
+                        <p class="text-muted small">
+                            {% if station_filter or status_filter or approval_filter or search_query %}
+                            Try adjusting your filters or search criteria
+                            {% else %}
+                            Follow the steps above to create your first CTR drawing
+                            {% endif %}
+                        </p>
+                        <div class="mt-3">
+                            {% if station_filter or status_filter or approval_filter or search_query %}
+                            <a href="{{ url_for('main.ctr_drawing') }}" class="btn btn-outline-secondary btn-compact">
+                                <i class="bi bi-x-circle me-2"></i> Clear Filters
+                            </a>
+                            {% endif %}
+                            <a href="#uploadForm" class="btn btn-primary btn-compact">
+                                <i class="bi bi-cloud-arrow-up me-2"></i> Start Uploading
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        {% endif %}
+    </div>
+    {% endif %}
     </div>
 
     <!-- ============= DYNAMIC MODALS (STACKABLE) ============= -->
-    
+
     <!-- Single Approve Modal -->
     <div class="modal fade approval-modal stackable-modal" id="approveModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
@@ -795,7 +800,8 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div class="modal fade delete-modal stackable-modal" id="deleteConfirmModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal fade delete-modal stackable-modal" id="deleteConfirmModal" tabindex="-1"
+        data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -820,7 +826,8 @@
     </div>
 
     <!-- Version History Modal -->
-    <div class="modal fade stackable-modal" id="versionHistoryModal" tabindex="-1" aria-labelledby="versionHistoryModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal fade stackable-modal" id="versionHistoryModal" tabindex="-1"
+        aria-labelledby="versionHistoryModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
@@ -828,7 +835,8 @@
                         <i class="bi bi-layers me-2"></i>
                         All Previous Versions
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
                     <!-- Loading Spinner -->
@@ -838,7 +846,7 @@
                         </div>
                         <p class="mt-2 text-muted">Loading version history...</p>
                     </div>
-                    
+
                     <!-- Content Area -->
                     <div id="versionsContent" class="d-none">
                         <!-- Info Alert -->
@@ -846,13 +854,13 @@
                             <i class="bi bi-info-circle me-2"></i>
                             Click on the PDF buttons to view or download previous versions.
                         </div>
-                        
+
                         <!-- Versions List Container -->
                         <div class="version-list-modal p-3" id="versionsList">
                             <!-- Version items will be inserted here by JavaScript -->
                         </div>
                     </div>
-                    
+
                     <!-- Error Message -->
                     <div id="versionsError" class="text-center py-5 d-none">
                         <i class="bi bi-exclamation-triangle text-danger display-4"></i>
@@ -869,7 +877,8 @@
     </div>
 
     <!-- Approval History Modal -->
-    <div class="modal fade stackable-modal" id="approvalHistoryModal" tabindex="-1" aria-labelledby="approvalHistoryModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal fade stackable-modal" id="approvalHistoryModal" tabindex="-1"
+        aria-labelledby="approvalHistoryModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
@@ -877,7 +886,8 @@
                         <i class="bi bi-clock-history me-2"></i>
                         Approval History
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
                     <!-- Loading Spinner -->
@@ -887,7 +897,7 @@
                         </div>
                         <p class="mt-2 text-muted">Loading approval history...</p>
                     </div>
-                    
+
                     <!-- Content Area -->
                     <div id="approvalHistoryContent" class="d-none">
                         <!-- Header Info -->
@@ -902,13 +912,14 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- History List Container -->
-                        <div class="approval-history-list p-3" id="approvalHistoryList" style="max-height: 400px; overflow-y: auto;">
+                        <div class="approval-history-list p-3" id="approvalHistoryList"
+                            style="max-height: 400px; overflow-y: auto;">
                             <!-- History items will be inserted here by JavaScript -->
                         </div>
                     </div>
-                    
+
                     <!-- Error Message -->
                     <div id="approvalHistoryError" class="text-center py-5 d-none">
                         <i class="bi bi-exclamation-triangle text-danger display-4"></i>
@@ -925,7 +936,8 @@
     </div>
 
     <!-- Station All Versions History Modal -->
-    <div class="modal fade stackable-modal" id="stationVersionsHistoryModal" tabindex="-1" aria-labelledby="stationVersionsHistoryModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal fade stackable-modal" id="stationVersionsHistoryModal" tabindex="-1"
+        aria-labelledby="stationVersionsHistoryModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
@@ -933,7 +945,8 @@
                         <i class="bi bi-layers me-2"></i>
                         Station Version History
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
                     <!-- Loading Spinner -->
@@ -943,7 +956,7 @@
                         </div>
                         <p class="mt-2 text-muted">Loading station history...</p>
                     </div>
-                    
+
                     <!-- Content Area -->
                     <div id="stationVersionsHistoryContent" class="d-none">
                         <!-- Header Info -->
@@ -960,13 +973,14 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Versions Container -->
-                        <div class="station-versions-container p-3" id="stationVersionsContainer" style="max-height: 500px; overflow-y: auto;">
+                        <div class="station-versions-container p-3" id="stationVersionsContainer"
+                            style="max-height: 500px; overflow-y: auto;">
                             <!-- Version cards will be inserted here by JavaScript -->
                         </div>
                     </div>
-                    
+
                     <!-- Error Message -->
                     <div id="stationVersionsHistoryError" class="text-center py-5 d-none">
                         <i class="bi bi-exclamation-triangle text-danger display-4"></i>
@@ -983,44 +997,37 @@
     </div>
 
     <div class="modal fade" id="signUploadModal">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
+        <div class="modal-dialog">
+            <div class="modal-content">
 
-                                                <form id="signUploadForm" method="POST"
-                                                    enctype="multipart/form-data"
-                                                    action="">
+                <form id="signUploadForm" method="POST" enctype="multipart/form-data" action="">
 
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Upload Signed PDF</h5>
-                                                    </div>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Signed PDF</h5>
+                    </div>
 
-                                                    <div class="modal-body">
+                    <div class="modal-body">
 
-                                                        <input type="file"
-                                                            name="signed_pdf"
-                                                            accept=".pdf"
-                                                            required
-                                                            class="form-control">
+                        <input type="file" name="signed_pdf" accept=".pdf" required class="form-control">
 
-                                                        <input type="hidden" name="roleid" value="{{ user_role }}">
-                                                    </div>
+                        <input type="hidden" name="roleid" value="{{ user_role }}">
+                    </div>
 
-                                                    <div class="modal-footer">
-                                                        <button type="submit"
-                                                                class="btn btn-success">
-                                                            Upload
-                                                        </button>
-                                                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">
+                            Upload
+                        </button>
+                    </div>
 
-                                                </form>
+                </form>
 
-                                            </div>
-                                        </div>
-    </div>  
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Global configuration for routes -->
     <script>
         // Global configuration object for routes
@@ -1039,39 +1046,39 @@
             },
             current_user: {
                 id: {{ current_user.id }},
-                role: {{ current_user.role_name if current_user.role_name else '0' }}
+        role: { { current_user.role_name if current_user.role_name else '0' } }
             }
         };
 
 
-        
+
     </script>
-    
-   <script>
-     document.getElementById("local_time").value = new Date().toISOString();
-document.getElementById("uploadForm").addEventListener("submit", function () {
-    document.getElementById("local_time").value = new Date().toISOString();
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
 
-    const modal = document.getElementById('signUploadModal');
+    <script>
+        document.getElementById("local_time").value = new Date().toISOString();
+        document.getElementById("uploadForm").addEventListener("submit", function () {
+            document.getElementById("local_time").value = new Date().toISOString();
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
 
-    modal.addEventListener('show.bs.modal', function (event) {
+            const modal = document.getElementById('signUploadModal');
 
-        const button = event.relatedTarget;
+            modal.addEventListener('show.bs.modal', function (event) {
 
-        const uploadId = button.getAttribute('data-upload-id');
+                const button = event.relatedTarget;
 
-        const form = document.getElementById('signUploadForm');
+                const uploadId = button.getAttribute('data-upload-id');
 
-        form.action = "/upload-signed-pdf/" + uploadId;
+                const form = document.getElementById('signUploadForm');
 
-    });
+                form.action = "/upload-signed-pdf/" + uploadId;
 
-});
-</script>
+            });
+
+        });
+    </script>
 </body>
 
 </html>

@@ -1639,14 +1639,14 @@ def load_footer_data_from_excel(excel_path):
             'designation2': ['desg2', 'designation2', 'designation 2', 'adste'],
             'designation3': ['desg3', 'designation3', 'designation 3', 'sse'],
             'station_name': ['station_name', 'Station', 'station name', 'station'],
-            'junction_name': ['name', 'Project', 'junction_name', 'junction name', 'junction', 'track'],
-            'station_code': ['station_code', 'station code', 'drawing_name', 'drg_no', 'drawing no', 'big plan','sig_play_no'],
+            'junction_name': ['name', 'ctr_name','Project', 'junction_name', 'junction name', 'junction', 'track'],
+            'station_code': ['station_code', 'station code', 'drawing_name', 'drg_no', 'drawing no', 'big plan','sip_no'],
             'zone': ['zone', 'zone name', 'zone_no'],
             'division': ['division', 'division name', 'div'],
             'version': ['version', 'version_no', 'revision', 'ver_no'],   # New version column mapping
             'page_no' : ['page_no','page no'],
             'date' : ['date','Date'],
-            'ver_no' : ['ver_no'],
+            'ver_no' : ['total_page_no'],
             'madeby' : ['madeby','made by']
         }
         
@@ -2190,7 +2190,10 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         logger.info(f"Parameters: station={station_name}, project={project_name}, rows={len(rows)}, y_offset={diagram_start_y_offset}")
         
         # Create document with adjusted bottom margin to accommodate footer
-        doc = SimpleDocTemplate(pdf_path, pagesize=landscape(A0),
+        
+        a0_weight,a0_height =  landscape(A0)
+        custom_page=(5000,a0_height)  
+        doc = SimpleDocTemplate(pdf_path, pagesize=custom_page,
                                leftMargin=10*mm, rightMargin=10*mm,
                                topMargin=10*mm, bottomMargin=60*mm)
         

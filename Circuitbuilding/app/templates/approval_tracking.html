@@ -37,6 +37,8 @@
     {% include '_sidebar.html' %}
     <!-- Main Content Area -->
     <div class="main-content">
+
+        
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -56,6 +58,25 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+         <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1"><i class="bi bi-card-list text-primary"></i> Dashboard</h2>
+                <p class="text-muted mb-0">Overview of all Drawing and their status</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-light text-dark fs-6 me-3">
+                    <i class="bi bi-building"></i> {{ stats.total_projects }} Drawing
+                </span>
+                
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+       
     
         <!-- Notification Section -->
         <div class="container-fluid py-4 fade-in">

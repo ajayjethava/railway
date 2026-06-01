@@ -38,7 +38,17 @@
         {% endif %}
         {% endwith %}
 
-
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                           </div>
+            <div class="d-flex align-items-center">
+                
+                <a class="sidebar-btn logout" href="{{ url_for('main.logout') }}">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div> 
         <!-- Upload History Section -->
         {% if uploads %}
         <div class="row mt-3 fade-in">
@@ -68,7 +78,7 @@
                                     <tr>
 
                                         <th>Station name</th>
-                                        <th>Filename</th>
+                                        <th>All Station Pdf</th>
                                         
                                     </tr>
                                 </thead>
@@ -84,15 +94,14 @@
                   <a href="{{ url_for('main.download_station_pdfs', station_name=station) }}"
                     class="btn btn-sm btn-danger">
                         <i class="fa fa-file-pdf"></i>
-                        Download All PDFs
+                        Download {{ station }} PDFs
                   </a>
             </td>
 
             <!-- COLUMN 2 = ALL PDFs -->
             <td>
 
-               <td>
-
+               
                 <div class="d-flex flex-wrap gap-2">
 
                     {% for upload in uploads %}
@@ -110,7 +119,7 @@
                                 target="_blank">
 
                                     
-                                     {{ upload.filename }}
+                                     {{ upload.generated_pdf }}
                                 </a>
 
                             {% else %}
@@ -120,7 +129,7 @@
                                 class="btn btn-sm btn-primary"
                                 target="_blank">
 
-                                    {{ upload.filename }}
+                                    {{ upload.generated_pdf }}
                                 </a>
 
                             {% endif %}
@@ -133,7 +142,7 @@
 
             </td>
 
-            </td>
+            
 
         </tr>
 
