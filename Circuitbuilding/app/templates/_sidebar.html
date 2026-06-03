@@ -124,7 +124,18 @@
 
                 <a class="sidebar-btn" href="{{ url_for('main.ctr_drawing') }}">
                     <i class="bi bi-file-earmark-excel"></i>
-                    <span>CTR Drawing</span>
+                    <span>New CTR Drawing</span>
+                </a>
+
+                 <a class="sidebar-btn"
+   href="{{ url_for('main.ctr_drawing',
+                    search='',
+                    station='',
+                    status='',
+                    approval='fully_approved',
+                    version='latest') }}">
+                                        <i class="bi bi-file-earmark-excel"></i>
+                    <span>Approved CTR Drawing</span>
                 </a>
 
                 <a class="sidebar-btn" href="{{ url_for('main.station_ctr_drawing') }}">

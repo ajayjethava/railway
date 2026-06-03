@@ -14428,125 +14428,8 @@ def view_list():
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-    """View all projects with summary statistics"""
-    try:
-        # Get filter parameters
-        page = request.args.get('page', 1, type=int)
-        rows_per_page = request.args.get('rows_per_page', 20, type=int)
-        project_id = request.args.get('project_id', 'all')
-        approval_status = request.args.get('approval_status', 'all')
-        
-        # Base query for projects
-        if current_user.role_name == '4' or current_user.role_name == '1':
-            # Admin or Creator can see all projects
-            base_query = Project.query
-        else:
-            # Others see only their assigned projects
-            base_query = Project.query.filter(
-                Project.assigned_users.any(id=current_user.id)
-            )
-        
-        # Apply filters
-        if project_id != 'all':
-            base_query = base_query.filter(Project.id == project_id)
-        
-        # Apply approval status filter if not 'all'
-        if approval_status != 'all':
-            if approval_status == 'approved':
-                base_query = base_query.filter(Project.status == 'drawing_approved')
-            elif approval_status == 'rejected':
-                base_query = base_query.filter(Project.status == 'rejected')
-            elif approval_status == 'pending':
-                base_query = base_query.filter(
-                    Project.status.in_(['level1_pending', 'level2_pending', 'level3_pending'])
-                )
-            elif approval_status == 'drawing_in_progress':
-                base_query = base_query.filter(Project.status == 'drawing_in_progress')
-            elif approval_status == 'no_drawing':
-                base_query = base_query.filter(
-                    ~Project.generated_pdfs.any()
-                )
-        
-        # Order by latest updated
-        projects_query = base_query.order_by(Project.updated_date.desc())
-        
-        # Pagination
-        total_projects = projects_query.count()
-        total_pages = (total_projects + rows_per_page - 1) // rows_per_page
-        start_idx = (page - 1) * rows_per_page + 1
-        end_idx = min(start_idx + rows_per_page - 1, total_projects)
-        
-        projects = projects_query.paginate(
-            page=page, 
-            per_page=rows_per_page,
-            error_out=False
-        )
-        
-        # Get all projects for filter dropdown
-        if current_user.role_name == '4' or current_user.role_name == '1':
-            all_projects_for_filter = Project.query.order_by(Project.name).all()
-        else:
-            all_projects_for_filter = Project.query.filter(
-                Project.assigned_users.any(id=current_user.id)
-            ).order_by(Project.name).all()
-        
-        # Get summary statistics for each project
-        project_summaries = []
-        for project in projects.items:
-            # Get latest PDF
-            latest_pdf = GeneratedPDF.query.filter_by(
-                project_id=project.id
-            ).order_by(GeneratedPDF.created_at.desc()).first()
-            
-            # Get counts
-            junction_count = JunctionBox.query.filter_by(project_id=project.id).count()
-            cable_count = Cable.query.filter_by(project_id=project.id).count()
-            terminal_count = Terminal.query.filter_by(project_id=project.id).count()
-            
-            # Get approval status
-            if latest_pdf:
-                approval_status_str = latest_pdf.get_approval_status()
-                # Map to more readable status
-                status_map = {
-                    'approved': 'Approved',
-                    'rejected': 'Rejected',
-                    'level1_pending': 'Pending Level 1',
-                    'level2_pending': 'Pending Level 2',
-                    'level3_pending': 'Pending Level 3'
-                }
-                approval_status_display = status_map.get(approval_status_str, 'Unknown')
-            else:
-                approval_status_display = 'No Drawing'
-            
-            # Get stage information
-            stage_display = 'Not Started'
-            if project.stage:
-                if project.stage == 10:
-                    stage_display = 'PDF Generated'
-                elif project.stage == 9:
-                    stage_display = 'Drawing Complete'
-                elif project.stage < 9:
-                    stage_display = f'Stage {project.stage}/9'
-            
-            project_summaries.append({
-                'project': project,
-                'latest_pdf': latest_pdf,
-                'junction_count': junction_count,
-                'cable_count': cable_count,
-                'terminal_count': terminal_count,
-                'approval_status': approval_status_display,
-                'stage': stage_display,
-                'has_drawing': latest_pdf is not None,
-                'last_updated': project.updated_date
-            })
-        
-        # Calculate overall statistics
-        total_junctions = JunctionBox.query.count()
-        total_cables = Cable.query.count()
-        total_terminals = Terminal.query.count()
-        
-        # Get approval status distribution
         status_counts = {
+            'total' : GeneratedPDF.query.count(),
             'approved': GeneratedPDF.query.filter_by(level3_status='approved').count(),
             'rejected': GeneratedPDF.query.filter(
                 db.or_(
@@ -14565,47 +14448,26 @@ def dashboard():
             'no_drawing': Project.query.filter(~Project.generated_pdfs.any()).count()
         }
         
-        # Pagination numbers for template
-        pagination_numbers = []
-        if total_pages <= 7:
-            pagination_numbers = list(range(1, total_pages + 1))
-        else:
-            if page <= 4:
-                pagination_numbers = list(range(1, 6)) + ['...', total_pages]
-            elif page >= total_pages - 3:
-                pagination_numbers = [1, '...'] + list(range(total_pages - 4, total_pages + 1))
-            else:
-                pagination_numbers = [1, '...'] + list(range(page - 1, page + 2)) + ['...', total_pages]
+        total_ctr = CTRUpload.query.count()
+
+        approved_ctr = CTRUpload.query.filter(
+            CTRUpload.is_fully_approved == True
+        ).count()
+
+        ctr_status_counts = {
+            'total': total_ctr,
+            'approved': approved_ctr,
+            'pending': total_ctr - approved_ctr
+        }
+        
         
         return render_template('dashboard.html',
-                            projects=project_summaries,
-                            all_projects=all_projects_for_filter,
-                            current_filters={
-                                'project_id': project_id,
-                                'approval_status': approval_status
-                            },
-                            pagination={
-                                'page': page,
-                                'total_pages': total_pages,
-                                'total_records': total_projects,
-                                'rows_per_page': rows_per_page,
-                                'start_idx': start_idx,
-                                'end_idx': end_idx,
-                                'pagination_numbers': pagination_numbers
-                            },
-                            stats={
-                                'total_junctions': total_junctions,
-                                'total_cables': total_cables,
-                                'total_terminals': total_terminals,
-                                'total_projects': total_projects,
+                                stats={
+                                'ctr_status_counts' : ctr_status_counts ,
                                 'status_counts': status_counts
                             })
         
-    except Exception as e:
-        print(f"Error in view_list: {e}")
-        flash('Error loading view list', 'danger')
-        return redirect(url_for('main.approval_tracking'))
-
+    
 
 
 # ==================== BEFORE REQUEST HOOK ====================
@@ -17985,7 +17847,7 @@ def download_ctr_blank_template():
             "desg2", 
             "desg3",
             "sip_no",
-            "total_page_no",
+            "total_page",
             "page_no",
             "date"
         ]
@@ -20377,13 +20239,14 @@ def delete_ctr_upload(upload_id):
     ctr_upload = CTRUpload.query.get_or_404(upload_id)
     
     # Check permissions - only owner or admin can delete
+        
     if not (current_user.id == ctr_upload.user_id or current_user.role_name == '4'):
         flash("You don't have permission to delete this upload.", "danger")
         return redirect(url_for('main.ctr_drawing'))
     
     try:
 
-        if current_user.role_name != "4":
+        if current_user.role_name == "44":
             ctr_upload.is_deleted = 1
             db.session.commit()
             flash(f"CTR upload '{ctr_upload.filename}' has been deleted successfully.", "success")

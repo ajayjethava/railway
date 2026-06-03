@@ -1049,6 +1049,17 @@
                                 {% endfor %}
                             </select>
                         </div>
+
+                        <!-- Filter by User Role - SINGLE SELECT -->
+                        <div class="filter-group">
+                            <label class="form-label fw-medium">User Designation</label>
+                            <select class="form-select" id="filterDesignation">
+                                <option value="">-- All Designation --</option>
+                                {% for designation in designations %}
+                                    <option value="{{ designation.designation_name }}">{{ designation.designation_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                        
                         <!-- Filter by User Role - SINGLE SELECT -->
                         <div class="filter-group">
@@ -1060,6 +1071,8 @@
                                 {% endfor %}
                             </select>
                         </div>
+
+
                     </div>
                    
                     <div class="filter-buttons">
@@ -1099,6 +1112,7 @@
                                 <tr class="user-row"
                                     data-user-id="{{ user.id }}"
                                     data-role="{{ user.role }}"
+                                    data-designation="{{ user.designation }}"
                                     data-stations="{{ user.projects|map(attribute='id')|join(',') }}">
                                     <td><strong>{{ user.id }}</strong></td>
                                     <td>{{ user.username }}</td>
@@ -1599,16 +1613,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Filter functionality
     const filterStation = document.getElementById('filterStation');
     const filterRole = document.getElementById('filterRole');
+    const filterDesignation = document.getElementById('filterDesignation');
     const applyFiltersBtn = document.getElementById('applyFilters');
     const clearFiltersBtn = document.getElementById('clearFilters');
     const filterCount = document.getElementById('filterCount');
     const userRows = document.querySelectorAll('.user-row');
     const totalUsers = userRows.length;
     // Function to apply filters
-    function applyFilters() {
+    function applyFilters_old() {
         const selectedStation = filterStation.value;
         const selectedRole = filterRole.value;
-       
+        const selectedDesignation = filterDesignation.value;       
         let visibleCount = 0;
         let hasStationFilter = selectedStation !== '';
         let hasRoleFilter = selectedRole !== '';
@@ -1664,6 +1679,88 @@ document.addEventListener('DOMContentLoaded', function() {
         updateFilterCount(visibleCount, hasStationFilter || hasRoleFilter);
     }
     // Function to update filter count display
+    function applyFilters() {
+    const selectedStation = filterStation.value;
+    const selectedRole = filterRole.value;
+    const selectedDesignation = filterDesignation.value;
+
+    let visibleCount = 0;
+
+    let hasStationFilter = selectedStation !== '';
+    let hasRoleFilter = selectedRole !== '';
+    let hasDesignationFilter = selectedDesignation !== '';
+
+    userRows.forEach(row => {
+        const userStations = row.dataset.stations.split(',').filter(s => s !== '');
+        const userRole = row.dataset.role;
+        const userDesignation = row.dataset.designation;
+
+        let showRow = true;
+        let highlightClass = '';
+
+        // Station filter
+        if (hasStationFilter) {
+            const hasMatchingStation = userStations.includes(selectedStation);
+
+            if (!hasMatchingStation) {
+                showRow = false;
+            } else {
+                highlightClass = 'highlight-station';
+            }
+        }
+
+        // Role filter
+        if (hasRoleFilter && showRow) {
+            if (userRole !== selectedRole) {
+                showRow = false;
+            } else {
+                highlightClass = highlightClass ? 'highlight-both' : 'highlight-role';
+            }
+        }
+
+        // Designation filter
+        if (hasDesignationFilter && showRow) {
+            if (userDesignation !== selectedDesignation) {
+                showRow = false;
+            } else if (!highlightClass) {
+                highlightClass = 'highlight-role'; // or create highlight-designation
+            }
+        }
+
+        // No filters selected
+        if (!hasStationFilter && !hasRoleFilter && !hasDesignationFilter) {
+            showRow = true;
+            highlightClass = '';
+        }
+
+        // Apply visibility
+        if (showRow) {
+            row.classList.remove('hidden');
+            row.classList.remove(
+                'highlight-station',
+                'highlight-role',
+                'highlight-both'
+            );
+            if (highlightClass) {
+                row.classList.add(highlightClass);
+            }
+            visibleCount++;
+        } else {
+            row.classList.add('hidden');
+            row.classList.remove(
+                'highlight-station',
+                'highlight-role',
+                'highlight-both'
+            );
+        }
+    });
+
+    updateFilterCount(
+        visibleCount,
+        hasStationFilter || hasRoleFilter || hasDesignationFilter
+    );
+}
+    
     function updateFilterCount(visibleCount, filtersApplied) {
         const filterCount = document.getElementById('filterCount');
        
@@ -1679,7 +1776,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearFilters() {
         filterStation.value = '';
         filterRole.value = '';
-       
+        filterDesignation.value='';
         userRows.forEach(row => {
             row.classList.remove('hidden', 'highlight-station', 'highlight-role', 'highlight-both');
         });

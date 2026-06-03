@@ -401,8 +401,51 @@
                             <i class="bi bi-building fs-1 text-primary"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
-                            <div class="stat-number">{{ stats.total_projects }}</div>
-                            <div class="stat-label">Total Drawings</div>
+                            <div class="stat-number">{{ stats.ctr_status_counts.total }}</div>
+                            <div class="stat-label">Total Ctr Drawings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #198754;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-check-circle fs-1 text-success"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.ctr_status_counts.approved }}</div>
+                            <div class="stat-label">Approved Drawings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #0dcaf0;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock fs-1 text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.ctr_status_counts.pending }}</div>
+                            <div class="stat-label">Pending Approvals</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+           
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #00695c;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-building fs-1 text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.status_counts.total }}</div>
+                            <div class="stat-label">Total JB Drawings</div>
                         </div>
                     </div>
                 </div>

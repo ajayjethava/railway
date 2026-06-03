@@ -390,7 +390,7 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
             draw_vertical_line(ax, x, fb[1], y_func+0.35)
            
             # Draw function text (vertical) – auto‑size to fit vertical space of 0.7 inches
-            vtext(ax, x, y_func, row.get('function', 'SP'), 7, rotation=90, max_dim=0.7)
+            vtext(ax, x, y_func, row.get('function', 'SP'), 9, rotation=90, max_dim=0.7)
            
             ct, cb, cic, coc = draw_capsule(
                 ax, x, y_cap, terminal,
@@ -1479,7 +1479,7 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         division = footer_data.get('division', 'AHMEDABAD')
         version = footer_data.get('version', '')  # New version field
 
-        total_page_no = footer_data.get('total_page_no', '')  # New version field
+        ver_no = footer_data.get('ver_no', '')  # New version field
         page_no = footer_data.get('page_no', '')  # New version field
         date = footer_data.get('date', '')  # New version field
 
@@ -1552,7 +1552,7 @@ def add_pdf_footer(canvas, doc, footer_data, total_pages):
         right_edge_x = footer_x_start + footer_width - 10  # 10pt from right border
 
         # Page number (top row, right cell)
-        page_num_text = f"PAGE NO-{page_num}/{total_page_no}"
+        page_num_text = f"PAGE NO-{page_num}/{ver_no}"
         canvas.drawRightString(right_edge_x, top_cell_top - 20, page_num_text)   # moved down from -17 to -20
         
         # Version (top row, right cell) – only if present
@@ -1650,10 +1650,9 @@ def load_footer_data_from_excel(excel_path):
             'zone': ['zone', 'zone name', 'zone_no'],
             'division': ['division', 'division name', 'div'],
             'version': ['version', 'version_no', 'revision', 'ver_no'],   # New version column mapping
-            'total_page_no' : ['total_page','total_page_no'],
-            'page_no' : ['page_no','page_no.','page no'],
+            'page_no' : ['page_no','page no'],
             'date' : ['date','Date'],
-            
+            'ver_no' : ['total_page_no'],
             'madeby' : ['madeby','made by']
         }
         
@@ -2199,7 +2198,11 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         # Create document with adjusted bottom margin to accommodate footer
         
         a0_weight,a0_height =  landscape(A0)
-        custom_page=(5000,a0_height)  
+        if ctr_image_path and os.path.exists(ctr_image_path):
+           custom_page=(5000,a0_height + 170)
+        else :
+           custom_page=(5000,a0_height + 70)
+                
         doc = SimpleDocTemplate(pdf_path, pagesize=custom_page,
                                leftMargin=10*mm, rightMargin=10*mm,
                                topMargin=10*mm, bottomMargin=60*mm)
@@ -2211,14 +2214,14 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         styles = getSampleStyleSheet()
 
         station_style = ParagraphStyle('Station', parent=styles['Heading1'], 
-                                       fontSize=50, alignment=1,
+                                       fontSize=70, alignment=1,
                                        spaceAfter=0, fontName=FONT_BOLD,
                                        textColor=colors.black,
                                        
                                        spaceBefore=0)
         
         project_style = ParagraphStyle('Project', parent=styles['Normal'], 
-                                       fontSize=40, alignment=1,
+                                       fontSize=60, alignment=1,
                                        spaceAfter=0, fontName=FONT_BOLD,
                                        textColor=colors.black,
                                        
@@ -2234,14 +2237,14 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         logger.info("Adding header for first page only")
         if ctr_image_path and os.path.exists(ctr_image_path):
             logger.info(f"Including CTR image: {ctr_image_path}")
-            ctr_img = Image(ctr_image_path, width=1000, height=330)
+            ctr_img = Image(ctr_image_path, width=1200, height=500)
             
             # Check if logo exists
             logo_img = None
             if os.path.exists(logo_path):
                 try:
                     # Bigger logo size - 140x140
-                    logo_img = Image(logo_path, width=180, height=180)
+                    logo_img = Image(logo_path, width=200, height=200)
                     logger.info(f"Loaded logo: {logo_path}")
                 except Exception as e:
                     logger.warning(f"Could not load logo {logo_path}: {e}")
@@ -2249,9 +2252,9 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
             
             if logo_img:
                 # Three columns: Logo, Text, CTR Image
-                logo_col_width = 180
+                logo_col_width = 200
                 
-                ctr_col_width = 450 # doc.width * 0.37
+                ctr_col_width = 650 # doc.width * 0.37
                 text_col_width = doc.width -  logo_col_width - ctr_col_width
 
                 text_table_data = [
@@ -2271,8 +2274,8 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                 
                 # Create a separate table for logo with perfect border
                 logo_table = Table([[logo_img]], 
-                                  colWidths=[180],
-                                  rowHeights=[180])
+                                  colWidths=[200],
+                                  rowHeights=[200])
                 
                 logo_table.setStyle(TableStyle([
                     ('BOX', (0, 0), (0, 0), 1, colors.black),
@@ -2343,8 +2346,8 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
             # No CTR image - just station and project text
             if os.path.exists(logo_path):
                 try:
-                    logo_img = Image(logo_path, width=180, height=180)
-                    logo_col_width = 180
+                    logo_img = Image(logo_path, width=200, height=200)
+                    logo_col_width =200
                     #text_col_width = doc.width - logo_col_width
                     #ctr_col_width = doc.width * 0.37
                     text_col_width = doc.width - (2 * logo_col_width)-70
@@ -2367,8 +2370,8 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     ]))
                     
                     logo_table = Table([[logo_img]], 
-                                      colWidths=[180],
-                                      rowHeights=[180])
+                                      colWidths=[200],
+                                      rowHeights=[200])
                     
                     logo_table.setStyle(TableStyle([
                         ('BOX', (0, 0), (0, 0), 1, colors.black),
@@ -2381,7 +2384,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
                     ]))
                     
                     header_table_data = [
-                        [logo_table, text_table, Spacer(1, 280)]
+                        [logo_table, text_table, Spacer(1, 300)]
                     ]
                     
                     header_table = Table(header_table_data, colWidths=[logo_col_width, text_col_width,logo_col_width])
