@@ -18012,6 +18012,23 @@ def ctr_drawing():
     
     # Get uploads with ordering
     uploads = query.order_by(CTRUpload.upload_date.desc()).all()
+    
+    from collections import OrderedDict
+
+    station_groups = OrderedDict()
+
+    for upload in uploads:
+        station = upload.station_name or "Unknown"
+
+        if station not in station_groups:
+            station_groups[station] = {}
+
+        rack = upload.name  # Rack name
+
+        # Keep only latest upload per rack
+        if rack not in station_groups[station]:
+            station_groups[station][rack] = upload
+
     for u in uploads:
         print(f"Upload {u.id}: pdf_generated_date = {u.pdf_generated_date}")
     
@@ -18039,6 +18056,7 @@ def ctr_drawing():
     return render_template('ctr_drawing.html', 
                          permissions=permissions,
                          user_role=user_role,
+                         station_groups=station_groups,
                          uploads=uploads,
                          station_names=station_names,
                          assigned_stations=assigned_stations,
