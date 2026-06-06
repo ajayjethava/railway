@@ -471,6 +471,13 @@
                                                         <i class="bi bi-eye"></i>
                                                     </a>
 
+                                                      <a href="{{ url_for('main.view_signed_pdf', upload_id=upload.id, level=1) }}"
+                                                    class="btn btn-sm btn-outline-success" target="_blank"
+                                                    title="Download Signed PDF" download>
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+
+
                                                     
 
                                                     {% else %}
@@ -480,7 +487,11 @@
                                                         class="btn btn-sm btn-success" target="_blank" title="View PDF">
                                                         <i class="bi bi-file-pdf"></i>
                                                     </a>
-
+                                                    <a href="{{ url_for('main.view_ctr_pdf', upload_id=upload.id) }}"
+                                                    class="btn btn-sm btn-outline-success" target="_blank"
+                                                    title="Download PDF" download>
+                                                    <i class="bi bi-download"></i>
+                                                </a>
                                                     
 
                                                     {% endif %}

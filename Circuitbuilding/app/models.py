@@ -46,6 +46,10 @@ class User(UserMixin, db.Model):
     role_rel = db.relationship('RoleMaster', backref='users', lazy='joined')
     designation_rel = db.relationship('DesignationMaster', backref='users', lazy='joined')
 
+    serial_number = db.Column(db.String(255))
+    certificate_subject = db.Column(db.Text)
+    certificate_issuer = db.Column(db.Text)
+
     projects = db.relationship(
         'Project',
         secondary=user_projects,

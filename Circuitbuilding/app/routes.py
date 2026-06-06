@@ -114,7 +114,54 @@ def get_next_approval_level(upload_id):
     return None
 def can_user_sign(upload, user_role):
    return upload.current_approval_level == user_role
+from .Signature_code import extract_signature_info
 
+@bp.route('/register-signature', methods=['GET', 'POST'])
+@login_required
+def register_signature():
+
+    if request.method == 'POST':
+
+        pdf_file = request.files.get('signed_pdf')
+
+        if not pdf_file:
+            flash('Please upload a signed PDF.', 'danger')
+            return redirect(request.url)
+
+        temp_folder = r"C:\Railway\git\temp_signatures"
+        os.makedirs(temp_folder, exist_ok=True)
+
+        file_path = os.path.join(
+            temp_folder,
+            secure_filename(pdf_file.filename)
+        )
+
+        pdf_file.save(file_path)
+
+        try:
+            cert = extract_signature_info(Path(file_path))
+
+            current_user.serial_number = cert.serial_number
+            current_user.certificate_subject = cert.subject
+            current_user.certificate_issuer = cert.issuer
+
+            db.session.commit()
+
+            flash(
+                'Digital signature registered successfully.',
+                'success'
+            )
+
+        except Exception as e:
+            flash(str(e), 'danger')
+
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+        return redirect(url_for('main.register_signature'))
+
+    return render_template('register_signature.html')
 @bp.route('/upload-signed-pdf/<int:upload_id>', methods=['POST'])
 @login_required
 def upload_signed_pdf(upload_id):
@@ -146,6 +193,32 @@ def upload_signed_pdf(upload_id):
 
     # Save file
     file.save(file_path)
+
+    
+
+    
+    
+    from .Signature_code import extract_signature_info, CertificateError,verify_signature
+
+    try:
+        cert = extract_signature_info(Path(file_path))
+        
+        # ORM lookup using Users model
+        user = User.query.filter_by(serial_number=cert.serial_number).first()
+
+        if not user:
+            os.remove(file_path)
+            flash("Signer not registered in system.", "danger")
+            return redirect(url_for('main.ctr_drawing'))
+
+        
+        print("Signer:", cert.subject)
+        print("Serial:", cert.serial_number)
+
+    except CertificateError as e:
+        flash(f"Invalid signed PDF: {e}", "danger")
+        os.remove(file_path)
+        return redirect(url_for('main.ctr_drawing'))
 
        
    

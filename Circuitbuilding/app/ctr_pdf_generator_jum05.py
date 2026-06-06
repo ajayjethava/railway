@@ -348,15 +348,6 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
         )
        
         fuse_pts, cap_pts, fflags, cflags = [], [], [], []
-
-        def wrap_label(text, width=6):
-            text = str(text)
-            if len(text) > width:
-                return '\n'.join(
-                    text[i:i+width]
-                    for i in range(0, len(text), width)
-                )
-            return text
        
         for i, x in enumerate(xs):
             row = df.iloc[i] if i < len(df) else pd.Series()
@@ -376,15 +367,13 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
                     logger.debug(f"Row {i+1}: Using index as terminal: {terminal}")
         
             text = row.get('positive', 'SP')
-            
+
             # Split long text into 2 lines
             if len(text) > 6:
                 mid = len(text) // 2
                 text = text[:mid] + '\n' + text[mid:]
-                
-            text = wrap_label(row.get('positive', 'SP'), 4)
             # Draw positive text (horizontal)
-            vtext(ax, x, y_pos, text, 12)
+            vtext(ax, x, y_pos, text, 10, max_dim=col_width*0.9)
            
             # Draw S-FUSE with terminal
             ft, fb, fic, foc = draw_s_fuse(
@@ -401,12 +390,7 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
             draw_vertical_line(ax, x, fb[1], y_func+0.35)
            
             # Draw function text (vertical) – auto‑size to fit vertical space of 0.7 inches
-            text = str(row.get('function', 'SP'))
-
-            if len(text) > 6:
-                mid = len(text) // 2
-                text = text[:mid] + '\n' + text[mid:]
-            vtext(ax, x, y_func, text, 12, rotation=90)
+            vtext(ax, x, y_func, row.get('function', 'SP'), 7, rotation=90, max_dim=0.7)
            
             ct, cb, cic, coc = draw_capsule(
                 ax, x, y_cap, terminal,
@@ -428,9 +412,7 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
             if len(text) > 6:
                 mid = len(text) // 2
                 text = text[:mid] + '\n' + text[mid:]
-            text = wrap_label(row.get('negative', 'SP'), 4)
-
-            vtext(ax, x, y_neg, text, 12)
+            vtext(ax, x, y_neg, text, 10, max_dim=col_width*0.9)
            
             fuse_pts.append(fb)
             cap_pts.append(ct)
@@ -2252,7 +2234,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         logger.info("Adding header for first page only")
         if ctr_image_path and os.path.exists(ctr_image_path):
             logger.info(f"Including CTR image: {ctr_image_path}")
-            ctr_img = Image(ctr_image_path, width=1000, height=330)
+            ctr_img = Image(ctr_image_path, width=1000, height=280)
             
             # Check if logo exists
             logo_img = None
