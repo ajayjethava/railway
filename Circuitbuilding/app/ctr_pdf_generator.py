@@ -357,7 +357,10 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
                     for i in range(0, len(text), width)
                 )
             return text
-       
+        def clean(val):
+            if pd.isna(val) or str(val).strip().lower() in ['nan', 'none', '']:
+                return 'SP'
+            return str(val).strip()
         for i, x in enumerate(xs):
             row = df.iloc[i] if i < len(df) else pd.Series()
             
@@ -378,9 +381,6 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
             text = row.get('positive', 'SP')
             
             # Split long text into 2 lines
-            if len(text) > 6:
-                mid = len(text) // 2
-                text = text[:mid] + '\n' + text[mid:]
                 
             text = wrap_label(row.get('positive', 'SP'), 4)
             # Draw positive text (horizontal)
@@ -422,13 +422,11 @@ def generate_ctr_diagram_from_df(df, output_image="ctr_diagram.png"):
             draw_vertical_line(ax, x, cb[1], y_neg+0.35)
            
             # Draw negative text (horizontal)  row.get('negative', 'SP')
-            text = row.get('negative', 'SP')
-
+            text =clean(row.get('negative', 'SP'))
+            if text=="nan":
+                text="SP" 
             # Split long text into 2 lines
-            if len(text) > 6:
-                mid = len(text) // 2
-                text = text[:mid] + '\n' + text[mid:]
-            text = wrap_label(row.get('negative', 'SP'), 4)
+            text = wrap_label(text, 4)
 
             vtext(ax, x, y_neg, text, 12)
            
@@ -2218,7 +2216,7 @@ def create_terminal_diagram_pdf(filename, rows, station_name, project_name, ctr_
         
         a0_weight,a0_height =  landscape(A0)
         custom_page=(5000,a0_height)  
-        doc = SimpleDocTemplate(pdf_path, pagesize=custom_page,
+        doc = SimpleDocTemplate(pdf_path, pagesize=landscape(A0),
                                leftMargin=10*mm, rightMargin=10*mm,
                                topMargin=10*mm, bottomMargin=60*mm)
         

@@ -368,6 +368,59 @@ def extract_signature_info(pdf_path: Path) -> CertificateInfo:
         raise CertificateError(f"Failed to read PDF signature: {exc}") from exc
 
 
+def extract_all_signature_info(pdf_path: Path) -> list[CertificateInfo]:
+    """
+    Extract ALL embedded digital-signature certificates from a PDF.
+
+    Returns
+    -------
+    list[CertificateInfo]
+        List of all signer certificates found in the PDF.
+    """
+
+    if not pdf_path.is_file():
+        raise FileValidationError(f"File not found: {pdf_path}")
+
+    try:
+        from pyhanko.pdf_utils.reader import PdfFileReader
+    except ImportError as exc:
+        raise DSSError(
+            "pyhanko is not installed — run: pip install pyhanko"
+        ) from exc
+
+    try:
+        with pdf_path.open("rb") as fh:
+            reader = PdfFileReader(fh)
+            sigs = list(reader.embedded_signatures)
+
+        if not sigs:
+            raise CertificateError("No digital signature found in the PDF.")
+
+        cert_infos = []
+
+        for sig in sigs:
+            cert = sig.signer_cert
+            if cert is None:
+                continue
+
+            info = CertificateInfo(
+                field_name=sig.field_name,
+                subject=cert.subject.human_friendly,
+                issuer=cert.issuer.human_friendly,
+                serial_number=str(cert.serial_number),
+            )
+            cert_infos.append(info)
+
+        if not cert_infos:
+            raise CertificateError("No valid signer certificates found.")
+
+        return cert_infos
+
+    except CertificateError:
+        raise
+    except Exception as exc:
+        _log.exception("Error reading PDF signatures: %s", pdf_path)
+        raise CertificateError(f"Failed to read PDF signature: {exc}") from exc
 # ══════════════════════════════════════════════════════════════════════════════
 # §9  SERVICE LAYER
 # ══════════════════════════════════════════════════════════════════════════════

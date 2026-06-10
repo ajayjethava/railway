@@ -198,23 +198,29 @@ def upload_signed_pdf(upload_id):
 
     
     
-    from .Signature_code import extract_signature_info, CertificateError,verify_signature
+    from .Signature_code import extract_signature_info,extract_all_signature_info, CertificateError,verify_signature
 
     try:
-        cert = extract_signature_info(Path(file_path))
-        
-        # ORM lookup using Users model
-        user = User.query.filter_by(serial_number=cert.serial_number).first()
+        certs = extract_all_signature_info(Path(file_path))
 
-        if not user:
+        user = current_user
+
+        print("All Signers:")
+        for c in certs:
+            print(c.subject, c.serial_number)
+
+        valid = any(
+            c.serial_number == user.serial_number
+            for c in certs
+        )
+
+        if not valid:
             os.remove(file_path)
-            flash("Signer not registered in system.", "danger")
+            flash("Digital signature does not match logged-in user.", "danger")
             return redirect(url_for('main.ctr_drawing'))
 
         
-        print("Signer:", cert.subject)
-        print("Serial:", cert.serial_number)
-
+        
     except CertificateError as e:
         flash(f"Invalid signed PDF: {e}", "danger")
         os.remove(file_path)
@@ -14501,40 +14507,89 @@ def view_list():
 @bp.route('/dashboard')
 @login_required
 def dashboard():
-        status_counts = {
-            'total' : GeneratedPDF.query.count(),
-            'approved': GeneratedPDF.query.filter_by(level3_status='approved').count(),
-            'rejected': GeneratedPDF.query.filter(
-                db.or_(
-                    GeneratedPDF.level1_status == 'rejected',
-                    GeneratedPDF.level2_status == 'rejected',
-                    GeneratedPDF.level3_status == 'rejected'
-                )
-            ).count(),
-            'pending': GeneratedPDF.query.filter(
-                db.and_(
-                    GeneratedPDF.level3_status == 'pending',
-                    GeneratedPDF.level2_status != 'rejected',
-                    GeneratedPDF.level1_status != 'rejected'
-                )
-            ).count(),
-            'no_drawing': Project.query.filter(~Project.generated_pdfs.any()).count()
-        }
-        
-        total_ctr = CTRUpload.query.count()
+    user_role = int(current_user.role_name) if current_user.role_name.isdigit() else 4
 
-        approved_ctr = CTRUpload.query.filter(
-            CTRUpload.is_fully_approved == True
-        ).count()
+    if user_role == 4:  # Admin
+        assigned_projects_query = Project.query.with_entities(Project.id, Project.name).distinct()
 
-        ctr_status_counts = {
-            'total': total_ctr,
-            'approved': approved_ctr,
-            'pending': total_ctr - approved_ctr
-        }
-        
-        
-        return render_template('dashboard.html',
+        base_ctr_query = CTRUpload.query
+        base_pdf_query = GeneratedPDF.query
+
+    else:
+        assigned_projects_query = Project.query\
+            .join(user_projects, Project.id == user_projects.c.project_id)\
+            .filter(user_projects.c.user_id == current_user.id)\
+            .with_entities(Project.id, Project.name).distinct()
+
+        assigned_projects = [
+            {'id': row[0], 'name': row[1]}
+            for row in assigned_projects_query if row[1]
+        ]
+
+        assigned_project_ids = [str(p['id']) for p in assigned_projects]
+        assigned_station_names = [p['name'] for p in assigned_projects]
+
+        if assigned_project_ids:
+
+            base_ctr_query = CTRUpload.query.filter(
+                and_(
+                    CTRUpload.is_deleted == 0,
+                    or_(
+                        CTRUpload.station_id.in_(assigned_project_ids),
+                        CTRUpload.station_name.in_(assigned_station_names)
+                    )
+                )
+            )
+
+            base_pdf_query = GeneratedPDF.query.filter(
+                GeneratedPDF.project_id.in_(assigned_project_ids)
+            )
+
+        else:
+            base_ctr_query = CTRUpload.query.filter(False)
+            base_pdf_query = GeneratedPDF.query.filter(False)
+
+    status_counts = {
+        'total': base_pdf_query.count(),
+
+        'approved': base_pdf_query.filter(
+            GeneratedPDF.level3_status == 'approved'
+        ).count(),
+
+        'rejected': base_pdf_query.filter(
+            or_(
+                GeneratedPDF.level1_status == 'rejected',
+                GeneratedPDF.level2_status == 'rejected',
+                GeneratedPDF.level3_status == 'rejected'
+            )
+        ).count(),
+
+        'pending': base_pdf_query.filter(
+            and_(
+                GeneratedPDF.level3_status == 'pending',
+                GeneratedPDF.level2_status != 'rejected',
+                GeneratedPDF.level1_status != 'rejected'
+            )
+        ).count(),
+
+        'no_drawing': Project.query.filter(
+            Project.id.in_(assigned_project_ids if user_role != 4 else
+                        Project.query.with_entities(Project.id))
+        ).filter(~Project.generated_pdfs.any()).count()
+    }
+    total_ctr = base_ctr_query.count()
+
+    approved_ctr = base_ctr_query.filter(
+        CTRUpload.is_fully_approved == True
+    ).count()
+
+    ctr_status_counts = {
+        'total': total_ctr,
+        'approved': approved_ctr,
+        'pending': total_ctr - approved_ctr
+    }
+              
+    return render_template('dashboard.html',
                                 stats={
                                 'ctr_status_counts' : ctr_status_counts ,
                                 'status_counts': status_counts
@@ -18098,9 +18153,11 @@ def ctr_drawing():
 
         rack = upload.name  # Rack name
 
+        station_groups[station][rack] = upload
+
         # Keep only latest upload per rack
-        if rack not in station_groups[station]:
-            station_groups[station][rack] = upload
+        #if rack not in station_groups[station]:
+        #    station_groups[station][rack] = upload
 
     for u in uploads:
         print(f"Upload {u.id}: pdf_generated_date = {u.pdf_generated_date}")
@@ -18197,10 +18254,12 @@ def station_ctr_drawing():
 
     grouped_uploads = defaultdict(list)
 
+    test=0;
     for upload in uploads:
         station = upload.station_name or "Unknown Station"
         grouped_uploads[station].append(upload)
-
+        test = test + 1
+        print(test)
 
     # Group station-wise
     
@@ -19122,6 +19181,8 @@ def view_ctr_pdf(upload_id):
         ''' 
     # Approvers (roles 2, 3) can view if they're assigned to the station
     elif user_role in [2, 3]:
+        pass
+        '''
         if ctr_upload.station_id or ctr_upload.station_name:
             if ctr_upload.station_id:
                 project = Project.query.filter_by(id=int(ctr_upload.station_id)).first()
@@ -19166,6 +19227,7 @@ def view_ctr_pdf(upload_id):
         else:
             flash("This PDF doesn't have a station assigned. You don't have permission to view it.", "danger")
             return redirect(url_for('main.ctr_drawing'))
+        '''
     else:
         flash("You don't have permission to view CTR PDFs.", "danger")
         return redirect(url_for('main.ctr_drawing'))

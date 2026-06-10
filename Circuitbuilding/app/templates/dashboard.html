@@ -470,25 +470,26 @@
                             <i class="bi bi-clock fs-1 text-info"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
+                            <div class="stat-number">{{ stats.status_counts.rejected }}</div>
+                            <div class="stat-label">Rejected</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card" style="border-left: 4px solid #0dcaf0;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-clock fs-1 text-info"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
                             <div class="stat-number">{{ stats.status_counts.pending }}</div>
                             <div class="stat-label">Pending Approvals</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card stats-card" style="border-left: 4px solid #6c757d;">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="bi bi-file-earmark-excel fs-1 text-secondary"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="stat-number">{{ stats.status_counts.no_drawing }}</div>
-                            <div class="stat-label">Without Drawings</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
         
        

@@ -56,7 +56,7 @@
                 <div class="card">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
                         <div>
-                            <i class="bi bi-clock-history me-2"></i> Drawing Details
+                            <i class="bi bi-clock-history me-2"></i> Latest Drawing Details
                             <span class="badge bg-secondary ms-2">{{ uploads|length }} files</span>
                             {% if station_filter %}
                             <span class="badge bg-info ms-1">Station: {{ station_filter }}</span>
@@ -77,8 +77,8 @@
                                 <thead class="table-light">
                                     <tr>
 
-                                        <th>Station name</th>
-                                        <th>All Station Pdf</th>
+                                        <th width="50%">Combine Station Drawing</th>
+                                        <th>Individual Rack Drawing </th>
                                         
                                     </tr>
                                 </thead>
@@ -106,12 +106,12 @@
 
                     {% for upload in uploads %}
 
-                        <div class="border rounded px-2 py-1 d-flex align-items-center">
+                        
 
                                                         
 
                             {% if upload.sign_document %}
-
+                               <div class="border rounded px-2 py-1 d-flex align-items-center">
                                 <a href="{{ url_for('main.view_signed_pdf',
                                                     upload_id=upload.id,
                                                     level=1) }}"
@@ -121,20 +121,23 @@
                                     
                                      {{ upload.generated_pdf }}
                                 </a>
+                                </div>
 
                             {% else %}
+                                 {% if upload.generated_pdf %}
+                                      <div class="border rounded px-2 py-1 d-flex align-items-center">
+                                        <a href="{{ url_for('main.view_ctr_pdf',
+                                                            upload_id=upload.id) }}"
+                                        class="btn btn-sm btn-primary"
+                                        target="_blank">
 
-                                <a href="{{ url_for('main.view_ctr_pdf',
-                                                    upload_id=upload.id) }}"
-                                class="btn btn-sm btn-primary"
-                                target="_blank">
-
-                                    {{ upload.generated_pdf }}
-                                </a>
-
+                                            {{ upload.generated_pdf }}
+                                        </a>
+                                        </div>
+                                 {% endif %}
                             {% endif %}
 
-                        </div>
+                        
 
                     {% endfor %}
 
