@@ -1090,13 +1090,16 @@ def draw_group_bottom_symbol(
             
             # --- Original diagonal bar (\) moved slightly lower ---
             y_offset = 0.235 * scale  # Adjust this value as needed
-            
+              
             if draw_diagonal:
-                ax.plot(
-                    [current_x - diagonal_length / 2, current_x + diagonal_length / 2],
-                    [left_y - y_offset, right_y - y_offset],
-                    color='black', linewidth=1
-                )
+                display_text = str(texts[i]).strip()
+                if display_text !='' :
+                    ax.plot(
+                            [current_x - diagonal_length / 2, current_x + diagonal_length / 2],
+                            [left_y - y_offset, right_y - y_offset],
+                            color='black', linewidth=1
+                        )
+                
                 
                 # --- Updated: stacked diagonal connector between symbols (\) ---
                 if prev_center_y is not None:
@@ -1127,6 +1130,7 @@ def draw_group_bottom_symbol(
                         [right_y_shifted - y_offset, right_y_shifted + small_vert_length_bottom - y_offset],
                         color='black', linewidth=1
                     )
+            
             
             center_y = (left_y + right_y) / 2.0
             
@@ -1206,7 +1210,8 @@ def draw_group_bottom_symbol(
                                 facecolor='white', 
                                 edgecolor='none', 
                                 alpha=0.7))
-                                
+
+                                  
 # === New Relay Box Functions ===
 def draw_relay_box_top(ax, x_start, x_end, y, texts='R1', scale=1.0, input_connected='N', spacing=0.3, x_offset=0.3):
     """
@@ -3494,6 +3499,7 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                         if x_start_term is None or x_end_term is None:
                             continue
                         label_text = grow.get('text', '')
+                        
                         io_field = str(grow.get('input_output', '')).strip().lower()
                        
                         # Get the actual indices for this specific group
@@ -3550,6 +3556,8 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                         text = ''
                     else:
                         text = str(text).strip()
+
+                        
                     start_name = str(terminal_start).strip().replace('.0', '') if pd.notna(terminal_start) else None
                     end_name = str(terminal_end).strip().replace('.0', '') if pd.notna(terminal_end) else None
                     if pd.isna(start_name) or pd.isna(end_name) or start_name not in terminal_nos_for_positions or end_name not in terminal_nos_for_positions:
@@ -3606,6 +3614,8 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                             continue
                         key = (cable_id, terminal_start_str, terminal_end_str)
                         text = str(hrow.get('text', '')).strip()
+                        if text.lower() in ('nan', 'none', 'null'):
+                            text = ''
                         input_output = str(hrow.get('input_output', '')).strip().lower()
                         if input_output == 'input':
                             if key not in relay_top:
@@ -3835,6 +3845,7 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                             output_terminal = output_terminal[:-2]
                         if output_terminal in [start_name, end_name]:
                             choke_output_terminal = output_terminal
+                   
                     draw_group_bottom_symbol(ax, x_left, x_right, vertical_line_end, texts=texts,
                                             scale=1.0, output_connected='Y' if output_conn_flag else 'N',
                                             choke_output_terminal=choke_output_terminal)
