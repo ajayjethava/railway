@@ -1151,7 +1151,7 @@ async function handlePreview() {
         // Use a hidden iframe to trigger the PREVIEW download
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
-        iframe.src = '/download_preview/';  // This is the PREVIEW endpoint
+        iframe.src = '/download';  // This is the PREVIEW endpoint
         document.body.appendChild(iframe);
         
         // Step 3: After download, show PDF modal
