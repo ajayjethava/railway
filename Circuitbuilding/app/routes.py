@@ -17982,7 +17982,7 @@ def download_ctr_blank_template():
         summary_sheet.append(summary_headers)
         
         # 2. Diagram Sheet - ONLY HEADERS
-        diagram_sheet = wb.create_sheet(title="Diagram")
+        diagram_sheet = wb.create_sheet(title="Fuse Diagram")
         diagram_headers = [
             "TerminalNo", 
             "positive", 

@@ -391,7 +391,8 @@
                                                         <button class="btn btn-sm btn-outline-danger"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#deleteProjectModal"
-                                                                onclick="setDeleteProjectData({{ pdf.project.id }}, '{{ pdf.project.name }}')"
+                                                                data-project-name="{{ pdf.project.name }}"
+                                                                onclick="setDeleteProjectData({{ pdf.project.id }}, this.dataset.projectName)"
                                                                 title="Delete Project">
                                                             <i class="bi bi-trash"></i>
                                                         </button>

@@ -1325,6 +1325,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 await saveJunctionBoxDraft();
+                window.location.reload();
             } finally {
                 this.disabled = false;
                 this.innerHTML = originalText;

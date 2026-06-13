@@ -1788,9 +1788,9 @@ def load_data_from_excel(excel_path):
         logger.warning("No 'Summary' sheet found – using default station/project names.")
 
     # ---- Diagram sheet ----
-    if 'Diagram' in sheet_names:
+    if 'Fuse Diagram' in sheet_names:
         try:
-            ctr_df = pd.read_excel(excel_path, sheet_name='Diagram')
+            ctr_df = pd.read_excel(excel_path, sheet_name='Fuse Diagram')
             logger.info(f"Loaded Diagram sheet with {len(ctr_df)} rows")
         except Exception as e:
             logger.error(f"Error reading Diagram sheet: {e}")

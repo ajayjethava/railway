@@ -1753,7 +1753,7 @@ function loadCableConfigDraft(junctionBoxId) {
                         (existingRowsConfig[i-1].cableType === 'cable_box' ? 'relay_box' : existingRowsConfig[i-1].cableType) : 
                         'cable';
             var cableCount = existingRowsConfig && existingRowsConfig[i-1] ? existingRowsConfig[i-1].cableCount : 1;
-            
+              
             row.innerHTML = `
                 <td><strong>${i}</strong></td>
                 <td>
