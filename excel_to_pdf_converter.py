@@ -305,7 +305,7 @@ def draw_cable_box_row(ax, x_start, y_center, cable_info, pin_spacing=0.8):
     # Rectangle dimensions - bigger for better visibility
     #rect_width = 1.5
     #rect_height = 0.7
-    rect_width = 1   # narrow
+    rect_width = 2   # narrow
     rect_height = 0.7  # tall
     
     # Draw the rectangle
@@ -2514,7 +2514,8 @@ def draw_symbols(df, ax, page_rows, junction_name, start_x=1, pin_spacing=0.8, c
                         all_output_connected_flags.extend(output_connected_flags)
                        
                         # Add extra space after cable boxes for ALL letters
-                        current_x += pin_spacing * 4 # Double spacing for cable boxes in any row
+                        #current_x += pin_spacing * -3.0 # Double spacing for cable boxes in any row
+                        current_x += rect_width - 2.2
                         current_row_max_x = max(current_row_max_x, current_x)
                        
                         min_y = min(min_y, y_bottom_bus_group - 1.8)
@@ -4059,6 +4060,46 @@ def draw_footer(ax, left, right, fixed_ylim_min, total_pages, page_num, df_title
     # str(df_title_row.get('date')), va='center', ha='left', fontsize=FONTSIZE)
 
 # === NEW FUNCTIONS FOR PAGINATION AND ROW ORGANIZATION ===
+def organize_junction_rows_new(junction_cables_regular, junction_cables_box):
+    from collections import OrderedDict
+
+    if not junction_cables_regular.empty and not junction_cables_box.empty:
+        junction_cables = pd.concat([junction_cables_regular, junction_cables_box], ignore_index=True)
+    elif not junction_cables_regular.empty:
+        junction_cables = junction_cables_regular.copy()
+    elif not junction_cables_box.empty:
+        junction_cables = junction_cables_box.copy()
+    else:
+        return OrderedDict()
+
+    # DO NOT convert cable_id to numeric
+
+    # Keep natural order (VERY IMPORTANT)
+    if 'position' in junction_cables.columns:
+        junction_cables = junction_cables.sort_values('position')
+    else:
+        junction_cables = junction_cables.sort_index()
+
+    cable_to_row = (
+        junction_cables
+        .drop_duplicates(subset=['cable_id'], keep='first')
+        .set_index('cable_id')['row']
+        .to_dict()
+    )
+
+    letter_groups = OrderedDict()
+
+    for cid in junction_cables['cable_id'].unique():
+        letter = str(cable_to_row.get(cid, '')).strip()
+        if not letter:
+            continue
+
+        if letter not in letter_groups:
+            letter_groups[letter] = []
+
+        letter_groups[letter].append(cid)
+
+    return letter_groups
 def organize_junction_rows(junction_cables_regular, junction_cables_box):
     from collections import OrderedDict
 
@@ -4156,7 +4197,7 @@ def create_pages_for_junction(junction, letter_groups, max_rows_per_page=3):
     all_rows = []
     for letter in sorted_letters:
         cable_list = letter_groups[letter]
-        letter_rows = break_cables_into_rows_updated(cable_list, max_terminal_symbols_per_row=36, max_cable_boxes_per_row=6)
+        letter_rows = break_cables_into_rows_updated(cable_list, max_terminal_symbols_per_row=36, max_cable_boxes_per_row=15)
         
         # REVERSE THE CABLE ORDER WITHIN EACH ROW to get left-to-right descending
         for i, row_cables in enumerate(letter_rows):
@@ -4457,7 +4498,7 @@ for junction in junction_names:
                     i += 1
         
         # Check if we need to break the row due to cable box limit
-        if is_cable_box and current_cable_box_count_pre >= 6 and current_terminal_count_pre > 0:
+        if is_cable_box and current_cable_box_count_pre >= 16 and current_terminal_count_pre > 0:
             max_row_width = max(max_row_width, current_row_max_x_pre - 1)
             current_row_max_x_pre = 1
             current_x_pre = 1
@@ -4465,7 +4506,7 @@ for junction in junction_names:
             current_cable_box_count_pre = 0
         
         # If adding this cable would exceed the terminal limit, start a new row
-        if current_terminal_count_pre + total_terminals > 36 and current_terminal_count_pre > 0:
+        if not is_cable_box and current_terminal_count_pre + total_terminals > 36 and current_terminal_count_pre > 0:
             max_row_width = max(max_row_width, current_row_max_x_pre - 1)
             current_row_max_x_pre = 1
             current_x_pre = 1
@@ -4474,9 +4515,10 @@ for junction in junction_names:
         
         current_x_pre += added_width + CABLE_GAP
         current_row_max_x_pre = max(current_row_max_x_pre, current_x_pre)
-        current_terminal_count_pre += total_terminals
-        if is_cable_box:
-            current_cable_box_count_pre += 1
+        #current_terminal_count_pre += total_terminals
+        if not  is_cable_box:
+            #current_cable_box_count_pre += 1
+            current_terminal_count_pre += total_terminals
             
     max_row_width = max(max_row_width, current_row_max_x_pre - 1)
     junction_row_widths[junction] = max_row_width
@@ -4486,7 +4528,7 @@ global_max_width = max(junction_row_widths.values()) + 2.0 if junction_row_width
 # === FIXED: Compute page dimensions ===
 max_rows_visible = 3
 max_terminal_symbols_per_row = 36
-max_cable_boxes_per_row = 6
+max_cable_boxes_per_row = 16
 
 fixed_fig_width = 42.8
 fixed_fig_height = 31.0

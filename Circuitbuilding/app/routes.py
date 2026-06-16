@@ -4016,6 +4016,48 @@ def upload_pdf():
             file.save(pdf_path)
             if os.path.exists(pdf_path):
 
+                if signed_status=="1" :
+                    from .Signature_code import extract_signature_info,extract_all_signature_info, CertificateError,verify_signature
+
+                    try:
+                        file_path=pdf_path
+                        certs = extract_all_signature_info(Path(file_path))
+
+                        user = current_user
+
+                        
+                        for c in certs:
+                            print(c.subject, c.serial_number)
+
+                        valid = any(
+                            c.serial_number == user.serial_number
+                            for c in certs
+                        )
+
+                        serials = [str(c.serial_number) for c in certs]
+
+                        flash(
+                            f"User Serial: {user.serial_number} | {valid}"
+                            f"Certificate Serials: {', '.join(serials)}",
+                            "warning"
+                        )
+
+                        #return redirect(url_for('main.approval_tracking'))
+
+                        if not valid:
+                            os.remove(file_path)
+                            flash("Digital signature does not match logged-in user.", "danger")
+                            return redirect(url_for('main.approval_tracking'))
+
+                        
+                        
+                    except CertificateError as e:
+                        flash(f"Invalid signed PDF: {e}", "danger")
+                        os.remove(file_path)
+                        return redirect(url_for('main.approval_tracking'))
+
+
+
                 file_md5 = _md5_of_file(pdf_path)
                 file_size = os.path.getsize(pdf_path)
 
